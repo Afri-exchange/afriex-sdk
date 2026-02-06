@@ -4,6 +4,13 @@
     "description": "Official TypeScript SDK for the Afriex Business API",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
+    "homepage": "https://afriex-sdk-docs.vercel.app",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/codewithveek/afriex-sdk.git",
+        "directory": "packages/sdk"
+    },
+    "author": "Victory Lucky <luckyvictory54@gmail.com>",
     "exports": {
         ".": {
             "require": "./dist/index.js",
