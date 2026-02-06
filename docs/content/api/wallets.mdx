@@ -1,0 +1,78 @@
+---
+title: Wallets
+---
+
+# Wallets
+
+The Wallets service manages wallet operations.
+
+## Methods
+
+### `getWallets()`
+
+Get all wallets for your account.
+
+```typescript
+const wallets = await afriex.wallets.getWallets();
+```
+
+### `getWallet(currency)`
+
+Get a specific wallet by currency.
+
+```typescript
+const wallet = await afriex.wallets.getWallet('USD');
+```
+
+### `getBalance(currency)`
+
+Get the balance for a specific currency.
+
+```typescript
+const balance = await afriex.wallets.getBalance('NGN');
+console.log(`Available: ${balance.available}, Pending: ${balance.pending}`);
+```
+
+### `getTransactions(params?)`
+
+Get wallet transaction history.
+
+```typescript
+const transactions = await afriex.wallets.getTransactions({
+  currency: 'USD',
+  limit: 50,
+  offset: 0,
+});
+```
+
+## Types
+
+### Wallet
+
+```typescript
+interface Wallet {
+  id: string;
+  currency: string;
+  balance: {
+    available: number;
+    pending: number;
+    total: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### WalletTransaction
+
+```typescript
+interface WalletTransaction {
+  id: string;
+  type: 'credit' | 'debit';
+  amount: number;
+  currency: string;
+  description: string;
+  reference: string;
+  createdAt: string;
+}
+```

@@ -1,0 +1,72 @@
+---
+title: Banks
+---
+
+# Banks
+
+The Banks service provides bank information for supported countries.
+
+## Methods
+
+### `getBanks(country)`
+
+Get list of banks for a country.
+
+```typescript
+const banks = await afriex.banks.getBanks('NG');
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `country` | `string` | Yes | Country code (ISO 3166-1 alpha-2) |
+
+### `getBank(country, bankCode)`
+
+Get a specific bank by code.
+
+```typescript
+const bank = await afriex.banks.getBank('NG', '058');
+```
+
+### `validateAccount(params)`
+
+Validate a bank account.
+
+```typescript
+const validation = await afriex.banks.validateAccount({
+  country: 'NG',
+  bankCode: '058',
+  accountNumber: '0123456789',
+});
+
+if (validation.valid) {
+  console.log(`Account holder: ${validation.accountName}`);
+}
+```
+
+## Types
+
+### Bank
+
+```typescript
+interface Bank {
+  code: string;
+  name: string;
+  country: string;
+  logo?: string;
+}
+```
+
+### AccountValidation
+
+```typescript
+interface AccountValidation {
+  valid: boolean;
+  accountNumber: string;
+  accountName?: string;
+  bankCode: string;
+  bankName: string;
+}
+```

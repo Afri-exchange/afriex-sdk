@@ -1,0 +1,94 @@
+---
+title: Recipients
+---
+
+# Recipients
+
+The Recipients service manages transfer recipients.
+
+## Methods
+
+### `create(params)`
+
+Create a new recipient.
+
+```typescript
+const recipient = await afriex.recipients.create({
+  firstName: 'John',
+  lastName: 'Doe',
+  email: 'john@example.com',
+  phone: '+2341234567890',
+  country: 'NG',
+  bankCode: '058',
+  accountNumber: '0123456789',
+});
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `firstName` | `string` | Yes | Recipient's first name |
+| `lastName` | `string` | Yes | Recipient's last name |
+| `email` | `string` | No | Email address |
+| `phone` | `string` | No | Phone number (E.164 format) |
+| `country` | `string` | Yes | Country code (ISO 3166-1 alpha-2) |
+| `bankCode` | `string` | Yes | Bank code |
+| `accountNumber` | `string` | Yes | Bank account number |
+
+### `get(id)`
+
+Get a recipient by ID.
+
+```typescript
+const recipient = await afriex.recipients.get('recipient_123');
+```
+
+### `list(params?)`
+
+List all recipients.
+
+```typescript
+const recipients = await afriex.recipients.list({
+  country: 'NG',
+  limit: 20,
+});
+```
+
+### `update(id, params)`
+
+Update a recipient.
+
+```typescript
+const updated = await afriex.recipients.update('recipient_123', {
+  email: 'newemail@example.com',
+});
+```
+
+### `delete(id)`
+
+Delete a recipient.
+
+```typescript
+await afriex.recipients.delete('recipient_123');
+```
+
+## Types
+
+### Recipient
+
+```typescript
+interface Recipient {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  country: string;
+  bankCode: string;
+  bankName: string;
+  accountNumber: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```

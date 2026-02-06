@@ -1,0 +1,86 @@
+---
+title: Rates
+---
+
+# Rates
+
+The Rates service provides exchange rate information.
+
+## Methods
+
+### `getRate(params)`
+
+Get the current exchange rate for a currency pair.
+
+```typescript
+const rate = await afriex.rates.getRate({
+  sourceCurrency: 'USD',
+  destinationCurrency: 'NGN',
+});
+
+console.log(`1 USD = ${rate.rate} NGN`);
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `sourceCurrency` | `string` | Yes | Source currency code |
+| `destinationCurrency` | `string` | Yes | Destination currency code |
+| `amount` | `number` | No | Amount for conversion preview |
+
+### `getRates()`
+
+Get all available exchange rates.
+
+```typescript
+const rates = await afriex.rates.getRates();
+```
+
+### `getSupportedCurrencies()`
+
+Get list of supported currencies.
+
+```typescript
+const currencies = await afriex.rates.getSupportedCurrencies();
+```
+
+### `convert(params)`
+
+Convert an amount between currencies.
+
+```typescript
+const conversion = await afriex.rates.convert({
+  sourceCurrency: 'USD',
+  destinationCurrency: 'NGN',
+  amount: 100,
+});
+
+console.log(`$100 = ₦${conversion.destinationAmount}`);
+```
+
+## Types
+
+### ExchangeRate
+
+```typescript
+interface ExchangeRate {
+  sourceCurrency: string;
+  destinationCurrency: string;
+  rate: number;
+  inverseRate: number;
+  validUntil: string;
+}
+```
+
+### Currency
+
+```typescript
+interface Currency {
+  code: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  country: string;
+}
+```

@@ -1,0 +1,123 @@
+---
+title: Webhooks
+---
+
+# Webhooks
+
+The Webhooks service handles webhook configuration and verification.
+
+## Methods
+
+### `create(params)`
+
+Register a new webhook endpoint.
+
+```typescript
+const webhook = await afriex.webhooks.create({
+  url: 'https://your-app.com/webhooks/afriex',
+  events: ['transfer.completed', 'transfer.failed'],
+  secret: 'your-webhook-secret',
+});
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `url` | `string` | Yes | Webhook endpoint URL |
+| `events` | `string[]` | Yes | Events to subscribe to |
+| `secret` | `string` | No | Secret for signature verification |
+
+### `list()`
+
+List all registered webhooks.
+
+```typescript
+const webhooks = await afriex.webhooks.list();
+```
+
+### `get(id)`
+
+Get a webhook by ID.
+
+```typescript
+const webhook = await afriex.webhooks.get('webhook_123');
+```
+
+### `update(id, params)`
+
+Update a webhook.
+
+```typescript
+const updated = await afriex.webhooks.update('webhook_123', {
+  events: ['transfer.completed'],
+});
+```
+
+### `delete(id)`
+
+Delete a webhook.
+
+```typescript
+await afriex.webhooks.delete('webhook_123');
+```
+
+## Webhook Verification
+
+Verify incoming webhook signatures:
+
+```typescript
+import { WebhookVerifier } from '@afriex/sdk';
+
+const verifier = new WebhookVerifier('your-webhook-secret');
+
+// In your webhook handler
+app.post('/webhooks/afriex', (req, res) => {
+  const signature = req.headers['x-afriex-signature'];
+  const payload = req.body;
+
+  if (verifier.verify(payload, signature)) {
+    // Process the webhook
+    console.log('Webhook verified:', payload.event);
+    res.status(200).send('OK');
+  } else {
+    res.status(401).send('Invalid signature');
+  }
+});
+```
+
+## Event Types
+
+| Event | Description |
+| :--- | :--- |
+| `transfer.created` | Transfer was created |
+| `transfer.processing` | Transfer is being processed |
+| `transfer.completed` | Transfer completed successfully |
+| `transfer.failed` | Transfer failed |
+| `transfer.cancelled` | Transfer was cancelled |
+
+## Types
+
+### Webhook
+
+```typescript
+interface Webhook {
+  id: string;
+  url: string;
+  events: string[];
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### WebhookEvent
+
+```typescript
+interface WebhookEvent {
+  id: string;
+  event: string;
+  data: Record<string, unknown>;
+  createdAt: string;
+}
+```

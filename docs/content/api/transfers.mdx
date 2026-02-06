@@ -1,0 +1,81 @@
+---
+title: Transfers
+---
+
+# Transfers
+
+The Transfers service handles international money transfers.
+
+## Methods
+
+### `create(params)`
+
+Create a new transfer.
+
+```typescript
+const transfer = await afriex.transfers.create({
+  sourceCurrency: 'USD',
+  destinationCurrency: 'NGN',
+  amount: 100,
+  recipientId: 'recipient_123',
+  purpose: 'family_support',
+});
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `sourceCurrency` | `string` | Yes | Source currency code (ISO 4217) |
+| `destinationCurrency` | `string` | Yes | Destination currency code |
+| `amount` | `number` | Yes | Amount in source currency |
+| `recipientId` | `string` | Yes | ID of the recipient |
+| `purpose` | `string` | No | Purpose of transfer |
+
+### `get(id)`
+
+Get a transfer by ID.
+
+```typescript
+const transfer = await afriex.transfers.get('transfer_abc123');
+```
+
+### `list(params?)`
+
+List transfers with optional filters.
+
+```typescript
+const transfers = await afriex.transfers.list({
+  status: 'completed',
+  limit: 10,
+  offset: 0,
+});
+```
+
+### `cancel(id)`
+
+Cancel a pending transfer.
+
+```typescript
+await afriex.transfers.cancel('transfer_abc123');
+```
+
+## Types
+
+### Transfer
+
+```typescript
+interface Transfer {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  sourceCurrency: string;
+  destinationCurrency: string;
+  sourceAmount: number;
+  destinationAmount: number;
+  exchangeRate: number;
+  fee: number;
+  recipientId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
