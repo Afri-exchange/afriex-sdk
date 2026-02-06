@@ -43,7 +43,7 @@ export class Config {
 
         this.baseUrl = customConfig.baseUrl || envConfig.baseUrl;
         this.timeout = customConfig.timeout || envConfig.timeout;
-        this.maxRetries = config.retryConfig?.maxRetries || envConfig.maxRetries;
+        this.maxRetries = config.retryConfig?.maxRetries ?? envConfig.maxRetries;
         this.retryDelay = config.retryConfig?.retryDelay || envConfig.retryDelay;
         this.retryableStatusCodes = config.retryConfig?.retryableStatusCodes || [
             408, 429, 500, 502, 503, 504,

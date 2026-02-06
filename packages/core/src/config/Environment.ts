@@ -19,13 +19,13 @@ export const DEFAULT_CONFIG: Record<Environment, EnvironmentConfig> = {
     [Environment.STAGING]: {
         baseUrl: BASE_URLS[Environment.STAGING],
         timeout: 30000,
-        maxRetries: 3,
+        maxRetries: 0,
         retryDelay: 1000,
     },
     [Environment.PRODUCTION]: {
         baseUrl: BASE_URLS[Environment.PRODUCTION],
         timeout: 30000,
-        maxRetries: 3,
+        maxRetries: 0,
         retryDelay: 1000,
     },
 };

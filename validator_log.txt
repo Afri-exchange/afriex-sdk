@@ -1,0 +1,43 @@
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in C:/Users/HP/hacks/afriex-sdk/tsconfig.base.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+FAIL packages/core/src/utils/__tests__/validators.test.ts
+  Validators
+    isValidCurrency
+      √ should return true for valid currencies (4 ms)
+      √ should return false for invalid currencies (1 ms)
+    isValidCountry
+      √ should return true for valid countries (1 ms)
+      √ should return false for invalid countries (1 ms)
+    isValidEmail
+      √ should return true for valid emails (1 ms)
+      √ should return false for invalid emails (2 ms)
+    isValidPhoneNumber
+      √ should return true for valid phone numbers (2 ms)
+      × should return false for invalid phone numbers (6 ms)
+    isValidAmount
+      √ should return true for positive numbers (1 ms)
+      √ should return false for non-positive numbers (1 ms)
+
+  ● Validators › isValidPhoneNumber › should return false for invalid phone numbers
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+    [0m [90m 57 |[39m         it([32m'should return false for invalid phone numbers'[39m[33m,[39m () [33m=>[39m {
+     [90m 58 |[39m             [90m// Assuming specific format requirements, but basics:[39m
+    [31m[1m>[22m[39m[90m 59 |[39m             expect(isValidPhoneNumber([32m'1234567890'[39m))[33m.[39mtoBe([36mfalse[39m)[33m;[39m [90m// Missing +[39m
+     [90m    |[39m                                                      [31m[1m^[22m[39m
+     [90m 60 |[39m             expect(isValidPhoneNumber([32m''[39m))[33m.[39mtoBe([36mfalse[39m)[33m;[39m
+     [90m 61 |[39m         })[33m;[39m
+     [90m 62 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (packages/core/src/utils/__tests__/validators.test.ts:59:54)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 9 passed, 10 total
+Snapshots:   0 total
+Time:        1.055 s
+Ran all test suites matching packages/core/src/utils/__tests__/validators.test.ts.
