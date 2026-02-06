@@ -41,9 +41,13 @@ Thumbs.db
 
 # Misc
 .turbo/
+**/src/**/*.js
+**/src/**/*.js.map
+**/src/**/*.d.ts
+**/src/**/*.d.ts.map
+
 .changeset/*.md
 !.changeset/README.md
-fluxmedia-master-spec (1).md
 **_Analysis.md
 **addendum.md
 **spec.md

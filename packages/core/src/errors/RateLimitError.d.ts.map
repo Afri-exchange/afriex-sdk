@@ -1,1 +1,0 @@
-{"version":3,"file":"RateLimitError.d.ts","sourceRoot":"","sources":["RateLimitError.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,QAAQ,EAAE,gBAAgB,EAAE,MAAM,YAAY,CAAC;AAExD,qBAAa,cAAe,SAAQ,QAAQ;IACxC,SAAgB,UAAU,CAAC,EAAE,MAAM,CAAC;gBAExB,QAAQ,EAAE,gBAAgB,EAAE,UAAU,CAAC,EAAE,MAAM;IAK3D,MAAM;;;;;;;;;;;CAMT"}

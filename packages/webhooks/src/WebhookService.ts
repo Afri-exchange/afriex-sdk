@@ -1,6 +1,6 @@
 import { HttpClient, ValidationError } from '@afriex/core';
 import { WebhookVerifier } from './WebhookVerifier';
-import { WebhookEventType, WebhookPayload, WebhookEndpoint, CreateWebhookRequest } from './types';
+import { WebhookPayload, WebhookEndpoint, CreateWebhookRequest } from './types';
 
 export class WebhookService {
     private httpClient: HttpClient;

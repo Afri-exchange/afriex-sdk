@@ -15,7 +15,7 @@ import {
 
 export interface RequestOptions {
     headers?: Record<string, string>;
-    params?: Record<string, unknown>;
+    params?: object;
     timeout?: number;
 }
 
