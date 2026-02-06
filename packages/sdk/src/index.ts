@@ -10,7 +10,7 @@ export interface AfriexSDKConfig extends AfriexConfig {
     webhookPublicKey?: string;
 }
 
-export class Afriex extends AfriexClient {
+export class AfriexSDK extends AfriexClient {
     public readonly customers: CustomerService;
     public readonly transactions: TransactionService;
     public readonly paymentMethods: PaymentMethodService;
@@ -35,14 +35,76 @@ export class Afriex extends AfriexClient {
     }
 }
 
-// Alias for backward compatibility
-export { Afriex as AfriexSDK };
+// Short alias
+export { AfriexSDK as Afriex };
 
-// Re-export all types and modules
+// Re-export core types
 export * from '@afriex/core';
-export * from '@afriex/customers';
-export * from '@afriex/transactions';
-export * from '@afriex/payment-methods';
-export * from '@afriex/balance';
-export * from '@afriex/rates';
-export * from '@afriex/webhooks';
+
+// Re-export service classes explicitly to avoid conflicts
+export { CustomerService } from '@afriex/customers';
+export { TransactionService } from '@afriex/transactions';
+export { PaymentMethodService } from '@afriex/payment-methods';
+export { BalanceService } from '@afriex/balance';
+export { RateService } from '@afriex/rates';
+export { WebhookVerifier } from '@afriex/webhooks';
+
+// Re-export types from each package - using explicit exports to avoid conflicts
+export type {
+    Customer,
+    CreateCustomerRequest,
+    UpdateCustomerKycRequest,
+    ListCustomersParams,
+    CustomerListResponse,
+} from '@afriex/customers';
+
+export type {
+    Transaction,
+    CreateTransactionRequest,
+    ListTransactionsParams,
+    TransactionListResponse,
+    TransactionType,
+    TransactionStatus,
+    TransactionMeta,
+} from '@afriex/transactions';
+
+export type {
+    PaymentMethod,
+    CreatePaymentMethodRequest,
+    ListPaymentMethodsParams,
+    PaymentMethodListResponse,
+    PaymentChannel,
+    Institution,
+    ResolveAccountParams,
+    ResolveAccountResponse,
+    GetInstitutionsParams,
+    CryptoWalletResponse,
+    GetCryptoWalletParams,
+    GetVirtualAccountParams,
+} from '@afriex/payment-methods';
+
+export type {
+    BalanceResponse,
+    GetBalanceParams,
+} from '@afriex/balance';
+
+export type {
+    RatesResponse,
+    GetRatesParams,
+} from '@afriex/rates';
+
+export type {
+    WebhookPayload,
+    CustomerWebhookPayload,
+    CustomerEventType,
+    CustomerWebhookData,
+    PaymentMethodWebhookPayload,
+    PaymentMethodEventType,
+    PaymentMethodWebhookData,
+    TransactionWebhookPayload,
+    TransactionEventType,
+    TransactionWebhookData,
+    TransactionWebhookStatus,
+} from '@afriex/webhooks';
+
+export { WEBHOOK_SIGNATURE_HEADER } from '@afriex/webhooks';
