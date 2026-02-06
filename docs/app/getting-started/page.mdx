@@ -1,0 +1,69 @@
+# Getting Started
+
+## Prerequisites
+
+Before using the Afriex SDK, ensure you have:
+
+*   Node.js installed (v16 or later)
+*   A valid Afriex API Key (contact support to obtain one)
+
+## Installation
+
+Install the package via your preferred package manager:
+
+```bash
+npm install @afriex/sdk
+```
+
+or
+
+```bash
+pnpm add @afriex/sdk
+```
+
+## Basic Usage
+
+1.  **Import the SDK**:
+
+    ```typescript
+    import { Afriex, Environment } from '@afriex/sdk';
+    ```
+
+2.  **Initialize the client**:
+
+    ```typescript
+    const afriex = new Afriex({
+        apiKey: process.env.AFRIEX_API_KEY,
+        environment: Environment.STAGING, // Defaults to PRODUCTION if omitted
+    });
+    ```
+
+3.  **Make a request**:
+
+    ```typescript
+    const wallets = await afriex.wallets.getWallets();
+    console.log('My Wallets:', wallets);
+    ```
+
+## Configuration Options
+
+| Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `apiKey` | `string` | **Required** | Your Afriex API key. |
+| `environment` | `Environment` | `Environment.PRODUCTION` | Target environment (`STAGING` or `PRODUCTION`). |
+| `retryConfig` | `RetryConfig` | `{ maxRetries: 0 }` | Configuration for request retries. |
+
+### Retry Configuration
+
+By default, retries are **disabled**. You can enable them by passing a `retryConfig`:
+
+```typescript
+const afriex = new Afriex({
+    apiKey: '...',
+    retryConfig: {
+        maxRetries: 3,
+        retryDelay: 1000, // 1 second
+        retryableStatusCodes: [408, 429, 500, 502, 503, 504],
+    },
+});
+```

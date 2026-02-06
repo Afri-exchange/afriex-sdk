@@ -1,0 +1,36 @@
+# Introduction
+
+Welcome to the **Afriex SDK** documentation. This SDK allows you to integrate Afriex Business API into your TypeScript/JavaScript applications with ease.
+
+## Features
+
+- **Type-Safe**: Written in TypeScript with full type definitions.
+- **Modular**: Import only what you need from individual packages.
+- **Resilient**: Built-in retry logic and error handling.
+- **Comprehensive**: Covers Transfers, Wallets, Rates, Webhooks, and more.
+
+## Installation
+
+```bash
+npm install @afriex/sdk
+# or
+pnpm add @afriex/sdk
+```
+
+## Getting Started
+
+```typescript
+import { Afriex } from '@afriex/sdk';
+
+const afriex = new Afriex({
+  apiKey: 'YOUR_API_KEY',
+  environment: 'STAGING', // or 'PRODUCTION'
+});
+
+async function main() {
+  const wallets = await afriex.wallets.getWallets();
+  console.log(wallets);
+}
+
+main();
+```

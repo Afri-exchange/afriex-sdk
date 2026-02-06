@@ -1,0 +1,33 @@
+# API Reference
+
+The Afriex SDK is organized into several service modules.
+
+## Services
+
+*   [Transfers](/api/transfers)
+*   [Wallets](/api/wallets)
+*   [Recipients](/api/recipients)
+*   [Rates](/api/rates)
+*   [Banks](/api/banks)
+*   [Webhooks](/api/webhooks)
+
+## Core Types
+
+### AfriexConfig
+
+```typescript
+interface AfriexConfig {
+    apiKey: string;
+    environment?: Environment;
+    retryConfig?: RetryConfig;
+}
+```
+
+### Environment
+
+```typescript
+enum Environment {
+    STAGING = 'staging',
+    PRODUCTION = 'production',
+}
+```
