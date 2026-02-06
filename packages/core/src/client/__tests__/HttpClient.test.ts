@@ -27,7 +27,7 @@ describe('HttpClient', () => {
             interceptors: {
                 request: { use: jest.fn() },
                 response: {
-                    use: jest.fn((success, error) => {
+                    use: jest.fn((_, error) => {
                         responseErrorHandler = error;
                         // Return rejected promise to simulate axios behavior if needed, 
                         // but since we capture the handler, we call it manually.
