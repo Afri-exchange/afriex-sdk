@@ -1,6 +1,6 @@
 {
     "name": "@afriex/sdk",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Official TypeScript SDK for the Afriex Business API",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -40,7 +40,8 @@
     },
     "files": [
         "dist",
-        "README.md"
+        "README.md",
+        "!dist/**/*.map"
     ],
     "publishConfig": {
         "access": "public"
