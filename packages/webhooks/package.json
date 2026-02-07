@@ -1,6 +1,6 @@
 {
     "name": "@afriex/webhooks",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Webhook service for Afriex SDK",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",

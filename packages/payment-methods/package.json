@@ -1,6 +1,6 @@
 {
     "name": "@afriex/payment-methods",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Payment method service for Afriex SDK",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
