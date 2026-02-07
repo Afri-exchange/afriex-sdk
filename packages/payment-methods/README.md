@@ -17,75 +17,117 @@ import { AfriexClient } from '@afriex/core';
 import { PaymentMethodService } from '@afriex/payment-methods';
 
 const client = new AfriexClient({
-    apiKey: 'your-api-key',
-    apiSecret: 'your-api-secret'
+    apiKey: 'your-api-key'
 });
 
-const paymentMethods = new PaymentMethodService(client);
+const paymentMethods = new PaymentMethodService(client.getHttpClient());
 
-// Create a bank payment method
-const bank = await paymentMethods.create({
+// Create a payment method
+const method = await paymentMethods.create({
     customerId: 'customer-id',
-    type: 'bank',
+    channel: 'BANK_ACCOUNT',
+    accountName: 'John Doe',
     accountNumber: '1234567890',
-    bankCode: 'GTB',
-    currency: 'NGN'
+    countryCode: 'NG',
+    institution: {
+        institutionCode: '058',
+        institutionName: 'GTBank'
+    }
 });
 
-// List payment methods
-const methods = await paymentMethods.list('customer-id');
+// Get a payment method by ID
+const fetchedMethod = await paymentMethods.get('payment-method-id');
+
+// List payment methods with pagination
+const { data, page, total } = await paymentMethods.list({ 
+    page: 1, 
+    limit: 10 
+});
+
+// Delete a payment method
+await paymentMethods.delete('payment-method-id');
 
 // Get supported institutions
-const banks = await paymentMethods.getInstitutions('NGN', 'bank');
+const banks = await paymentMethods.getInstitutions({
+    channel: 'BANK_ACCOUNT',
+    countryCode: 'NG'
+});
 
 // Resolve account details
 const account = await paymentMethods.resolveAccount({
+    channel: 'BANK_ACCOUNT',
+    countryCode: 'NG',
     accountNumber: '1234567890',
-    bankCode: 'GTB'
+    institutionCode: '058'
 });
 
-// Get crypto deposit address
-const address = await paymentMethods.getCryptoAddress('customer-id', 'BTC');
+// Get crypto wallet (production only)
+const wallet = await paymentMethods.getCryptoWallet({
+    asset: 'USDT' // or 'USDC'
+});
 
-// Create virtual account
-const virtualAccount = await paymentMethods.createVirtualAccount({
-    customerId: 'customer-id',
-    currency: 'NGN'
+// Get virtual account (production only)
+const virtualAccount = await paymentMethods.getVirtualAccount({
+    currency: 'NGN' // USD, NGN, GBP, or EUR
 });
 ```
 
-## Payment Method Types
+## Payment Channels
 
-- `bank` - Bank account
-- `mobile_money` - Mobile money wallet
-- `crypto` - Cryptocurrency wallet
-- `virtual_account` - Virtual bank account
+- `BANK_ACCOUNT` - Bank account
+- `SWIFT` - SWIFT transfer
+- `MOBILE_MONEY` - Mobile money wallet
+- `UPI` - UPI transfer (India)
+- `INTERAC` - Interac transfer (Canada)
+- `WE_CHAT` - WeChat Pay
 
 ## API Reference
 
-### `create(data)`
+### `create(request: CreatePaymentMethodRequest): Promise<PaymentMethod>`
 Create a new payment method.
 
-### `get(paymentMethodId)`
+**Required fields:** `customerId`, `channel`, `accountName`, `accountNumber`, `countryCode`, `institution`
+
+**Optional fields:** `recipient`, `transaction`
+
+### `get(paymentMethodId: string): Promise<PaymentMethod>`
 Retrieve a payment method by ID.
 
-### `list(customerId)`
-List all payment methods for a customer.
+### `list(params?: ListPaymentMethodsParams): Promise<PaymentMethodListResponse>`
+List payment methods with optional pagination.
 
-### `delete(paymentMethodId)`
+**Parameters:** `page`, `limit`
+
+**Returns:** `{ data: PaymentMethod[], page: number, total: number }`
+
+### `delete(paymentMethodId: string): Promise<void>`
 Delete a payment method.
 
-### `getInstitutions(currency, type?)`
-Get supported financial institutions for a currency.
+### `getInstitutions(params: GetInstitutionsParams): Promise<Institution[]>`
+Get supported financial institutions.
 
-### `resolveAccount(data)`
+**Required:** `channel`, `countryCode`
+
+### `resolveAccount(params: ResolveAccountParams): Promise<ResolveAccountResponse>`
 Resolve and verify account details.
 
-### `getCryptoAddress(customerId, currency)`
-Get crypto deposit address.
+**Required:** `channel` (`MOBILE_MONEY` or `BANK_ACCOUNT`), `countryCode`, `accountNumber`
 
-### `createVirtualAccount(data)`
-Create a virtual account.
+**Required for bank accounts:** `institutionCode`
+
+### `getCryptoWallet(params: GetCryptoWalletParams): Promise<CryptoWalletResponse>`
+Get crypto wallet address. **Production only.**
+
+**Required:** `asset` (`USDT` or `USDC`)
+
+**Optional:** `customerId`
+
+### `getVirtualAccount(params: GetVirtualAccountParams): Promise<PaymentMethod>`
+Get virtual account. **Production only.**
+
+**Required:** `currency` (`USD`, `NGN`, `GBP`, or `EUR`)
+
+**Optional:** `amount`, `customerId`
 
 ## License
 

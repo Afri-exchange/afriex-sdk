@@ -1,6 +1,6 @@
 # @afriex/webhooks
 
-Webhook verification for the Afriex SDK. Verify and parse webhook signatures.
+Webhook verification for the Afriex SDK. Verify webhook signatures using RSA public key.
 
 ## Installation
 
@@ -13,85 +13,96 @@ pnpm add @afriex/webhooks
 ## Usage
 
 ```typescript
-import { WebhookVerifier } from '@afriex/webhooks';
+import { WebhookVerifier, WEBHOOK_SIGNATURE_HEADER } from '@afriex/webhooks';
 
-const verifier = new WebhookVerifier('your-webhook-public-key');
+const verifier = new WebhookVerifier('-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----');
 
 // Verify a webhook signature
 const isValid = verifier.verify(payload, signature);
 
-// Verify and parse webhook payload
+// Verify and parse webhook payload (throws if invalid)
 const event = verifier.verifyAndParse(payload, signature);
-if (event) {
-    console.log('Event type:', event.type);
-    console.log('Event data:', event.data);
-}
+console.log('Event type:', event.event);
+console.log('Event data:', event.data);
 ```
 
 ### Express.js Example
 
 ```typescript
 import express from 'express';
-import { WebhookVerifier } from '@afriex/webhooks';
+import { WebhookVerifier, WEBHOOK_SIGNATURE_HEADER } from '@afriex/webhooks';
 
 const app = express();
-const verifier = new WebhookVerifier(process.env.AFRIEX_WEBHOOK_PUBLIC_KEY);
+const verifier = new WebhookVerifier(process.env.AFRIEX_WEBHOOK_PUBLIC_KEY!);
 
 app.post('/webhooks/afriex', express.raw({ type: 'application/json' }), (req, res) => {
-    const signature = req.headers['x-afriex-signature'] as string;
+    const signature = req.headers[WEBHOOK_SIGNATURE_HEADER] as string;
     const payload = req.body.toString();
 
-    const event = verifier.verifyAndParse(payload, signature);
-    
-    if (!event) {
-        return res.status(401).send('Invalid signature');
-    }
+    try {
+        const event = verifier.verifyAndParse(payload, signature);
+        
+        switch (event.event) {
+            case 'TRANSACTION.CREATED':
+            case 'TRANSACTION.UPDATED':
+                // Handle transaction events
+                break;
+            case 'customer.created':
+            case 'customer.updated':
+            case 'customer.deleted':
+                // Handle customer events
+                break;
+            case 'PAYMENT_METHOD.CREATED':
+            case 'PAYMENT_METHOD.UPDATED':
+            case 'PAYMENT_METHOD.DELETED':
+                // Handle payment method events
+                break;
+        }
 
-    switch (event.type) {
-        case 'transaction.completed':
-            // Handle completed transaction
-            break;
-        case 'transaction.failed':
-            // Handle failed transaction
-            break;
-        case 'customer.created':
-            // Handle new customer
-            break;
+        res.status(200).send('OK');
+    } catch (error) {
+        res.status(401).send('Invalid signature');
     }
-
-    res.status(200).send('OK');
 });
 ```
 
 ## Webhook Event Types
 
-- `transaction.completed` - Transaction completed successfully
-- `transaction.failed` - Transaction failed
-- `transaction.pending` - Transaction is pending
-- `customer.created` - New customer created
-- `customer.updated` - Customer updated
-- `payment_method.created` - Payment method added
-- `payment_method.deleted` - Payment method removed
+### Customer Events
+- `customer.created`
+- `customer.updated`
+- `customer.deleted`
+
+### Transaction Events
+- `TRANSACTION.CREATED`
+- `TRANSACTION.UPDATED`
+
+### Payment Method Events
+- `PAYMENT_METHOD.CREATED`
+- `PAYMENT_METHOD.UPDATED`
+- `PAYMENT_METHOD.DELETED`
 
 ## API Reference
 
-### `verify(payload, signature)`
-Verify a webhook signature.
+### `verify(payload: string, signature: string): boolean`
+Verify a webhook signature using RSA SHA256.
 
 **Parameters:**
 - `payload`: Raw webhook payload string
-- `signature`: Signature from `x-afriex-signature` header
+- `signature`: Base64-encoded signature from `x-webhook-signature` header
 
 **Returns:** `boolean` - Whether signature is valid
 
-### `verifyAndParse(payload, signature)`
+### `verifyAndParse(payload: string, signature: string): WebhookPayload`
 Verify signature and parse the webhook event.
 
-**Parameters:**
-- `payload`: Raw webhook payload string
-- `signature`: Signature from `x-afriex-signature` header
+**Throws:** `Error` if signature is invalid
 
-**Returns:** `WebhookEvent | null` - Parsed event or null if invalid
+**Returns:** Parsed `WebhookPayload` object with `event` and `data` properties
+
+## Constants
+
+- `WEBHOOK_SIGNATURE_HEADER` - The header name: `'x-webhook-signature'`
 
 ## License
 

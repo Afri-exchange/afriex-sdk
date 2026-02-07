@@ -13,48 +13,56 @@ pnpm add @afriex/sdk
 ## Quick Start
 
 ```typescript
+import { AfriexSDK } from '@afriex/sdk';
+// or use the alias
 import { Afriex } from '@afriex/sdk';
 
-const afriex = new Afriex({
+const afriex = new AfriexSDK({
     apiKey: 'your-api-key',
-    apiSecret: 'your-api-secret',
-    environment: 'sandbox', // or 'production'
-    webhookPublicKey: 'your-webhook-public-key' // optional
+    environment: 'production', // or 'staging' (default: 'production')
+    webhookPublicKey: '-----BEGIN PUBLIC KEY-----...' // optional
 });
 
 // Customers
 const customer = await afriex.customers.create({
-    email: 'user@example.com',
-    firstName: 'John',
-    lastName: 'Doe'
+    fullName: 'John Doe',
+    email: 'john@example.com',
+    phone: '+1234567890',
+    countryCode: 'US'
 });
 
 // Payment Methods
 const paymentMethod = await afriex.paymentMethods.create({
-    customerId: customer.id,
-    type: 'bank',
+    customerId: customer.customerId,
+    channel: 'BANK_ACCOUNT',
+    accountName: 'John Doe',
     accountNumber: '1234567890',
-    bankCode: 'GTB',
-    currency: 'NGN'
+    countryCode: 'NG',
+    institution: {
+        institutionCode: '058',
+        institutionName: 'GTBank'
+    }
 });
 
 // Transactions
 const transaction = await afriex.transactions.create({
-    customerId: customer.id,
-    amount: 100,
+    customerId: customer.customerId,
+    destinationAmount: 50000,
     sourceCurrency: 'USD',
     destinationCurrency: 'NGN',
-    paymentMethodId: paymentMethod.id
+    destinationId: paymentMethod.paymentMethodId
 });
 
 // Rates
 const rate = await afriex.rates.getRate('USD', 'NGN');
 
 // Balance
-const balances = await afriex.balance.getBalance();
+const balances = await afriex.balance.getBalance({ currencies: ['USD', 'NGN'] });
 
-// Webhook Verification
-const isValid = afriex.webhooks.verify(payload, signature);
+// Webhook Verification (only if webhookPublicKey provided)
+if (afriex.webhooks) {
+    const isValid = afriex.webhooks.verify(payload, signature);
+}
 ```
 
 ## Available Services
@@ -66,31 +74,31 @@ const isValid = afriex.webhooks.verify(payload, signature);
 | `afriex.paymentMethods` | Bank, mobile money, crypto, virtual accounts |
 | `afriex.balance`        | Organization wallet balances                 |
 | `afriex.rates`          | Exchange rates and conversions               |
-| `afriex.webhooks`       | Webhook signature verification               |
+| `afriex.webhooks`       | Webhook signature verification (optional)    |
 
 ## Configuration
 
 ```typescript
-const afriex = new Afriex({
-    apiKey: 'your-api-key',        // Required
-    apiSecret: 'your-api-secret',  // Required
-    environment: 'sandbox',        // 'sandbox' | 'production' (default: 'sandbox')
-    webhookPublicKey: 'key',       // Optional - for webhook verification
-    timeout: 30000,                // Optional - request timeout in ms
-});
+interface AfriexSDKConfig {
+    apiKey: string;           // Required - Your Afriex API key
+    environment?: 'staging' | 'production';  // Default: 'production'
+    webhookPublicKey?: string; // Optional - Afriex's public key for webhooks
+}
 ```
 
 ## Individual Packages
 
-You can also install individual packages for smaller bundle sizes:
+For smaller bundle sizes, install packages individually:
 
-- `@afriex/core` - Base client and configuration
-- `@afriex/customers` - Customer management
-- `@afriex/transactions` - Transaction handling
-- `@afriex/payment-methods` - Payment methods
-- `@afriex/balance` - Balance queries
-- `@afriex/rates` - Exchange rates
-- `@afriex/webhooks` - Webhook verification
+| Package                   | Description                   |
+| ------------------------- | ----------------------------- |
+| `@afriex/core`            | Base client and configuration |
+| `@afriex/customers`       | Customer management           |
+| `@afriex/transactions`    | Transaction handling          |
+| `@afriex/payment-methods` | Payment methods               |
+| `@afriex/balance`         | Balance queries               |
+| `@afriex/rates`           | Exchange rates                |
+| `@afriex/webhooks`        | Webhook verification          |
 
 ## Documentation
 

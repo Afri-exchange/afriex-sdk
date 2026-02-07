@@ -1,6 +1,6 @@
 # @afriex/customers
 
-Customer management service for the Afriex SDK. Create, retrieve, update, and manage customer KYC.
+Customer management service for the Afriex SDK. Create, retrieve, list, delete customers and manage KYC.
 
 ## Installation
 
@@ -17,49 +17,66 @@ import { AfriexClient } from '@afriex/core';
 import { CustomerService } from '@afriex/customers';
 
 const client = new AfriexClient({
-    apiKey: 'your-api-key',
-    apiSecret: 'your-api-secret'
+    apiKey: 'your-api-key'
 });
 
-const customers = new CustomerService(client);
+const customers = new CustomerService(client.getHttpClient());
 
 // Create a customer
 const customer = await customers.create({
-    email: 'user@example.com',
-    firstName: 'John',
-    lastName: 'Doe',
-    phoneNumber: '+1234567890'
+    fullName: 'John Doe',
+    email: 'john@example.com',
+    phone: '+1234567890',
+    countryCode: 'US'
 });
 
-// Get a customer
-const customer = await customers.get('customer-id');
+// Get a customer by ID
+const fetchedCustomer = await customers.get('customer-id');
 
-// List customers
-const { data, pagination } = await customers.list({ limit: 10 });
+// List customers with pagination
+const { data, page, total } = await customers.list({ 
+    limit: 10,
+    page: 1 
+});
 
-// Update KYC
-await customers.updateKyc('customer-id', {
-    documentType: 'passport',
-    documentNumber: 'AB123456'
+// Delete a customer
+await customers.delete('customer-id');
+
+// Update KYC information
+const updated = await customers.updateKyc('customer-id', {
+    kyc: {
+        documentType: 'passport',
+        documentNumber: 'AB123456'
+    }
 });
 ```
 
 ## API Reference
 
-### `create(data)`
+### `create(request: CreateCustomerRequest): Promise<Customer>`
 Create a new customer.
 
-### `get(customerId)`
+**Required fields:** `fullName`, `email`, `phone`, `countryCode`
+
+**Optional fields:** `kyc`, `meta`
+
+### `get(customerId: string): Promise<Customer>`
 Retrieve a customer by ID.
 
-### `list(params?)`
+### `list(params?: ListCustomersParams): Promise<CustomerListResponse>`
 List all customers with optional pagination.
 
-### `delete(customerId)`
+**Parameters:** `page`, `limit`
+
+**Returns:** `{ data: Customer[], page: number, total: number }`
+
+### `delete(customerId: string): Promise<void>`
 Delete a customer.
 
-### `updateKyc(customerId, kycData)`
+### `updateKyc(customerId: string, request: UpdateCustomerKycRequest): Promise<Customer>`
 Update customer KYC information.
+
+**Required:** `kyc` object with key-value pairs
 
 ## License
 
