@@ -1,59 +1,59 @@
 {
-    "name": "@afriex/sdk",
-    "version": "1.0.3",
-    "description": "Official TypeScript SDK for the Afriex Business API",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "homepage": "https://afriex-sdk-docs.vercel.app",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/codewithveek/afriex-sdk.git",
-        "directory": "packages/sdk"
-    },
-    "author": "Victory Lucky <luckyvictory54@gmail.com>",
-    "exports": {
-        ".": {
-            "require": "./dist/index.js",
-            "types": "./dist/index.d.ts"
-        }
-    },
-    "scripts": {
-        "build": "tsc",
-        "type-check": "tsc --noEmit",
-        "clean": "rimraf dist"
-    },
-    "dependencies": {
-        "@afriex/core": "workspace:*",
-        "@afriex/customers": "workspace:*",
-        "@afriex/transactions": "workspace:*",
-        "@afriex/payment-methods": "workspace:*",
-        "@afriex/balance": "workspace:*",
-        "@afriex/rates": "workspace:*",
-        "@afriex/webhooks": "workspace:*"
-    },
-    "devDependencies": {
-        "rimraf": "^5.0.5",
-        "typescript": "^5.3.3"
-    },
-    "peerDependencies": {
-        "typescript": ">=5.0.0"
-    },
-    "files": [
-        "dist",
-        "README.md",
-        "!dist/**/*.map"
-    ],
-    "publishConfig": {
-        "access": "public"
-    },
-    "keywords": [
-        "afriex",
-        "sdk",
-        "api",
-        "money-transfer",
-        "payments",
-        "fintech",
-        "typescript"
-    ],
-    "license": "MIT"
+  "name": "@afriex/sdk",
+  "version": "1.0.4",
+  "description": "Official TypeScript SDK for the Afriex Business API",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "homepage": "https://afriex-sdk-docs.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codewithveek/afriex-sdk.git",
+    "directory": "packages/sdk"
+  },
+  "author": "Victory Lucky <luckyvictory54@gmail.com>",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@afriex/core": "workspace:*",
+    "@afriex/customers": "workspace:*",
+    "@afriex/transactions": "workspace:*",
+    "@afriex/payment-methods": "workspace:*",
+    "@afriex/balance": "workspace:*",
+    "@afriex/rates": "workspace:*",
+    "@afriex/webhooks": "workspace:*"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "!dist/**/*.map"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "afriex",
+    "sdk",
+    "api",
+    "money-transfer",
+    "payments",
+    "fintech",
+    "typescript"
+  ],
+  "license": "MIT"
 }

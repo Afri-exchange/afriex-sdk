@@ -1,34 +1,34 @@
 {
-    "name": "@afriex/rates",
-    "version": "1.0.3",
-    "description": "Rate service for Afriex SDK",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "require": "./dist/index.js",
-            "types": "./dist/index.d.ts"
-        }
-    },
-    "scripts": {
-        "build": "tsc",
-        "type-check": "tsc --noEmit",
-        "clean": "rimraf dist"
-    },
-    "dependencies": {
-        "@afriex/core": "workspace:*"
-    },
-    "devDependencies": {
-        "rimraf": "^5.0.5",
-        "typescript": "^5.3.3"
-    },
-    "files": [
-        "dist",
-        "README.md",
-        "!dist/**/*.map"
-    ],
-    "publishConfig": {
-        "access": "public"
-    },
-    "license": "MIT"
+  "name": "@afriex/rates",
+  "version": "1.0.4",
+  "description": "Rate service for Afriex SDK",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@afriex/core": "workspace:*"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "!dist/**/*.map"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
 }

@@ -13,62 +13,62 @@ pnpm add @afriex/payment-methods @afriex/core
 ## Usage
 
 ```typescript
-import { AfriexClient } from '@afriex/core';
-import { PaymentMethodService } from '@afriex/payment-methods';
+import { AfriexClient } from "@afriex/core";
+import { PaymentMethodService } from "@afriex/payment-methods";
 
 const client = new AfriexClient({
-    apiKey: 'your-api-key'
+  apiKey: "your-api-key",
 });
 
 const paymentMethods = new PaymentMethodService(client.getHttpClient());
 
 // Create a payment method
 const method = await paymentMethods.create({
-    customerId: 'customer-id',
-    channel: 'BANK_ACCOUNT',
-    accountName: 'John Doe',
-    accountNumber: '1234567890',
-    countryCode: 'NG',
-    institution: {
-        institutionCode: '058',
-        institutionName: 'GTBank'
-    }
+  customerId: "customer-id",
+  channel: "BANK_ACCOUNT",
+  accountName: "John Doe",
+  accountNumber: "1234567890",
+  countryCode: "NG",
+  institution: {
+    institutionCode: "058",
+    institutionName: "GTBank",
+  },
 });
 
 // Get a payment method by ID
-const fetchedMethod = await paymentMethods.get('payment-method-id');
+const fetchedMethod = await paymentMethods.get("payment-method-id");
 
 // List payment methods with pagination
-const { data, page, total } = await paymentMethods.list({ 
-    page: 1, 
-    limit: 10 
+const { data, page, total } = await paymentMethods.list({
+  page: 1,
+  limit: 10,
 });
 
 // Delete a payment method
-await paymentMethods.delete('payment-method-id');
+await paymentMethods.delete("payment-method-id");
 
 // Get supported institutions
 const banks = await paymentMethods.getInstitutions({
-    channel: 'BANK_ACCOUNT',
-    countryCode: 'NG'
+  channel: "BANK_ACCOUNT",
+  countryCode: "NG",
 });
 
 // Resolve account details
 const account = await paymentMethods.resolveAccount({
-    channel: 'BANK_ACCOUNT',
-    countryCode: 'NG',
-    accountNumber: '1234567890',
-    institutionCode: '058'
+  channel: "BANK_ACCOUNT",
+  countryCode: "NG",
+  accountNumber: "1234567890",
+  institutionCode: "058",
 });
 
 // Get crypto wallet (production only)
 const wallet = await paymentMethods.getCryptoWallet({
-    asset: 'USDT' // or 'USDC'
+  asset: "USDT", // or 'USDC'
 });
 
 // Get virtual account (production only)
 const virtualAccount = await paymentMethods.getVirtualAccount({
-    currency: 'NGN' // USD, NGN, GBP, or EUR
+  currency: "NGN", // USD, NGN, GBP, or EUR
 });
 ```
 
@@ -84,6 +84,7 @@ const virtualAccount = await paymentMethods.getVirtualAccount({
 ## API Reference
 
 ### `create(request: CreatePaymentMethodRequest): Promise<PaymentMethod>`
+
 Create a new payment method.
 
 **Required fields:** `customerId`, `channel`, `accountName`, `accountNumber`, `countryCode`, `institution`
@@ -91,9 +92,11 @@ Create a new payment method.
 **Optional fields:** `recipient`, `transaction`
 
 ### `get(paymentMethodId: string): Promise<PaymentMethod>`
+
 Retrieve a payment method by ID.
 
 ### `list(params?: ListPaymentMethodsParams): Promise<PaymentMethodListResponse>`
+
 List payment methods with optional pagination.
 
 **Parameters:** `page`, `limit`
@@ -101,14 +104,23 @@ List payment methods with optional pagination.
 **Returns:** `{ data: PaymentMethod[], page: number, total: number }`
 
 ### `delete(paymentMethodId: string): Promise<void>`
+
 Delete a payment method.
 
 ### `getInstitutions(params: GetInstitutionsParams): Promise<Institution[]>`
+
 Get supported financial institutions.
 
 **Required:** `channel`, `countryCode`
 
+### `resolveInstitutionCode(params: InstitutionCodesParams): Promise<InstitutionCodesResponse|null>`
+
+Resolve a bank code (SWIFT or US routing number) to the corresponding bank or institution
+
+**Required:** `codeType`, `searchTerm`, and `country`
+
 ### `resolveAccount(params: ResolveAccountParams): Promise<ResolveAccountResponse>`
+
 Resolve and verify account details.
 
 **Required:** `channel` (`MOBILE_MONEY` or `BANK_ACCOUNT`), `countryCode`, `accountNumber`
@@ -116,6 +128,7 @@ Resolve and verify account details.
 **Required for bank accounts:** `institutionCode`
 
 ### `getCryptoWallet(params: GetCryptoWalletParams): Promise<CryptoWalletResponse>`
+
 Get crypto wallet address. **Production only.**
 
 **Required:** `asset` (`USDT` or `USDC`)
@@ -123,6 +136,7 @@ Get crypto wallet address. **Production only.**
 **Optional:** `customerId`
 
 ### `getVirtualAccount(params: GetVirtualAccountParams): Promise<PaymentMethod>`
+
 Get virtual account. **Production only.**
 
 **Required:** `currency` (`USD`, `NGN`, `GBP`, or `EUR`)

@@ -11,6 +11,8 @@ import {
   CryptoWalletResponse,
   GetCryptoWalletParams,
   GetVirtualAccountParams,
+  InstitutionCodesParams,
+  InstitutionCodesResponse,
 } from "./types";
 
 export class PaymentMethodService {
@@ -85,6 +87,27 @@ export class PaymentMethodService {
     return this.httpClient.get<Institution[]>("/payment-method/institution", {
       params,
     });
+  }
+
+  /**
+   * Resolves a bank code (SWIFT code or US routing number) to the corresponding bank or institution name.
+   * GET /payment-method/institution/codes
+   */
+  async resolveInstitutionCode(
+    params: InstitutionCodesParams
+  ): Promise<InstitutionCodesResponse|null> {
+    if (!params.codeType || !params.country || !params.searchTerm) {
+      throw new ValidationError(
+        "Code type, country, and search term are required"
+      );
+    }
+
+    return this.httpClient.get<InstitutionCodesResponse|null>(
+      "/payment-method/institution/codes",
+      {
+        params,
+      }
+    );
   }
 
   /**
