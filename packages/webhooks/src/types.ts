@@ -3,7 +3,7 @@
  */
 
 // Customer webhook events
-export type CustomerEventType = 'customer.created' | 'customer.updated' | 'customer.deleted';
+export type CustomerEventType = 'CUSTOMER.CREATED' | 'CUSTOMER.UPDATED' | 'CUSTOMER.DELETED';
 
 export interface CustomerWebhookData {
     customerId: string;

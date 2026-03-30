@@ -37,7 +37,6 @@ export class HttpClient {
       timeout: config.timeout,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${config.apiKey}`,
         "x-api-key": `${config.apiKey}`,
         "User-Agent": "Afriex-TypeScript-SDK/1.0.0",
       },

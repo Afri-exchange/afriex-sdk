@@ -10,7 +10,7 @@ export class BalanceService {
 
     /**
      * Get wallet balances for specified currencies
-     * GET /api/v1/org/balance
+     * GET /org/balance
      * 
      * @param params.currencies - Comma-separated list or array of currency codes
      * @returns Map of currency codes to balance amounts
@@ -24,7 +24,7 @@ export class BalanceService {
             ? params.currencies.join(',')
             : params.currencies;
 
-        const response = await this.httpClient.get<BalanceResponse>('/api/v1/org/balance', {
+        const response = await this.httpClient.get<BalanceResponse>('/org/balance', {
             params: { currencies },
         });
 

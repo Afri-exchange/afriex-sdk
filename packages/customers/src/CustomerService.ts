@@ -16,13 +16,13 @@ export class CustomerService {
 
     /**
      * Create a new customer
-     * POST /api/v1/customer
+     * POST /customer
      */
     async create(request: CreateCustomerRequest): Promise<Customer> {
         this.validateCreateRequest(request);
 
         const response = await this.httpClient.post<{ data: Customer }>(
-            '/api/v1/customer',
+            '/customer',
             request
         );
         return response.data;
@@ -30,7 +30,7 @@ export class CustomerService {
 
     /**
      * Get a customer by ID
-     * GET /api/v1/customer/{customerId}
+     * GET /customer/{customerId}
      */
     async get(customerId: string): Promise<Customer> {
         if (!customerId) {
@@ -38,36 +38,36 @@ export class CustomerService {
         }
 
         const response = await this.httpClient.get<{ data: Customer }>(
-            `/api/v1/customer/${customerId}`
+            `/customer/${customerId}`
         );
         return response.data;
     }
 
     /**
      * List all customers with pagination
-     * GET /api/v1/customer
+     * GET /customer
      */
     async list(params?: ListCustomersParams): Promise<CustomerListResponse> {
-        return this.httpClient.get<CustomerListResponse>('/api/v1/customer', {
+        return this.httpClient.get<CustomerListResponse>('/customer', {
             params,
         });
     }
 
     /**
      * Delete a customer by ID
-     * DELETE /api/v1/customer/{customerId}
+     * DELETE /customer/{customerId}
      */
     async delete(customerId: string): Promise<void> {
         if (!customerId) {
             throw new ValidationError('Customer ID is required');
         }
 
-        await this.httpClient.delete(`/api/v1/customer/${customerId}`);
+        await this.httpClient.delete(`/customer/${customerId}`);
     }
 
     /**
      * Update customer KYC information
-     * PATCH /api/v1/customer/{customerId}/kyc
+     * PATCH /customer/{customerId}/kyc
      */
     async updateKyc(
         customerId: string,
@@ -82,7 +82,7 @@ export class CustomerService {
         }
 
         const response = await this.httpClient.patch<{ data: Customer }>(
-            `/api/v1/customer/${customerId}/kyc`,
+            `/customer/${customerId}/kyc`,
             request
         );
         return response.data;

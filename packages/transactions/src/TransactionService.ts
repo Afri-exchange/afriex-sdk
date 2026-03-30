@@ -15,13 +15,13 @@ export class TransactionService {
 
     /**
      * Create a new transaction
-     * POST /api/v1/transaction
+     * POST /transaction
      */
     async create(request: CreateTransactionRequest): Promise<Transaction> {
         this.validateCreateRequest(request);
 
         const response = await this.httpClient.post<{ data: Transaction }>(
-            '/api/v1/transaction',
+            '/transaction',
             request
         );
         return response.data;
@@ -29,7 +29,7 @@ export class TransactionService {
 
     /**
      * Get a transaction by ID
-     * GET /api/v1/transaction/{transactionId}
+     * GET /transaction/{transactionId}
      */
     async get(transactionId: string): Promise<Transaction> {
         if (!transactionId) {
@@ -37,17 +37,17 @@ export class TransactionService {
         }
 
         const response = await this.httpClient.get<{ data: Transaction }>(
-            `/api/v1/transaction/${transactionId}`
+            `/transaction/${transactionId}`
         );
         return response.data;
     }
 
     /**
      * List all transactions with pagination
-     * GET /api/v1/transaction
+     * GET /transaction
      */
     async list(params?: ListTransactionsParams): Promise<TransactionListResponse> {
-        return this.httpClient.get<TransactionListResponse>('/api/v1/transaction', {
+        return this.httpClient.get<TransactionListResponse>('/transaction', {
             params,
         });
     }
