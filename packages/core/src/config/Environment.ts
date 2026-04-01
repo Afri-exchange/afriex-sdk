@@ -1,8 +1,8 @@
-export enum Environment {
-  STAGING = "staging",
-  PRODUCTION = "production",
-}
-
+export const Environment = {
+  STAGING: "staging",
+  PRODUCTION: "production",
+} as const;
+export type Environment = (typeof Environment)[keyof typeof Environment];
 export const BASE_URLS = {
   [Environment.STAGING]: "https://sandbox.api.afriex.com/api/v1",
   [Environment.PRODUCTION]: "https://api.afriex.com/api/v1",
