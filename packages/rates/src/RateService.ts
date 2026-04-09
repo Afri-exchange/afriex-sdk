@@ -50,7 +50,7 @@ export class RateService {
       toSymbols: targetCurrency,
     });
 
-    return response.rates[baseCurrency]?.[targetCurrency] ?? "0";
+    return response.data.rates[baseCurrency]?.[targetCurrency] ?? "0";
   }
 
   /**

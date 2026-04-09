@@ -12,38 +12,38 @@ Initialize the SDK with your webhook public key:
 
 ```typescript
 const afriex = new AfriexSDK({
-  apiKey: 'your-api-key',
-  webhookPublicKey: 'your-afriex-public-key'
+  apiKey: "your-api-key",
+  webhookPublicKey: "your-afriex-public-key",
 });
 ```
 
 ## Verify Webhook Signature
 
 ```typescript
-app.post('/webhook', (req, res) => {
-  const signature = req.headers['x-webhook-signature'];
+app.post("/webhook", (req, res) => {
+  const signature = req.headers["x-webhook-signature"];
   const payload = req.body; // Raw string body
 
   try {
     const event = afriex.webhooks.verifyAndParse(payload, signature);
-    
+
     // Handle the event
     switch (event.event) {
-      case 'customer.created':
-        console.log('Customer created:', event.data);
+      case "CUSTOMER.CREATED":
+        console.log("Customer created:", event.data);
         break;
-      case 'TRANSACTION.CREATED':
-        console.log('Transaction created:', event.data);
+      case "TRANSACTION.CREATED":
+        console.log("Transaction created:", event.data);
         break;
-      case 'PAYMENT_METHOD.CREATED':
-        console.log('Payment method created:', event.data);
+      case "PAYMENT_METHOD.CREATED":
+        console.log("Payment method created:", event.data);
         break;
     }
 
-    res.status(200).send('OK');
+    res.status(200).send("OK");
   } catch (error) {
-    console.error('Invalid signature');
-    res.status(400).send('Invalid signature');
+    console.error("Invalid signature");
+    res.status(400).send("Invalid signature");
   }
 });
 ```
@@ -52,16 +52,17 @@ app.post('/webhook', (req, res) => {
 
 ### Customer Events
 
-| Event | Description |
-| :--- | :--- |
-| `customer.created` | Customer was created |
-| `customer.updated` | Customer was updated |
-| `customer.deleted` | Customer was deleted |
+| Event              | Description          |
+| :----------------- | :------------------- |
+| `CUSTOMER.CREATED` | Customer was created |
+| `CUSTOMER.UPDATED` | Customer was updated |
+| `CUSTOMER.DELETED` | Customer was deleted |
 
 **Payload:**
+
 ```typescript
 {
-  event: 'customer.created',
+  event: 'CUSTOMER.CREATED',
   data: {
     customerId: string,
     name: string,
@@ -74,12 +75,13 @@ app.post('/webhook', (req, res) => {
 
 ### Transaction Events
 
-| Event | Description |
-| :--- | :--- |
-| `TRANSACTION.CREATED` | Transaction was created |
+| Event                 | Description                |
+| :-------------------- | :------------------------- |
+| `TRANSACTION.CREATED` | Transaction was created    |
 | `TRANSACTION.UPDATED` | Transaction status changed |
 
 **Payload:**
+
 ```typescript
 {
   event: 'TRANSACTION.UPDATED',
@@ -102,13 +104,14 @@ app.post('/webhook', (req, res) => {
 
 ### Payment Method Events
 
-| Event | Description |
-| :--- | :--- |
+| Event                    | Description                |
+| :----------------------- | :------------------------- |
 | `PAYMENT_METHOD.CREATED` | Payment method was created |
 | `PAYMENT_METHOD.UPDATED` | Payment method was updated |
 | `PAYMENT_METHOD.DELETED` | Payment method was deleted |
 
 **Payload:**
+
 ```typescript
 {
   event: 'PAYMENT_METHOD.CREATED',

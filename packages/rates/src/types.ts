@@ -3,8 +3,10 @@
  */
 
 export interface RatesResponse {
-  rates: Record<string, Record<string, string>>;
-  updatedAt: number;
+  data: {
+    rates: Record<string, Record<string, string>>;
+    updatedAt: number;
+  };
 }
 
 export interface GetRatesParams {

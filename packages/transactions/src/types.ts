@@ -2,7 +2,7 @@
  * Transaction types matching Afriex Business API
  */
 
-export type TransactionType = "WITHDRAWAL" | "DEPOSIT";
+export type TransactionType = "WITHDRAW" | "DEPOSIT" | "SWAP";
 
 export const TransactionStatus = {
   CANCELLED: "CANCELLED",

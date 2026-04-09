@@ -44,6 +44,10 @@ export interface PaymentMethod {
 
 export interface CreatePaymentMethodRequest {
   channel: PaymentChannel;
+  /**
+   *The capability of this payment method. `DEPOSIT` means funds can be pulled from this method (e.g. charge/collect from the customer). `WITHDRAW` means funds can be sent to this method (e.g. pay out to the customer). If omitted, defaults to `WITHDRAW`.
+   */
+  type?: "WITHDRAW" | "DEPOSIT";
   customerId: string;
   accountName: string;
   accountNumber: string;
@@ -114,7 +118,10 @@ export interface GetCryptoWalletParams {
 }
 
 export interface GetVirtualAccountParams {
-  currency: "USD" | "NGN" | "GBP" | "EUR";
+  currency: "USD" | "NGN" | "KES" | "GBP" | "EUR";
   amount?: number;
   customerId?: string;
+  type: "VIRTUAL_ACCOUNT" | "POOL_ACCOUNT";
+  reference?: string;
+  country?: string;
 }
