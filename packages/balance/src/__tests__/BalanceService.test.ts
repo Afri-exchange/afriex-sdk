@@ -4,6 +4,7 @@ import { ValidationError } from "@afriex/core";
 
 const mockHttpClient = {
   get: jest.fn(),
+  post: jest.fn(),
 } as unknown as HttpClient;
 
 describe("BalanceService", () => {
@@ -82,6 +83,58 @@ describe("BalanceService", () => {
       await expect(balanceService.getBalanceForCurrency("")).rejects.toThrow(
         ValidationError
       );
+    });
+  });
+
+  describe("topUpSandbox", () => {
+    const mockTransaction = {
+      status: "SUCCESS",
+      type: "DEPOSIT",
+      sourceAmount: "500",
+      sourceCurrency: "USD",
+      destinationAmount: "500",
+      destinationCurrency: "USD",
+      destinationId: "",
+      customerId: "",
+      transactionId: "69d6005dab82306f11b03360",
+      meta: {},
+      createdAt: "2026-04-08T07:14:37.568Z",
+      updatedAt: "2026-04-08T07:14:37.568Z",
+    };
+
+    it("should top up sandbox balance and return the transaction", async () => {
+      (mockHttpClient.post as jest.Mock).mockResolvedValue({
+        data: mockTransaction,
+      });
+
+      const result = await balanceService.topUpSandbox({
+        amount: 500,
+        currency: "USD",
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith("/org/balance/topup", {
+        amount: 500,
+        currency: "USD",
+      });
+      expect(result).toEqual(mockTransaction);
+    });
+
+    it("should throw ValidationError when amount is zero", async () => {
+      await expect(
+        balanceService.topUpSandbox({ amount: 0, currency: "USD" })
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("should throw ValidationError when amount is negative", async () => {
+      await expect(
+        balanceService.topUpSandbox({ amount: -100, currency: "USD" })
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("should throw ValidationError when currency is missing", async () => {
+      await expect(
+        balanceService.topUpSandbox({ amount: 500, currency: "" })
+      ).rejects.toThrow(ValidationError);
     });
   });
 });

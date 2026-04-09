@@ -4,13 +4,13 @@ title: Balance
 
 # Balance API
 
-Get your organization's wallet balances.
+Get your organization's wallet balances and manage sandbox funds during development.
 
 ## Get Balance
 
 ```typescript
 const balances = await afriex.balance.getBalance({
-  currencies: 'USD,NGN,GBP'
+  currencies: "USD,NGN,GBP",
 });
 
 // Returns: { USD: 10000, NGN: 5000000, GBP: 8000 }
@@ -20,16 +20,16 @@ You can also pass an array of currencies:
 
 ```typescript
 const balances = await afriex.balance.getBalance({
-  currencies: ['USD', 'NGN', 'GBP']
+  currencies: ["USD", "NGN", "GBP"],
 });
 ```
 
 ## Get Balance for Single Currency
 
 ```typescript
-const usdBalance = await afriex.balance.getBalanceForCurrency('USD');
+const usdBalance = await afriex.balance.getBalanceForCurrency("USD");
 
-console.log('USD Balance:', usdBalance); // 10000
+console.log("USD Balance:", usdBalance); // 10000
 ```
 
 ## Response Format
@@ -41,5 +41,54 @@ The balance response is a map of currency codes to amounts:
   "USD": 10000.50,
   "NGN": 5000000.00,
   "GBP": 8000.25
+}
+```
+
+## Top Up Sandbox Balance
+
+import { Callout } from "nextra/components";
+
+<Callout type="warning">
+  This endpoint is only available in the **sandbox/staging** environment. It
+  will return a `403 Forbidden` response in production. Use it during
+  integration development to credit your test wallet without making real
+  transfers.
+</Callout>
+
+```typescript
+const transaction = await afriex.balance.topUpSandbox({
+  amount: 500,
+  currency: "USD",
+});
+
+console.log(transaction.transactionId); // '69d6005dab82306f11b03360'
+console.log(transaction.status); // 'SUCCESS'
+```
+
+### Parameters
+
+| Parameter  | Type     | Required | Description                                                    |
+| ---------- | -------- | -------- | -------------------------------------------------------------- |
+| `amount`   | `number` | Yes      | A positive number representing the amount to credit.           |
+| `currency` | `string` | Yes      | Uppercase 3-letter ISO 4217 currency code (e.g. `USD`, `NGN`). |
+
+### Response
+
+Returns a `TopUpTransaction` object:
+
+```typescript
+{
+  transactionId: '69d6005dab82306f11b03360',
+  status: 'SUCCESS',
+  type: 'DEPOSIT',
+  sourceAmount: '500',
+  sourceCurrency: 'USD',
+  destinationAmount: '500',
+  destinationCurrency: 'USD',
+  destinationId: '',
+  customerId: '',
+  meta: {},
+  createdAt: '2026-04-08T07:14:37.568Z',
+  updatedAt: '2026-04-08T07:14:37.568Z',
 }
 ```
