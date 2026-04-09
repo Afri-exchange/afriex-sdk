@@ -23,13 +23,33 @@ export const TransactionStatus = {
   DISPUTE_LOST: "DISPUTE_LOST",
   DISPUTE_EVIDENCE_SUBMITTED: "DISPUTE_EVIDENCE_SUBMITTED",
 } as const;
-export type TransactionStatus = typeof TransactionStatus[keyof typeof TransactionStatus];
+export type TransactionStatus =
+  (typeof TransactionStatus)[keyof typeof TransactionStatus];
 
+/**
+ * The `meta` object passed when creating a transaction. `idempotencyKey` and `reference` are required.
+ */
 export interface TransactionMeta {
+  /**
+   * Human-readable reason or description for the transaction
+   */
   narration?: string;
+  /**
+   * 	Base64-encoded invoice document to attach to the transaction
+   */
   invoice?: string;
-  idempotencyKey?: string;
-  merchantId: string;
+  /**
+   * Unique key to prevent duplicate transactions. Use a UUID or your own unique identifier.
+   */
+  idempotencyKey: string;
+  /**
+   * 	Your internal reference for the transaction (e.g. order ID)
+   */
+  reference: string;
+  /**
+   * 	Your merchant or business identifier, used for reconciliation
+   */
+  merchantId?: string;
 }
 
 export interface Transaction {
