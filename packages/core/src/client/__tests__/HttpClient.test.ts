@@ -1,134 +1,208 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { HttpClient } from '../HttpClient';
-import { Config } from '../../config/Config';
-import { Environment } from '../../config/Environment';
-import { ApiError, NetworkError, RateLimitError } from '../../errors';
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import ky, { isHTTPError, isNetworkError } from "ky";
+import { HttpClient } from "../HttpClient.js";
+import { Config } from "../../config/Config.js";
+import { Environment } from "../../config/Environment.js";
+import {
+  AfriexError,
+  ApiError,
+  NetworkError,
+  RateLimitError,
+} from "../../errors/index.js";
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+vi.mock("ky", () => ({
+  default: {
+    create: vi.fn(),
+  },
+  isHTTPError: vi.fn(() => false),
+  isNetworkError: vi.fn(() => false),
+}));
 
-describe('HttpClient', () => {
-    let config: Config;
-    let httpClient: HttpClient;
-    let responseErrorHandler: (error: any) => Promise<any>;
+describe("HttpClient", () => {
+  let config: Config;
+  let httpClient: HttpClient;
+  let mockJson: Mock;
+  let mockInstance: Record<string, Mock>;
 
-    beforeEach(() => {
-        config = new Config({
-            apiKey: 'test-api-key',
-            environment: Environment.STAGING,
-            retryConfig: {
-                maxRetries: 3,
-                retryDelay: 10,
-                retryableStatusCodes: [408, 429, 500, 502, 503, 504],
-            },
-        });
+  beforeEach(() => {
+    vi.clearAllMocks();
 
-        const mockCreate = jest.fn(() => ({
-            interceptors: {
-                request: { use: jest.fn() },
-                response: {
-                    use: jest.fn((_, error) => {
-                        responseErrorHandler = error;
-                        // Return rejected promise to simulate axios behavior if needed, 
-                        // but since we capture the handler, we call it manually.
-                        // Ideally interceptor returns the error or new promise.
-                    }),
-                },
-            },
-            get: jest.fn(),
-            post: jest.fn(),
-            put: jest.fn(),
-            patch: jest.fn(),
-            delete: jest.fn(),
-            request: jest.fn(),
-        }));
-
-        mockedAxios.create.mockImplementation(mockCreate as any);
-
-        httpClient = new HttpClient(config);
-        // Inject mock for internal usage - this creates a NEW instance but mocks are fresh
-        (httpClient as any).axiosInstance = mockedAxios.create();
+    config = new Config({
+      apiKey: "test-api-key",
+      environment: Environment.STAGING,
+      retryConfig: {
+        maxRetries: 3,
+        retryDelay: 10,
+        retryableStatusCodes: [408, 429, 500, 502, 503, 504],
+      },
     });
 
-    const createAxiosError = (status?: number, data?: any, code?: string): AxiosError => {
-        const error = new Error('Axios Error') as AxiosError;
-        error.isAxiosError = true;
-        error.config = { url: '/test', headers: {} as any } as InternalAxiosRequestConfig;
-        if (status) {
-            error.response = {
-                status,
-                data: data || {},
-                statusText: 'Error',
-                headers: {},
-                config: error.config,
-            };
-        }
-        if (code) {
-            error.code = code;
-        }
-        error.toJSON = jest.fn();
-        return error;
+    mockJson = vi.fn();
+    mockInstance = {
+      get: vi.fn(() => ({ json: mockJson })),
+      post: vi.fn(() => ({ json: mockJson })),
+      put: vi.fn(() => ({ json: mockJson })),
+      patch: vi.fn(() => ({ json: mockJson })),
+      delete: vi.fn(() => ({ json: mockJson })),
     };
 
-    describe('get', () => {
-        it('should make a GET request', async () => {
-            const mockResponse = { data: { id: '123' } };
-            // Mock the instance method, not global axios
-            const instance = (httpClient as any).axiosInstance;
-            instance.get.mockResolvedValue(mockResponse);
+    vi.mocked(ky.create).mockReturnValue(mockInstance as any);
+    httpClient = new HttpClient(config);
+  });
 
-            const result = await httpClient.get('/test');
+  describe("get", () => {
+    it("should make a GET request", async () => {
+      const mockResponse = { id: "123" };
+      mockJson.mockResolvedValue(mockResponse);
 
-            expect(instance.get).toHaveBeenCalledWith('/test', {
-                headers: undefined,
-                params: undefined,
-                timeout: undefined,
-            });
-            expect(result).toEqual(mockResponse.data);
-        });
+      const result = await httpClient.get("/test");
+
+      expect(mockInstance.get).toHaveBeenCalledWith("/test", {});
+      expect(result).toEqual(mockResponse);
     });
 
-    describe('Error Handling', () => {
-        it('should throw ApiError on 400 Bad Request', async () => {
-            const error = createAxiosError(400, { message: 'Bad Request' });
-            await expect(responseErrorHandler(error)).rejects.toThrow(ApiError);
-        });
+    it("should pass query params as searchParams", async () => {
+      mockJson.mockResolvedValue({});
 
-        it('should throw RateLimitError on 429', async () => {
-            const error = createAxiosError(429, { message: 'Too Many Requests' });
-            error.response!.headers['retry-after'] = '60';
+      await httpClient.get("/test", { params: { page: 1 } });
 
-            // Exhaust retries
-            const retryConfig = (error.config as any);
-            retryConfig.__retryCount = 3;
-
-            await expect(responseErrorHandler(error)).rejects.toThrow(RateLimitError);
-        });
-
-        it('should throw NetworkError when no response received', async () => {
-            const error = createAxiosError(undefined, undefined, 'ECONNREFUSED');
-            error.request = {};
-            await expect(responseErrorHandler(error)).rejects.toThrow(NetworkError);
-        });
+      expect(mockInstance.get).toHaveBeenCalledWith("/test", {
+        searchParams: { page: 1 },
+      });
     });
 
-    describe('Retry Logic', () => {
-        it('should retry on 503 Service Unavailable', async () => {
-            const error = createAxiosError(503, { message: 'Service Unavailable' });
+    it("should pass custom headers", async () => {
+      mockJson.mockResolvedValue({});
 
-            // Mock the instance's request method for the RETRY call
-            const instance = (httpClient as any).axiosInstance;
-            const successResponse = { data: { success: true } };
-            instance.request.mockResolvedValueOnce(successResponse);
+      await httpClient.get("/test", {
+        headers: { "X-Custom": "value" },
+      });
 
-            // Mock sleep
-            (httpClient as any).sleep = jest.fn().mockResolvedValue(undefined);
-
-            const result = await responseErrorHandler(error);
-
-            expect(instance.request).toHaveBeenCalled();
-            expect(result).toEqual(successResponse.data);
-            expect((httpClient as any).sleep).toHaveBeenCalled();
-        });
+      expect(mockInstance.get).toHaveBeenCalledWith("/test", {
+        headers: { "X-Custom": "value" },
+      });
     });
+  });
+
+  describe("post", () => {
+    it("should make a POST request with JSON body", async () => {
+      const mockResponse = { created: true };
+      mockJson.mockResolvedValue(mockResponse);
+
+      const result = await httpClient.post("/test", { name: "test" });
+
+      expect(mockInstance.post).toHaveBeenCalledWith("/test", {
+        json: { name: "test" },
+      });
+      expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe("put", () => {
+    it("should make a PUT request", async () => {
+      mockJson.mockResolvedValue({ updated: true });
+
+      await httpClient.put("/test", { name: "updated" });
+
+      expect(mockInstance.put).toHaveBeenCalledWith("/test", {
+        json: { name: "updated" },
+      });
+    });
+  });
+
+  describe("patch", () => {
+    it("should make a PATCH request", async () => {
+      mockJson.mockResolvedValue({ patched: true });
+
+      await httpClient.patch("/test", { name: "patched" });
+
+      expect(mockInstance.patch).toHaveBeenCalledWith("/test", {
+        json: { name: "patched" },
+      });
+    });
+  });
+
+  describe("delete", () => {
+    it("should make a DELETE request", async () => {
+      mockJson.mockResolvedValue(undefined);
+
+      await httpClient.delete("/test");
+
+      expect(mockInstance.delete).toHaveBeenCalledWith("/test", {});
+    });
+  });
+
+  describe("Error Handling", () => {
+    it("should throw ApiError on HTTP error", async () => {
+      const httpError = {
+        response: {
+          status: 400,
+          clone: () => ({
+            json: () => Promise.resolve({ message: "Bad Request" }),
+          }),
+          headers: new Headers(),
+        },
+        request: { url: "/test" },
+        message: "Bad Request",
+      };
+
+      mockJson.mockRejectedValueOnce(httpError);
+      vi.mocked(isHTTPError).mockReturnValueOnce(true);
+
+      await expect(httpClient.get("/test")).rejects.toThrow(ApiError);
+    });
+
+    it("should throw RateLimitError on 429", async () => {
+      const httpError = {
+        response: {
+          status: 429,
+          clone: () => ({
+            json: () => Promise.resolve({ message: "Too Many Requests" }),
+          }),
+          headers: new Headers({ "retry-after": "60" }),
+        },
+        request: { url: "/test" },
+        message: "Rate Limited",
+      };
+
+      mockJson.mockRejectedValueOnce(httpError);
+      vi.mocked(isHTTPError).mockReturnValueOnce(true);
+
+      await expect(httpClient.get("/test")).rejects.toThrow(RateLimitError);
+    });
+
+    it("should throw NetworkError on network failure", async () => {
+      const error = new Error("Network failure");
+
+      mockJson.mockRejectedValueOnce(error);
+      vi.mocked(isNetworkError).mockReturnValueOnce(true);
+
+      await expect(httpClient.get("/test")).rejects.toThrow(NetworkError);
+    });
+
+    it("should throw AfriexError on unknown error", async () => {
+      const error = new Error("Something broke");
+
+      mockJson.mockRejectedValueOnce(error);
+
+      await expect(httpClient.get("/test")).rejects.toThrow(AfriexError);
+    });
+  });
+
+  describe("Configuration", () => {
+    it("should create ky instance with correct options", () => {
+      expect(ky.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prefix: config.baseUrl,
+          timeout: config.timeout,
+          headers: expect.objectContaining({
+            "x-api-key": "test-api-key",
+          }),
+          retry: expect.objectContaining({
+            limit: config.maxRetries,
+          }),
+        })
+      );
+    });
+  });
 });

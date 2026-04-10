@@ -1,5 +1,5 @@
 import { HttpClient, ValidationError } from "@afriex/core";
-import { RatesResponse, GetRatesParams } from "./types";
+import { RatesResponse, GetRatesParams } from "./types.js";
 
 export class RateService {
   private httpClient: HttpClient;

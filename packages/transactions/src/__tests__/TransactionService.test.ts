@@ -1,17 +1,18 @@
-import { TransactionService } from "../TransactionService";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import { TransactionService } from "../TransactionService.js";
 import { HttpClient } from "@afriex/core";
 import { ValidationError } from "@afriex/core";
 
 const mockHttpClient = {
-  get: jest.fn(),
-  post: jest.fn(),
+  get: vi.fn(),
+  post: vi.fn(),
 } as unknown as HttpClient;
 
 describe("TransactionService", () => {
   let transactionService: TransactionService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     transactionService = new TransactionService(mockHttpClient);
   });
 
@@ -27,7 +28,7 @@ describe("TransactionService", () => {
         destinationCurrency: "NGN",
       };
 
-      (mockHttpClient.post as jest.Mock).mockResolvedValue({
+      (mockHttpClient.post as Mock).mockResolvedValue({
         data: mockTransaction,
       });
 
@@ -128,7 +129,7 @@ describe("TransactionService", () => {
         destinationCurrency: "NGN",
       };
 
-      (mockHttpClient.post as jest.Mock).mockResolvedValue({
+      (mockHttpClient.post as Mock).mockResolvedValue({
         data: mockTransaction,
       });
 
@@ -153,7 +154,7 @@ describe("TransactionService", () => {
         status: "COMPLETED",
       };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue({
+      (mockHttpClient.get as Mock).mockResolvedValue({
         data: mockTransaction,
       });
 
@@ -179,7 +180,7 @@ describe("TransactionService", () => {
         total: 2,
       };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue(mockResponse);
+      (mockHttpClient.get as Mock).mockResolvedValue(mockResponse);
 
       const result = await transactionService.list({ page: 1, limit: 20 });
 

@@ -1,18 +1,19 @@
-import { PaymentMethodService } from "../PaymentMethodService";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import { PaymentMethodService } from "../PaymentMethodService.js";
 import { HttpClient } from "@afriex/core";
 import { ValidationError } from "@afriex/core";
 
 const mockHttpClient = {
-  get: jest.fn(),
-  post: jest.fn(),
-  delete: jest.fn(),
+  get: vi.fn(),
+  post: vi.fn(),
+  delete: vi.fn(),
 } as unknown as HttpClient;
 
 describe("PaymentMethodService", () => {
   let paymentMethodService: PaymentMethodService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     paymentMethodService = new PaymentMethodService(mockHttpClient);
   });
 
@@ -26,7 +27,7 @@ describe("PaymentMethodService", () => {
         accountNumber: "1234567890",
       };
 
-      (mockHttpClient.post as jest.Mock).mockResolvedValue({
+      (mockHttpClient.post as Mock).mockResolvedValue({
         data: mockPaymentMethod,
       });
 
@@ -64,7 +65,7 @@ describe("PaymentMethodService", () => {
     it("should get a payment method by ID", async () => {
       const mockPaymentMethod = { paymentMethodId: "pm-123" };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue({
+      (mockHttpClient.get as Mock).mockResolvedValue({
         data: mockPaymentMethod,
       });
 
@@ -89,7 +90,7 @@ describe("PaymentMethodService", () => {
         total: 1,
       };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue(mockResponse);
+      (mockHttpClient.get as Mock).mockResolvedValue(mockResponse);
 
       const result = await paymentMethodService.list({ page: 1, limit: 10 });
 
@@ -102,7 +103,7 @@ describe("PaymentMethodService", () => {
 
   describe("delete", () => {
     it("should delete a payment method", async () => {
-      (mockHttpClient.delete as jest.Mock).mockResolvedValue(undefined);
+      (mockHttpClient.delete as Mock).mockResolvedValue(undefined);
 
       await paymentMethodService.delete("pm-123");
 
@@ -122,7 +123,7 @@ describe("PaymentMethodService", () => {
         },
       ];
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue(mockInstitutions);
+      (mockHttpClient.get as Mock).mockResolvedValue(mockInstitutions);
 
       const result = await paymentMethodService.getInstitutions({
         channel: "BANK_ACCOUNT",
@@ -152,7 +153,7 @@ describe("PaymentMethodService", () => {
     it("should resolve account details", async () => {
       const mockResponse = { recipientName: "John Doe" };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue(mockResponse);
+      (mockHttpClient.get as Mock).mockResolvedValue(mockResponse);
 
       const result = await paymentMethodService.resolveAccount({
         channel: "BANK_ACCOUNT",
@@ -194,7 +195,7 @@ describe("PaymentMethodService", () => {
         page: 1,
       };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue(mockResponse);
+      (mockHttpClient.get as Mock).mockResolvedValue(mockResponse);
 
       const result = await paymentMethodService.getCryptoWallet({
         asset: "USDT",
@@ -217,7 +218,7 @@ describe("PaymentMethodService", () => {
         accountNumber: "999888777",
       };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue({
+      (mockHttpClient.get as Mock).mockResolvedValue({
         data: mockPaymentMethod,
       });
 

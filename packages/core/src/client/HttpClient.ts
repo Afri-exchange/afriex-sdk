@@ -1,17 +1,17 @@
 import ky, { type KyInstance, isHTTPError, isNetworkError } from "ky";
-import { Config } from "../config/Config";
-import { Logger } from "../utils/logger";
+import { Config } from "../config/Config.js";
+import { Logger } from "../utils/logger.js";
 import {
   AfriexError,
   ApiError,
   NetworkError,
   RateLimitError,
   ApiErrorResponse,
-} from "../errors";
+} from "../errors/index.js";
 
 export interface RequestOptions {
   headers?: Record<string, string>;
-  params?: Record<string, string | number | boolean | undefined>;
+  params?: Record<string, string | number | boolean | undefined> | object;
   timeout?: number;
 }
 
@@ -119,7 +119,10 @@ export class HttpClient {
       kyOptions.headers = options.headers;
     }
     if (options?.params) {
-      kyOptions.searchParams = options.params;
+      kyOptions.searchParams = options.params as Record<
+        string,
+        string | number | boolean
+      >;
     }
     if (options?.timeout) {
       kyOptions.timeout = options.timeout;

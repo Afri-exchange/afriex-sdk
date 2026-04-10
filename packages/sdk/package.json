@@ -1,7 +1,8 @@
 {
   "name": "@afriex/sdk",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Official TypeScript SDK for the Afriex Business API",
+  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "homepage": "https://afriex-sdk-docs.vercel.app",
@@ -13,10 +14,9 @@
   "author": "Victory Lucky <luckyvictory54@gmail.com>",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "default": "./dist/index.js"
     }
   },
   "scripts": {

@@ -1,2 +1,2 @@
-export { BalanceService } from './BalanceService';
-export * from './types';
+export { BalanceService } from "./BalanceService.js";
+export * from "./types.js";

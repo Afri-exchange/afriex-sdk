@@ -5,7 +5,7 @@ import {
   TopUpParams,
   TopUpResponse,
   TopUpTransaction,
-} from "./types";
+} from "./types.js";
 
 export class BalanceService {
   private httpClient: HttpClient;

@@ -6,7 +6,7 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "test": "turbo run test",
+    "test": "vitest run",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "clean": "turbo run clean",
@@ -17,13 +17,11 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
-    "@types/jest": "^30.0.0",
     "@types/node": "^22.19.17",
-    "jest": "^30.3.0",
-    "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "turbo": "^2.9.5",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^4.1.4"
   },
   "engines": {
     "node": ">=22.13.0",

@@ -1,16 +1,17 @@
-import { RateService } from "../RateService";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import { RateService } from "../RateService.js";
 import { HttpClient } from "@afriex/core";
 import { ValidationError } from "@afriex/core";
 
 const mockHttpClient = {
-  get: jest.fn(),
+  get: vi.fn(),
 } as unknown as HttpClient;
 
 describe("RateService", () => {
   let rateService: RateService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     rateService = new RateService(mockHttpClient);
   });
 
@@ -21,7 +22,7 @@ describe("RateService", () => {
         updatedAt: 1707249600,
       };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue({
+      (mockHttpClient.get as Mock).mockResolvedValue({
         data: mockRatesData,
       });
 
@@ -42,7 +43,7 @@ describe("RateService", () => {
         updatedAt: 1707249600,
       };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue({
+      (mockHttpClient.get as Mock).mockResolvedValue({
         data: mockRatesData,
       });
 
@@ -83,7 +84,7 @@ describe("RateService", () => {
         updatedAt: 1707249600,
       };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue({
+      (mockHttpClient.get as Mock).mockResolvedValue({
         data: mockRatesData,
       });
 
@@ -98,7 +99,7 @@ describe("RateService", () => {
         updatedAt: 1707249600,
       };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue({
+      (mockHttpClient.get as Mock).mockResolvedValue({
         data: mockRatesData,
       });
 
@@ -124,7 +125,7 @@ describe("RateService", () => {
         updatedAt: 1707249600,
       };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue({
+      (mockHttpClient.get as Mock).mockResolvedValue({
         data: mockRatesData,
       });
 

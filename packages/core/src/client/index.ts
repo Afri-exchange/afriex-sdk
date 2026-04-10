@@ -1,2 +1,2 @@
-export * from './HttpClient';
-export * from './AfriexClient';
+export * from "./HttpClient.js";
+export * from "./AfriexClient.js";

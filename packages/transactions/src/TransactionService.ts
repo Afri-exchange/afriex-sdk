@@ -4,7 +4,7 @@ import {
   CreateTransactionRequest,
   ListTransactionsParams,
   TransactionListResponse,
-} from "./types";
+} from "./types.js";
 
 export class TransactionService {
   private httpClient: HttpClient;

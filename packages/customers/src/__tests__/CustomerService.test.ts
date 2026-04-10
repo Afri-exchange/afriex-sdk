@@ -1,20 +1,21 @@
-import { CustomerService } from "../CustomerService";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import { CustomerService } from "../CustomerService.js";
 import { HttpClient } from "@afriex/core";
 import { ValidationError } from "@afriex/core";
 
 // Mock the HttpClient
 const mockHttpClient = {
-  get: jest.fn(),
-  post: jest.fn(),
-  patch: jest.fn(),
-  delete: jest.fn(),
+  get: vi.fn(),
+  post: vi.fn(),
+  patch: vi.fn(),
+  delete: vi.fn(),
 } as unknown as HttpClient;
 
 describe("CustomerService", () => {
   let customerService: CustomerService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     customerService = new CustomerService(mockHttpClient);
   });
 
@@ -28,7 +29,7 @@ describe("CustomerService", () => {
         countryCode: "US",
       };
 
-      (mockHttpClient.post as jest.Mock).mockResolvedValue({
+      (mockHttpClient.post as Mock).mockResolvedValue({
         data: mockCustomer,
       });
 
@@ -78,7 +79,7 @@ describe("CustomerService", () => {
         fullName: "John Doe",
       };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue({
+      (mockHttpClient.get as Mock).mockResolvedValue({
         data: mockCustomer,
       });
 
@@ -101,7 +102,7 @@ describe("CustomerService", () => {
         total: 2,
       };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue(mockResponse);
+      (mockHttpClient.get as Mock).mockResolvedValue(mockResponse);
 
       const result = await customerService.list({ page: 1, limit: 20 });
 
@@ -114,7 +115,7 @@ describe("CustomerService", () => {
 
   describe("delete", () => {
     it("should delete a customer", async () => {
-      (mockHttpClient.delete as jest.Mock).mockResolvedValue(undefined);
+      (mockHttpClient.delete as Mock).mockResolvedValue(undefined);
 
       await customerService.delete("cust-123");
 
@@ -130,7 +131,7 @@ describe("CustomerService", () => {
     it("should update customer KYC", async () => {
       const mockCustomer = { customerId: "cust-123", kyc: { verified: true } };
 
-      (mockHttpClient.patch as jest.Mock).mockResolvedValue({
+      (mockHttpClient.patch as Mock).mockResolvedValue({
         data: mockCustomer,
       });
 

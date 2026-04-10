@@ -13,7 +13,7 @@ import {
   GetVirtualAccountParams,
   InstitutionCodesParams,
   InstitutionCodesResponse,
-} from "./types";
+} from "./types.js";
 
 export class PaymentMethodService {
   private httpClient: HttpClient;
@@ -95,14 +95,14 @@ export class PaymentMethodService {
    */
   async resolveInstitutionCode(
     params: InstitutionCodesParams
-  ): Promise<InstitutionCodesResponse|null> {
+  ): Promise<InstitutionCodesResponse | null> {
     if (!params.codeType || !params.country || !params.searchTerm) {
       throw new ValidationError(
         "Code type, country, and search term are required"
       );
     }
 
-    return this.httpClient.get<InstitutionCodesResponse|null>(
+    return this.httpClient.get<InstitutionCodesResponse | null>(
       "/payment-method/institution/codes",
       {
         params,

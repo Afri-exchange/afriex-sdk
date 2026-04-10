@@ -1,17 +1,18 @@
-import { BalanceService } from "../BalanceService";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import { BalanceService } from "../BalanceService.js";
 import { HttpClient } from "@afriex/core";
 import { ValidationError } from "@afriex/core";
 
 const mockHttpClient = {
-  get: jest.fn(),
-  post: jest.fn(),
+  get: vi.fn(),
+  post: vi.fn(),
 } as unknown as HttpClient;
 
 describe("BalanceService", () => {
   let balanceService: BalanceService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     balanceService = new BalanceService(mockHttpClient);
   });
 
@@ -19,7 +20,7 @@ describe("BalanceService", () => {
     it("should get balances for comma-separated currencies", async () => {
       const mockBalances = { USD: 1000, NGN: 500000 };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue({
+      (mockHttpClient.get as Mock).mockResolvedValue({
         data: mockBalances,
       });
 
@@ -34,7 +35,7 @@ describe("BalanceService", () => {
     it("should get balances for array of currencies", async () => {
       const mockBalances = { USD: 1000, GBP: 800 };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue({
+      (mockHttpClient.get as Mock).mockResolvedValue({
         data: mockBalances,
       });
 
@@ -59,7 +60,7 @@ describe("BalanceService", () => {
     it("should get balance for a single currency", async () => {
       const mockBalances = { USD: 1000 };
 
-      (mockHttpClient.get as jest.Mock).mockResolvedValue({
+      (mockHttpClient.get as Mock).mockResolvedValue({
         data: mockBalances,
       });
 
@@ -72,7 +73,7 @@ describe("BalanceService", () => {
     });
 
     it("should return 0 if currency not found", async () => {
-      (mockHttpClient.get as jest.Mock).mockResolvedValue({ data: {} });
+      (mockHttpClient.get as Mock).mockResolvedValue({ data: {} });
 
       const result = await balanceService.getBalanceForCurrency("XYZ");
 
@@ -103,7 +104,7 @@ describe("BalanceService", () => {
     };
 
     it("should top up sandbox balance and return the transaction", async () => {
-      (mockHttpClient.post as jest.Mock).mockResolvedValue({
+      (mockHttpClient.post as Mock).mockResolvedValue({
         data: mockTransaction,
       });
 

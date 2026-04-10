@@ -1,2 +1,2 @@
-export { CustomerService } from './CustomerService';
-export * from './types';
+export { CustomerService } from "./CustomerService.js";
+export * from "./types.js";

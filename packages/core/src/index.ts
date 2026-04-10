@@ -1,6 +1,6 @@
 // Core package - re-export all modules
-export * from './client';
-export * from './config';
-export * from './errors';
-export * from './types';
-export * from './utils';
+export * from "./client/index.js";
+export * from "./config/index.js";
+export * from "./errors/index.js";
+export * from "./types/index.js";
+export * from "./utils/index.js";
