@@ -104,7 +104,7 @@ For smaller bundle sizes, install packages individually:
 
 ## Documentation
 
-Full documentation available at [afriex-sdk-docs.vercel.app](https://afriex-sdk-docs.vercel.app)
+Full documentation availale at [https://docs.afriex.com](https://docs.afriex.com)
 
 ## License
 
