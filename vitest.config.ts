@@ -14,6 +14,7 @@ export default defineConfig({
       ),
       "@afriex/balance": path.resolve("./packages/balance/src/index.ts"),
       "@afriex/rates": path.resolve("./packages/rates/src/index.ts"),
+      "@afriex/checkout": path.resolve("./packages/checkout/src/index.ts"),
       "@afriex/webhooks": path.resolve("./packages/webhooks/src/index.ts"),
       "@afriex/sdk": path.resolve("./packages/sdk/src/index.ts"),
     },
@@ -21,5 +22,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["packages/**/src/**/__tests__/**/*.test.ts"],
+    // Exclude integration tests by default (run with test:integration script)
+    exclude: ["**/node_modules/**", "**/dist/**", "**/integration.test.ts"],
   },
 });

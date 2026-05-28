@@ -64,6 +64,9 @@ export class TransactionService {
       .required("destinationAmount", request.destinationAmount)
       .required("sourceCurrency", request.sourceCurrency)
       .required("destinationCurrency", request.destinationCurrency)
+      .required("meta", request.meta)
+      .required("meta.idempotencyKey", request.meta?.idempotencyKey)
+      .required("meta.reference", request.meta?.reference)
       .condition(
         "destinationId",
         type === "WITHDRAW" &&

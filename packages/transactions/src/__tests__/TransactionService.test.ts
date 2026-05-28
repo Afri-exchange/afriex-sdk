@@ -39,6 +39,10 @@ describe("TransactionService", () => {
         destinationCurrency: "NGN",
         sourceCurrency: "USD",
         destinationId: "pm-123",
+        meta: {
+          idempotencyKey: "test-key-123",
+          reference: "test-ref-123",
+        },
       });
 
       expect(mockHttpClient.post).toHaveBeenCalledWith("/transaction", {
@@ -48,6 +52,10 @@ describe("TransactionService", () => {
         destinationCurrency: "NGN",
         sourceCurrency: "USD",
         destinationId: "pm-123",
+        meta: {
+          idempotencyKey: "test-key-123",
+          reference: "test-ref-123",
+        },
       });
       expect(result).toEqual(mockTransaction);
     });
@@ -61,7 +69,7 @@ describe("TransactionService", () => {
           destinationCurrency: "NGN",
           sourceCurrency: "USD",
           destinationId: "pm-123",
-        })
+        } as any)
       ).rejects.toThrow(ValidationError);
     });
 
@@ -74,7 +82,7 @@ describe("TransactionService", () => {
           destinationCurrency: "NGN",
           sourceCurrency: "USD",
           destinationId: "pm-123",
-        })
+        } as any)
       ).rejects.toThrow(ValidationError);
     });
 
@@ -87,7 +95,7 @@ describe("TransactionService", () => {
           destinationCurrency: "NGN",
           sourceCurrency: "USD",
           destinationId: "pm-123",
-        })
+        } as any)
       ).rejects.toThrow(ValidationError);
     });
 
@@ -100,7 +108,7 @@ describe("TransactionService", () => {
           destinationCurrency: "NGN",
           sourceCurrency: "USD",
           destinationId: "",
-        })
+        } as any)
       ).rejects.toThrow(ValidationError);
     });
 
@@ -114,6 +122,53 @@ describe("TransactionService", () => {
           destinationCurrency: "NGN",
           sourceCurrency: "USD",
           sourceId: "",
+        } as any)
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("should throw ValidationError when meta is missing", async () => {
+      await expect(
+        transactionService.create({
+          customerId: "cust-123",
+          sourceAmount: "100",
+          destinationAmount: "1000",
+          destinationCurrency: "NGN",
+          sourceCurrency: "USD",
+          destinationId: "pm-123",
+        } as any)
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("should throw ValidationError when meta.idempotencyKey is missing", async () => {
+      await expect(
+        transactionService.create({
+          customerId: "cust-123",
+          sourceAmount: "100",
+          destinationAmount: "1000",
+          destinationCurrency: "NGN",
+          sourceCurrency: "USD",
+          destinationId: "pm-123",
+          meta: {
+            idempotencyKey: "",
+            reference: "ref-123",
+          },
+        })
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("should throw ValidationError when meta.reference is missing", async () => {
+      await expect(
+        transactionService.create({
+          customerId: "cust-123",
+          sourceAmount: "100",
+          destinationAmount: "1000",
+          destinationCurrency: "NGN",
+          sourceCurrency: "USD",
+          destinationId: "pm-123",
+          meta: {
+            idempotencyKey: "key-123",
+            reference: "",
+          },
         })
       ).rejects.toThrow(ValidationError);
     });
@@ -141,6 +196,10 @@ describe("TransactionService", () => {
         destinationCurrency: "NGN",
         sourceCurrency: "USD",
         sourceId: "pm-456",
+        meta: {
+          idempotencyKey: "test-key-456",
+          reference: "test-ref-456",
+        },
       });
 
       expect(result).toEqual(mockTransaction);

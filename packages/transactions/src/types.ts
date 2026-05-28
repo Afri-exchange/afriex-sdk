@@ -82,8 +82,8 @@ interface CreateTransactionBase {
   destinationAmount: `${number}`;
   destinationCurrency: string;
   sourceCurrency: string;
-  /** Optional transaction metadata. `idempotencyKey` and `reference` are required within meta. */
-  meta?: TransactionMeta;
+  /** Required transaction metadata. Must include idempotencyKey and reference. */
+  meta: TransactionMeta;
   destinationId?: string;
   sourceId?: string;
 }

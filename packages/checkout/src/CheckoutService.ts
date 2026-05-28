@@ -55,6 +55,15 @@ export class CheckoutService {
         request.transaction?.destinationCurrency
       )
       .required("transaction.type", request.transaction?.type)
+      .required("transaction.meta", request.transaction?.meta)
+      .required(
+        "transaction.meta.idempotencyKey",
+        request.transaction?.meta?.idempotencyKey
+      )
+      .required(
+        "transaction.meta.reference",
+        request.transaction?.meta?.reference
+      )
       // Validate URLs
       .required("successUrl", request.successUrl)
       .required("cancelUrl", request.cancelUrl)

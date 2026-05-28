@@ -24,6 +24,7 @@ export interface CheckoutTransaction {
   type: "WITHDRAW" | "DEPOSIT";
   destinationId?: string;
   sourceId?: string;
+  /** Required: must include idempotencyKey and reference */
   meta: CheckoutTransactionMeta;
 }
 

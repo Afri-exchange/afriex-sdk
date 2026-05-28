@@ -149,5 +149,53 @@ describe("CheckoutService", () => {
         requestWithWebhook
       );
     });
+
+    it("should throw validation error when meta is missing", async () => {
+      const invalidRequest = {
+        ...validRequest,
+        transaction: {
+          ...validRequest.transaction,
+          meta: undefined,
+        },
+      };
+
+      await expect(
+        checkoutService.createSession(invalidRequest as any)
+      ).rejects.toThrow("Validation failed");
+    });
+
+    it("should throw validation error when meta.idempotencyKey is missing", async () => {
+      const invalidRequest = {
+        ...validRequest,
+        transaction: {
+          ...validRequest.transaction,
+          meta: {
+            idempotencyKey: "",
+            reference: "ref-123",
+          },
+        },
+      };
+
+      await expect(
+        checkoutService.createSession(invalidRequest)
+      ).rejects.toThrow("Validation failed");
+    });
+
+    it("should throw validation error when meta.reference is missing", async () => {
+      const invalidRequest = {
+        ...validRequest,
+        transaction: {
+          ...validRequest.transaction,
+          meta: {
+            idempotencyKey: "key-123",
+            reference: "",
+          },
+        },
+      };
+
+      await expect(
+        checkoutService.createSession(invalidRequest)
+      ).rejects.toThrow("Validation failed");
+    });
   });
 });
