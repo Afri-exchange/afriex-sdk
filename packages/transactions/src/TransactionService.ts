@@ -1,9 +1,10 @@
-import { HttpClient, ValidationError } from "@afriex/core";
+import { HttpClient, ValidationBuilder, ValidationError } from "@afriex/core";
 import {
   Transaction,
   CreateTransactionRequest,
   ListTransactionsParams,
   TransactionListResponse,
+  DEFAULT_TRANSACTION_TYPE,
 } from "./types.js";
 
 export class TransactionService {
@@ -55,61 +56,25 @@ export class TransactionService {
   }
 
   private validateCreateRequest(request: CreateTransactionRequest): void {
-    const errors: Array<{ field: string; message: string }> = [];
+    const type = request.type ?? DEFAULT_TRANSACTION_TYPE;
 
-    if (!request.customerId) {
-      errors.push({ field: "customerId", message: "Customer ID is required" });
-    }
-
-    if (!request.sourceAmount) {
-      errors.push({
-        field: "sourceAmount",
-        message: "Source amount is required",
-      });
-    }
-
-    if (!request.destinationAmount) {
-      errors.push({
-        field: "destinationAmount",
-        message: "Destination amount is required",
-      });
-    }
-
-    if (!request.sourceCurrency) {
-      errors.push({
-        field: "sourceCurrency",
-        message: "Source currency is required",
-      });
-    }
-
-    if (!request.destinationCurrency) {
-      errors.push({
-        field: "destinationCurrency",
-        message: "Destination currency is required",
-      });
-    }
-
-    const type = request.type ?? "WITHDRAW";
-
-    if (
-      type === "WITHDRAW" &&
-      !("destinationId" in request && request.destinationId)
-    ) {
-      errors.push({
-        field: "destinationId",
-        message: "Destination ID is required for WITHDRAW transactions",
-      });
-    }
-
-    if (type === "DEPOSIT" && !("sourceId" in request && request.sourceId)) {
-      errors.push({
-        field: "sourceId",
-        message: "Source ID is required for DEPOSIT transactions",
-      });
-    }
-
-    if (errors.length > 0) {
-      throw new ValidationError("Validation failed", errors);
-    }
+    new ValidationBuilder()
+      .required("customerId", request.customerId)
+      .required("sourceAmount", request.sourceAmount)
+      .required("destinationAmount", request.destinationAmount)
+      .required("sourceCurrency", request.sourceCurrency)
+      .required("destinationCurrency", request.destinationCurrency)
+      .condition(
+        "destinationId",
+        type === "WITHDRAW" &&
+          !("destinationId" in request && request.destinationId),
+        "Destination ID is required for WITHDRAW transactions"
+      )
+      .condition(
+        "sourceId",
+        type === "DEPOSIT" && !("sourceId" in request && request.sourceId),
+        "Source ID is required for DEPOSIT transactions"
+      )
+      .throwIfInvalid();
   }
 }

@@ -1,4 +1,4 @@
-import { HttpClient, ValidationError } from "@afriex/core";
+import { HttpClient, ValidationBuilder, ValidationError } from "@afriex/core";
 import {
   Customer,
   CreateCustomerRequest,
@@ -89,29 +89,11 @@ export class CustomerService {
   }
 
   private validateCreateRequest(request: CreateCustomerRequest): void {
-    const errors: Array<{ field: string; message: string }> = [];
-
-    if (!request.fullName) {
-      errors.push({ field: "fullName", message: "Full name is required" });
-    }
-
-    if (!request.email) {
-      errors.push({ field: "email", message: "Email is required" });
-    }
-
-    if (!request.phone) {
-      errors.push({ field: "phone", message: "Phone is required" });
-    }
-
-    if (!request.countryCode) {
-      errors.push({
-        field: "countryCode",
-        message: "Country code is required",
-      });
-    }
-
-    if (errors.length > 0) {
-      throw new ValidationError("Validation failed", errors);
-    }
+    new ValidationBuilder()
+      .required("fullName", request.fullName)
+      .required("email", request.email)
+      .required("phone", request.phone)
+      .required("countryCode", request.countryCode)
+      .throwIfInvalid();
   }
 }

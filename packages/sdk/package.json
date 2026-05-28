@@ -31,6 +31,7 @@
     "@afriex/payment-methods": "workspace:*",
     "@afriex/balance": "workspace:*",
     "@afriex/rates": "workspace:*",
+    "@afriex/checkout": "workspace:*",
     "@afriex/webhooks": "workspace:*"
   },
   "devDependencies": {

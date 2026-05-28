@@ -4,6 +4,9 @@
 
 export type TransactionType = "WITHDRAW" | "DEPOSIT" | "SWAP";
 
+/** Default transaction type when not specified */
+export const DEFAULT_TRANSACTION_TYPE: TransactionType = "WITHDRAW";
+
 export const TransactionStatus = {
   CANCELLED: "CANCELLED",
   SUCCESS: "SUCCESS",

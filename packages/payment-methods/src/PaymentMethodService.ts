@@ -1,4 +1,4 @@
-import { HttpClient, ValidationError } from "@afriex/core";
+import { HttpClient, ValidationError, ValidationBuilder } from "@afriex/core";
 import {
   PaymentMethod,
   CreatePaymentMethodRequest,
@@ -10,7 +10,10 @@ import {
   ResolveAccountParams,
   CryptoWalletResponse,
   GetCryptoWalletParams,
-  GetVirtualAccountParams,
+  ListVirtualAccountsParams,
+  CreateVirtualAccountParams,
+  VirtualAccountListResponse,
+  ListPoolAccountsParams,
   InstitutionCodesParams,
   InstitutionCodesResponse,
 } from "./types.js";
@@ -160,62 +163,74 @@ export class PaymentMethodService {
   }
 
   /**
-   * Get or create virtual account payment method
+   * List existing virtual accounts
    * GET /payment-method/virtual-account
+   * Returns every active virtual account for the customer or business.
    * Note: Only available in production
    */
-  async getVirtualAccount(
-    params: GetVirtualAccountParams
-  ): Promise<PaymentMethod> {
+  async listVirtualAccounts(
+    params: ListVirtualAccountsParams
+  ): Promise<PaymentMethod[]> {
     if (!params.currency) {
       throw new ValidationError("Currency is required");
     }
 
-    const response = await this.httpClient.get<{ data: PaymentMethod }>(
+    const response = await this.httpClient.get<VirtualAccountListResponse>(
       "/payment-method/virtual-account",
       { params }
     );
     return response.data;
   }
 
+  /**
+   * Create a new virtual account
+   * POST /payment-method/virtual-account
+   * Creates a dedicated virtual bank account for the customer or business.
+   * Note: Only available in production
+   */
+  async createVirtualAccount(
+    params: CreateVirtualAccountParams
+  ): Promise<PaymentMethod> {
+    new ValidationBuilder()
+      .required("currency", params.currency)
+      .mutuallyExclusive("label", params.label, "amount", params.amount)
+      .throwIfInvalid();
+
+    const response = await this.httpClient.post<{ data: PaymentMethod }>(
+      "/payment-method/virtual-account",
+      params
+    );
+    return response.data;
+  }
+
+  /**
+   * List pool accounts
+   * GET /payment-method/pool-account
+   * Returns every pool account for the customer or business.
+   * Note: Only available in production
+   */
+  async listPoolAccounts(
+    params: ListPoolAccountsParams
+  ): Promise<PaymentMethod[]> {
+    if (!params.currency) {
+      throw new ValidationError("Currency is required");
+    }
+
+    const response = await this.httpClient.get<VirtualAccountListResponse>(
+      "/payment-method/pool-account",
+      { params }
+    );
+    return response.data;
+  }
+
   private validateCreateRequest(request: CreatePaymentMethodRequest): void {
-    const errors: Array<{ field: string; message: string }> = [];
-
-    if (!request.channel) {
-      errors.push({ field: "channel", message: "Channel is required" });
-    }
-
-    if (!request.customerId) {
-      errors.push({ field: "customerId", message: "Customer ID is required" });
-    }
-
-    if (!request.accountName) {
-      errors.push({
-        field: "accountName",
-        message: "Account name is required",
-      });
-    }
-
-    if (!request.accountNumber) {
-      errors.push({
-        field: "accountNumber",
-        message: "Account number is required",
-      });
-    }
-
-    if (!request.countryCode) {
-      errors.push({
-        field: "countryCode",
-        message: "Country code is required",
-      });
-    }
-
-    if (!request.institution) {
-      errors.push({ field: "institution", message: "Institution is required" });
-    }
-
-    if (errors.length > 0) {
-      throw new ValidationError("Validation failed", errors);
-    }
+    new ValidationBuilder()
+      .required("channel", request.channel)
+      .required("customerId", request.customerId)
+      .required("accountName", request.accountName)
+      .required("accountNumber", request.accountNumber)
+      .required("countryCode", request.countryCode)
+      .required("institution", request.institution)
+      .throwIfInvalid();
   }
 }

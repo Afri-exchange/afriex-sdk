@@ -8,7 +8,9 @@ export type PaymentChannel =
   | "MOBILE_MONEY"
   | "UPI"
   | "INTERAC"
-  | "WE_CHAT"|"ALIPAY"|"PAYBILL_TILL";
+  | "WE_CHAT"
+  | "ALIPAY"
+  | "PAYBILL_TILL";
 
 export interface PaymentMethodInstitution {
   institutionId?: string;
@@ -118,47 +120,53 @@ export interface GetCryptoWalletParams {
 }
 
 /**
- * Common parameters for virtual account requests
+ * Parameters for listing existing virtual accounts
+ * GET /payment-method/virtual-account
  */
-interface GetVirtualAccountBase {
-  /** The 3-letter ISO 4217 currency code for the virtual account */
-  currency: "USD" | "NGN" | "GBP" | "EUR" | "KES" & (string & {});
+export interface ListVirtualAccountsParams {
+  /** The 3-letter ISO 4217 currency code */
+  currency: string;
+  /** Optional customer ID. If not provided, lists business virtual accounts. */
+  customerId?: string;
   /** Optional transaction reference */
   reference?: string;
 }
 
 /**
- * Standard virtual account — creates or retrieves a dedicated virtual bank account.
+ * Parameters for creating a new virtual account
+ * POST /payment-method/virtual-account
  */
-interface GetStandardVirtualAccountParams extends GetVirtualAccountBase {
-  /** Defaults to `VIRTUAL_ACCOUNT` if omitted */
-  type?: "VIRTUAL_ACCOUNT";
-  /** Optional transaction amount */
-  amount?: number;
-  /** Optional customer ID. If not provided, the account is created for the business. */
+export interface CreateVirtualAccountParams {
+  /** The 3-letter ISO 4217 currency code */
+  currency: string;
+  /** Optional customer ID. If not provided, creates for the business. */
   customerId?: string;
   /** Optional ISO 3166-1 alpha-2 country code */
   country?: string;
+  /** Label for static virtual accounts (e.g., 'SALES', 'OPERATIONS'). Mutually exclusive with amount. */
+  label?: string;
+  /** Amount for dynamic virtual accounts. Mutually exclusive with label. */
+  amount?: number;
+  /** Optional transaction reference */
+  reference?: string;
 }
 
 /**
- * Pool account — assigns a shared business pool account for the customer's country.
- * `currency`, `country`, `amount`, and `customerId` are all required.
+ * Response for virtual account list endpoints
  */
-interface GetPoolAccountParams extends GetVirtualAccountBase {
-  type: "POOL_ACCOUNT";
-  /** ISO 3166-1 alpha-2 country code. Required for pool accounts. */
-  country: string;
-  /** Transaction amount. Required for pool accounts. */
-  amount: number;
-  /** Customer ID. Required for pool accounts. */
-  customerId: string;
+export interface VirtualAccountListResponse {
+  data: PaymentMethod[];
+  page: number;
+  total: number;
 }
 
 /**
- * Parameters for retrieving or creating a virtual account.
- * Use `VIRTUAL_ACCOUNT` (default) for dedicated accounts or `POOL_ACCOUNT` for shared pool accounts.
+ * Parameters for listing pool accounts
+ * GET /payment-method/pool-account
  */
-export type GetVirtualAccountParams =
-  | GetStandardVirtualAccountParams
-  | GetPoolAccountParams;
+export interface ListPoolAccountsParams {
+  /** The 3-letter ISO 4217 currency code */
+  currency: string;
+  /** Optional customer ID. If not provided, lists business pool accounts. */
+  customerId?: string;
+}

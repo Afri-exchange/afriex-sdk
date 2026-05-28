@@ -211,18 +211,26 @@ describe("PaymentMethodService", () => {
     });
   });
 
-  describe("getVirtualAccount", () => {
-    it("should get virtual account", async () => {
-      const mockPaymentMethod = {
-        paymentMethodId: "pm-va-123",
-        accountNumber: "999888777",
-      };
+  describe("listVirtualAccounts", () => {
+    it("should list virtual accounts", async () => {
+      const mockPaymentMethods = [
+        {
+          paymentMethodId: "pm-va-123",
+          accountNumber: "999888777",
+        },
+        {
+          paymentMethodId: "pm-va-456",
+          accountNumber: "999888778",
+        },
+      ];
 
       (mockHttpClient.get as Mock).mockResolvedValue({
-        data: mockPaymentMethod,
+        data: mockPaymentMethods,
+        page: 1,
+        total: 2,
       });
 
-      const result = await paymentMethodService.getVirtualAccount({
+      const result = await paymentMethodService.listVirtualAccounts({
         currency: "USD",
       });
 
@@ -232,7 +240,73 @@ describe("PaymentMethodService", () => {
           params: { currency: "USD" },
         }
       );
+      expect(result).toEqual(mockPaymentMethods);
+    });
+  });
+
+  describe("createVirtualAccount", () => {
+    it("should create virtual account", async () => {
+      const mockPaymentMethod = {
+        paymentMethodId: "pm-va-123",
+        accountNumber: "999888777",
+      };
+
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: mockPaymentMethod,
+      });
+
+      const result = await paymentMethodService.createVirtualAccount({
+        currency: "USD",
+        label: "SALES",
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        "/payment-method/virtual-account",
+        {
+          currency: "USD",
+          label: "SALES",
+        }
+      );
       expect(result).toEqual(mockPaymentMethod);
+    });
+
+    it("should throw error when label and amount are both provided", async () => {
+      await expect(
+        paymentMethodService.createVirtualAccount({
+          currency: "USD",
+          label: "SALES",
+          amount: 100,
+        })
+      ).rejects.toThrow("Validation failed");
+    });
+  });
+
+  describe("listPoolAccounts", () => {
+    it("should list pool accounts", async () => {
+      const mockPaymentMethods = [
+        {
+          paymentMethodId: "pm-pool-123",
+          accountNumber: "111222333",
+        },
+      ];
+
+      (mockHttpClient.get as Mock).mockResolvedValue({
+        data: mockPaymentMethods,
+        page: 1,
+        total: 1,
+      });
+
+      const result = await paymentMethodService.listPoolAccounts({
+        currency: "USD",
+      });
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith(
+        "/payment-method/pool-account",
+        {
+          params: { currency: "USD" },
+        }
+      );
+      expect(result).toEqual(mockPaymentMethods);
     });
   });
 });
