@@ -4,7 +4,7 @@ title: Payment Methods
 
 # Payment Methods API
 
-Manage payment methods including bank accounts, mobile money, crypto wallets, and virtual accounts.
+Manage bank accounts, mobile money, crypto wallets, and virtual accounts.
 
 ## Create Payment Method
 
@@ -22,13 +22,13 @@ const paymentMethod = await afriex.paymentMethods.create({
 });
 ```
 
-**Payment Channels:**
+**Supported Channels:**
 
 | Channel        | Description                        |
 | :------------- | :--------------------------------- |
 | `BANK_ACCOUNT` | Bank transfer                      |
-| `MOBILE_MONEY` | Mobile money (e.g., M-Pesa)        |
-| `SWIFT`        | SWIFT international transfer       |
+| `MOBILE_MONEY` | Mobile money (M-Pesa, MTN, etc.)   |
+| `SWIFT`        | International SWIFT transfer       |
 | `UPI`          | Unified Payments Interface (India) |
 | `INTERAC`      | Interac (Canada)                   |
 | `WE_CHAT`      | WeChat Pay (China)                 |
@@ -54,9 +54,9 @@ const response = await afriex.paymentMethods.list({
 await afriex.paymentMethods.delete("payment-method-id");
 ```
 
-## Get Institutions (Banks/MoMo Providers)
+## Get Institutions
 
-Get a list of supported financial institutions for a country:
+List supported banks or mobile money providers:
 
 ```typescript
 const institutions = await afriex.paymentMethods.getInstitutions({
@@ -98,42 +98,71 @@ const response = await afriex.paymentMethods.getCryptoWallet({
 
 import { Callout } from "nextra/components";
 
-<Callout type="note">Crypto wallets are only available in production.</Callout>
+<Callout type="note">Crypto wallets are production-only.</Callout>
 
-## Get Virtual Account
+## List Virtual Accounts
 
-Get or create a virtual bank account:
+Get existing virtual accounts for a customer:
 
 ```typescript
-// Standard virtual account (default)
-const virtualAccount = await afriex.paymentMethods.getVirtualAccount({
+const response = await afriex.paymentMethods.listVirtualAccounts({
+  customerId: "customer-id",
+  currency: "USD", // Optional filter
+});
+
+// Returns: { data: VirtualAccount[], total, page }
+```
+
+## Create Virtual Account
+
+Generate a new virtual account:
+
+```typescript
+// With fixed amount label
+const account = await afriex.paymentMethods.createVirtualAccount({
   currency: "USD",
-  amount: 1000, // Optional
+  label: "Payment for Order #123",
   customerId: "optional-customer-id",
 });
 
-// Pool account — shared business pool for a customer's country
-const poolAccount = await afriex.paymentMethods.getVirtualAccount({
-  type: "POOL_ACCOUNT",
+// OR with specific amount
+const account = await afriex.paymentMethods.createVirtualAccount({
   currency: "NGN",
-  country: "NG",
-  amount: 5000,
+  amount: 50000,
   customerId: "customer-id",
-  reference: "optional-ref",
 });
+
+// Returns single VirtualAccount object
 ```
 
 **Parameters:**
 
-| Field        | Type     | Required               | Description                                   |
-| :----------- | :------- | :--------------------- | :-------------------------------------------- |
-| `currency`   | `string` | Yes                    | `USD`, `NGN`, `GBP`, or `EUR`                 |
-| `type`       | `string` | -                      | `VIRTUAL_ACCOUNT` (default) or `POOL_ACCOUNT` |
-| `amount`     | `number` | Yes for `POOL_ACCOUNT` | Transaction amount                            |
-| `customerId` | `string` | Yes for `POOL_ACCOUNT` | Customer ID                                   |
-| `country`    | `string` | Yes for `POOL_ACCOUNT` | ISO 3166-1 alpha-2 country code               |
-| `reference`  | `string` | -                      | Optional transaction reference                |
+| Field        | Type     | Required | Description                       |
+| :----------- | :------- | :------- | :-------------------------------- |
+| `currency`   | `string` | Yes      | `USD`, `NGN`, `GBP`, or `EUR`     |
+| `label`      | `string` | No\*     | Descriptive label for the account |
+| `amount`     | `number` | No\*     | Specific transaction amount       |
+| `customerId` | `string` | -        | Optional customer ID to associate |
+
+\*Mutually exclusive: provide `label` OR `amount`, not both.
+
+## List Pool Accounts
+
+Get shared business pool accounts:
+
+```typescript
+const response = await afriex.paymentMethods.listPoolAccounts({
+  customerId: "customer-id",
+  country: "NG",
+  currency: "NGN",
+  amount: 25000,
+});
+
+// Returns: { data: PoolAccount[], total, page }
+```
+
+**Pool accounts** are shared across multiple customers in a country. Use for high-volume operations where individual virtual accounts aren't needed.
 
 <Callout type="note">
-  Virtual accounts are only available in production.
+  Virtual accounts and pool accounts are production-only.
 </Callout>

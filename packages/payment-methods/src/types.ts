@@ -141,11 +141,11 @@ export interface CreateVirtualAccountParams {
   currency: string;
   /** Optional customer ID. If not provided, creates for the business. */
   customerId?: string;
-  /** Optional ISO 3166-1 alpha-2 country code */
+  /** Optional ISO 3166-1 alpha-2 country code e.g US */
   country?: string;
-  /** Label for static virtual accounts (e.g., 'SALES', 'OPERATIONS'). Mutually exclusive with amount. */
+  /** Label for static virtual accounts (e.g., 'SALES', 'OPERATIONS'). Can not be used with amount. */
   label?: string;
-  /** Amount for dynamic virtual accounts. Mutually exclusive with label. */
+  /** Amount for dynamic virtual accounts. Can not be used with label. */
   amount?: number;
   /** Optional transaction reference */
   reference?: string;

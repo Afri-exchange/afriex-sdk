@@ -4,13 +4,13 @@ title: Transactions
 
 # Transactions API
 
-Create and manage money transfer transactions.
+Create and track money transfers.
 
 ## Create Transaction
 
-### Withdraw (default)
+### Withdraw (Default)
 
-Send funds to a customer's destination payment method:
+Send funds to a customer's payment method:
 
 ```typescript
 const transaction = await afriex.transactions.create({
@@ -21,8 +21,8 @@ const transaction = await afriex.transactions.create({
   destinationCurrency: "NGN",
   destinationId: "payment-method-id",
   meta: {
-    reference: "ref-withdraw-001",
     idempotencyKey: "unique-key-123",
+    reference: "order-456",
     narration: "Payment for services",
   },
 });
@@ -30,7 +30,7 @@ const transaction = await afriex.transactions.create({
 
 ### Deposit
 
-Pull funds from a customer's source payment method:
+Pull funds from a customer's payment method:
 
 ```typescript
 const transaction = await afriex.transactions.create({
@@ -42,29 +42,29 @@ const transaction = await afriex.transactions.create({
   destinationCurrency: "NGN",
   sourceId: "source-payment-method-id",
   meta: {
-    reference: "ref-deposit-001",
     idempotencyKey: "unique-key-456",
+    reference: "deposit-789",
   },
 });
 ```
 
-**Request Parameters:**
+## Parameters
 
-| Field                 | Type        | Required           | Description                                  |
-| :-------------------- | :---------- | :----------------- | :------------------------------------------- |
-| `customerId`          | `string`    | Yes                | ID of the customer                           |
-| `sourceAmount`        | `${number}` | Yes                | Amount in source currency                    |
-| `destinationAmount`   | `${number}` | Yes                | Amount in destination currency               |
-| `sourceCurrency`      | `string`    | Yes                | Source currency code (e.g., `USD`)           |
-| `destinationCurrency` | `string`    | Yes                | Target currency code (e.g., `NGN`)           |
-| `type`                | `string`    | -                  | `WITHDRAW` (default), `DEPOSIT`, or `SWAP`   |
-| `destinationId`       | `string`    | Yes for `WITHDRAW` | Payment method ID to send funds to           |
-| `sourceId`            | `string`    | Yes for `DEPOSIT`  | Payment method ID to pull funds from         |
-| `meta.reference`      | `string`    | Yes                | Your internal reference (e.g., order ID)     |
-| `meta.idempotencyKey` | `string`    | Yes                | Unique key to prevent duplicate transactions |
-| `meta.narration`      | `string`    | -                  | Transaction description                      |
-| `meta.invoice`        | `string`    | -                  | Base64-encoded invoice document              |
-| `meta.merchantId`     | `string`    | -                  | Your merchant/business identifier            |
+| Field                 | Type        | Required           | Description                                |
+| :-------------------- | :---------- | :----------------- | :----------------------------------------- |
+| `customerId`          | `string`    | Yes                | Customer ID                                |
+| `sourceAmount`        | `${number}` | Yes                | Amount in source currency                  |
+| `destinationAmount`   | `${number}` | Yes                | Amount in destination currency             |
+| `sourceCurrency`      | `string`    | Yes                | Source currency (e.g., `USD`)              |
+| `destinationCurrency` | `string`    | Yes                | Destination currency (e.g., `NGN`)         |
+| `type`                | `string`    | -                  | `WITHDRAW` (default), `DEPOSIT`, or `SWAP` |
+| `destinationId`       | `string`    | Yes for `WITHDRAW` | Payment method to send to                  |
+| `sourceId`            | `string`    | Yes for `DEPOSIT`  | Payment method to pull from                |
+| `meta.idempotencyKey` | `string`    | Yes                | Unique key to prevent duplicates           |
+| `meta.reference`      | `string`    | Yes                | Your internal reference                    |
+| `meta.narration`      | `string`    | -                  | Transaction description                    |
+| `meta.invoice`        | `string`    | -                  | Base64-encoded invoice document            |
+| `meta.merchantId`     | `string`    | -                  | Your merchant identifier                   |
 
 ## Get Transaction
 
@@ -83,20 +83,18 @@ const response = await afriex.transactions.list({
 console.log(response.data); // Transaction[]
 ```
 
-## Transaction Status
+## Status Values
 
-Transactions can have the following statuses:
-
-| Status       | Description                              |
-| :----------- | :--------------------------------------- |
-| `PENDING`    | Transaction created, awaiting processing |
-| `PROCESSING` | Transaction is being processed           |
-| `COMPLETED`  | Transaction completed successfully       |
-| `SUCCESS`    | Transaction successful                   |
-| `FAILED`     | Transaction failed                       |
-| `CANCELLED`  | Transaction was cancelled                |
-| `REFUNDED`   | Transaction was refunded                 |
-| `RETRY`      | Transaction is being retried             |
-| `REJECTED`   | Transaction was rejected                 |
-| `IN_REVIEW`  | Transaction is under review              |
-| `UNKNOWN`    | Transaction status is unknown            |
+| Status       | Description                  |
+| :----------- | :--------------------------- |
+| `PENDING`    | Created, awaiting processing |
+| `PROCESSING` | Currently processing         |
+| `COMPLETED`  | Completed successfully       |
+| `SUCCESS`    | Successful                   |
+| `FAILED`     | Failed                       |
+| `CANCELLED`  | Cancelled                    |
+| `REFUNDED`   | Refunded                     |
+| `RETRY`      | Retrying                     |
+| `REJECTED`   | Rejected                     |
+| `IN_REVIEW`  | Under review                 |
+| `UNKNOWN`    | Status unknown               |

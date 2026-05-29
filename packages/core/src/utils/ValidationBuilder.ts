@@ -60,7 +60,7 @@ export class ValidationBuilder {
     if (hasValue1 && hasValue2) {
       this.errors.push({
         field: field1,
-        message: message ?? `${field1} and ${field2} are mutually exclusive`,
+        message: message ?? `${field1} and ${field2} can not be used together`,
       });
     }
     return this;

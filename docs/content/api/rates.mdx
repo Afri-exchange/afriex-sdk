@@ -20,7 +20,7 @@ console.log(response.rates);
 //   NGN: { USD: '0.00065', GBP: '0.00051', KES: '0.0835' }
 // }
 
-console.log(response.updatedAt); // Timestamp
+console.log(response.updatedAt); // Unix timestamp
 ```
 
 **Parameters:**
@@ -28,11 +28,9 @@ console.log(response.updatedAt); // Timestamp
 | Field         | Type                 | Description                                |
 | :------------ | :------------------- | :----------------------------------------- |
 | `fromSymbols` | `string \| string[]` | Base currencies (comma-separated or array) |
-| `toSymbols`   | `string \| string[]` | Target currencies to get rates for         |
+| `toSymbols`   | `string \| string[]` | Target currencies                          |
 
 ## Get Single Rate
-
-Get the exchange rate between two specific currencies:
 
 ```typescript
 const rate = await afriex.rates.getRate("USD", "NGN");
@@ -41,8 +39,6 @@ console.log("USD to NGN:", rate); // "1550.00"
 ```
 
 ## Convert Amount
-
-Convert an amount from one currency to another:
 
 ```typescript
 const result = await afriex.rates.convert(100, "USD", "NGN");

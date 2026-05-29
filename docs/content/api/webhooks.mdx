@@ -4,11 +4,11 @@ title: Webhooks
 
 # Webhooks
 
-Afriex sends webhook notifications for key events. The SDK provides a verifier to validate webhook signatures.
+Afriex sends webhook notifications for key events. The SDK validates signatures and triggers test events in sandbox.
 
 ## Setup
 
-Initialize the SDK with your webhook public key:
+Pass your webhook public key during initialization:
 
 ```typescript
 const afriex = new AfriexSDK({
@@ -17,7 +17,9 @@ const afriex = new AfriexSDK({
 });
 ```
 
-## Verify Webhook Signature
+## Verify and Parse
+
+Validate signature and parse payload in one call:
 
 ```typescript
 app.post("/webhook", (req, res) => {
@@ -27,7 +29,6 @@ app.post("/webhook", (req, res) => {
   try {
     const event = afriex.webhooks.verifyAndParse(payload, signature);
 
-    // Handle the event
     switch (event.event) {
       case "CUSTOMER.CREATED":
         console.log("Customer created:", event.data);
@@ -48,15 +49,59 @@ app.post("/webhook", (req, res) => {
 });
 ```
 
+## Verify Only
+
+Validate signature without parsing:
+
+```typescript
+const isValid = afriex.webhooks.verify(payload, signature);
+
+if (isValid) {
+  const event = JSON.parse(payload);
+  // Handle event
+}
+```
+
+## Trigger Test Webhook (Sandbox)
+
+Send a test webhook to your endpoint in sandbox:
+
+```typescript
+const result = await afriex.webhooks.triggerTestWebhook({
+  event: "TRANSACTION.UPDATED",
+  resourceId: "transaction-id",
+});
+
+// Check your webhook endpoint for the test event
+console.log(result); // { success: true, message: "..." }
+```
+
+**Supported Events:**
+
+| Event                    | Resource Type     |
+| :----------------------- | :---------------- |
+| `CUSTOMER.CREATED`       | Customer ID       |
+| `CUSTOMER.UPDATED`       | Customer ID       |
+| `TRANSACTION.CREATED`    | Transaction ID    |
+| `TRANSACTION.UPDATED`    | Transaction ID    |
+| `PAYMENT_METHOD.CREATED` | Payment Method ID |
+| `PAYMENT_METHOD.UPDATED` | Payment Method ID |
+
+import { Callout } from "nextra/components";
+
+<Callout type="note">
+  Test webhook triggers only work in sandbox environment.
+</Callout>
+
 ## Event Types
 
 ### Customer Events
 
-| Event              | Description          |
-| :----------------- | :------------------- |
-| `CUSTOMER.CREATED` | Customer was created |
-| `CUSTOMER.UPDATED` | Customer was updated |
-| `CUSTOMER.DELETED` | Customer was deleted |
+| Event              | Description      |
+| :----------------- | :--------------- |
+| `CUSTOMER.CREATED` | Customer created |
+| `CUSTOMER.UPDATED` | Customer updated |
+| `CUSTOMER.DELETED` | Customer deleted |
 
 **Payload:**
 
@@ -77,7 +122,7 @@ app.post("/webhook", (req, res) => {
 
 | Event                 | Description                |
 | :-------------------- | :------------------------- |
-| `TRANSACTION.CREATED` | Transaction was created    |
+| `TRANSACTION.CREATED` | Transaction created        |
 | `TRANSACTION.UPDATED` | Transaction status changed |
 
 **Payload:**
@@ -95,7 +140,7 @@ app.post("/webhook", (req, res) => {
     sourceCurrency: string,
     destinationAmount: string,
     destinationCurrency: string,
-    meta: { narration?, invoice?, idempotencyKey?, merchantId? },
+    meta: { idempotencyKey, reference, narration?, invoice?, merchantId? },
     createdAt: string,
     updatedAt: string
   }
@@ -104,11 +149,11 @@ app.post("/webhook", (req, res) => {
 
 ### Payment Method Events
 
-| Event                    | Description                |
-| :----------------------- | :------------------------- |
-| `PAYMENT_METHOD.CREATED` | Payment method was created |
-| `PAYMENT_METHOD.UPDATED` | Payment method was updated |
-| `PAYMENT_METHOD.DELETED` | Payment method was deleted |
+| Event                    | Description            |
+| :----------------------- | :--------------------- |
+| `PAYMENT_METHOD.CREATED` | Payment method created |
+| `PAYMENT_METHOD.UPDATED` | Payment method updated |
+| `PAYMENT_METHOD.DELETED` | Payment method deleted |
 
 **Payload:**
 
@@ -125,18 +170,5 @@ app.post("/webhook", (req, res) => {
     institution: { institutionId?, institutionName?, institutionCode? },
     recipient: { recipientName?, recipientEmail?, recipientPhone? }
   }
-}
-```
-
-## Signature Verification Only
-
-If you only want to verify the signature without parsing:
-
-```typescript
-const isValid = afriex.webhooks.verify(payload, signature);
-
-if (isValid) {
-  const event = JSON.parse(payload);
-  // Handle event
 }
 ```

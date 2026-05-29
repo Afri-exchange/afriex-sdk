@@ -4,32 +4,33 @@ title: API Reference
 
 # API Reference
 
-The Afriex SDK is organized into several service modules that map directly to the Afriex Business API.
+The Afriex SDK maps directly to the Afriex Business API.
 
-## Available Services
+## Services
 
-| Service | Description |
-| :--- | :--- |
-| [Customers](/api/customers) | Create and manage customers with KYC |
-| [Transactions](/api/transactions) | Create and track transactions |
-| [Payment Methods](/api/payment-methods) | Manage payment methods, banks, mobile money |
-| [Balance](/api/balance) | Get organization wallet balances |
-| [Rates](/api/rates) | Get exchange rates |
-| [Webhooks](/api/webhooks) | Verify webhook signatures |
+| Service                                 | Description                                              |
+| :-------------------------------------- | :------------------------------------------------------- |
+| [Customers](/api/customers)             | Create and manage customers with KYC                     |
+| [Transactions](/api/transactions)       | Create and track money transfers                         |
+| [Payment Methods](/api/payment-methods) | Manage payment methods, virtual accounts, crypto wallets |
+| [Checkout](/api/checkout)               | Create hosted payment sessions                           |
+| [Balance](/api/balance)                 | Get wallet balances                                      |
+| [Rates](/api/rates)                     | Get exchange rates                                       |
+| [Webhooks](/api/webhooks)               | Verify signatures, trigger test events                   |
 
 ## Authentication
 
-All API requests require the `x-api-key` header:
+Pass your API key during initialization:
 
 ```typescript
 const afriex = new AfriexSDK({
-  apiKey: 'your-api-key'
+  apiKey: "your-api-key",
 });
 ```
 
 ## Error Handling
 
-The SDK throws typed errors that you can catch:
+The SDK throws typed errors:
 
 ```typescript
 import { AfriexSDK, ApiError, ValidationError, NetworkError } from '@afriex/sdk';
@@ -38,10 +39,13 @@ try {
   await afriex.customers.create({ ... });
 } catch (error) {
   if (error instanceof ValidationError) {
+    // Missing or invalid required fields
     console.log('Validation failed:', error.errors);
   } else if (error instanceof ApiError) {
+    // HTTP 4xx/5xx from API
     console.log('API error:', error.statusCode, error.message);
   } else if (error instanceof NetworkError) {
+    // Network timeout or unreachable
     console.log('Network error:', error.message);
   }
 }

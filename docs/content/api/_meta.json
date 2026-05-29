@@ -1,9 +1,10 @@
 {
-    "index": "Overview",
-    "customers": "Customers",
-    "transactions": "Transactions",
-    "payment-methods": "Payment Methods",
-    "balance": "Balance",
-    "rates": "Rates",
-    "webhooks": "Webhooks"
+  "index": "Overview",
+  "customers": "Customers",
+  "transactions": "Transactions",
+  "payment-methods": "Payment Methods",
+  "checkout": "Checkout",
+  "balance": "Balance",
+  "rates": "Rates",
+  "webhooks": "Webhooks"
 }

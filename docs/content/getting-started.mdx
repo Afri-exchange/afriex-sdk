@@ -6,40 +6,32 @@ title: Getting Started
 
 ## Prerequisites
 
-Before using the Afriex SDK, ensure you have:
-
-- Node.js installed (v20 or later)
-- A valid Afriex API Key (contact support to obtain one)
+- Node.js 20 or later
+- API key from [business.afriex.com](https://business.afriex.com) (Developer tab)
 
 ## Installation
-
-Install the package via your preferred package manager:
 
 ```bash npm2yarn
 npm install @afriex/sdk
 ```
 
-## Basic Usage
+## Quick Start
 
-### 1. Import the SDK
+### 1. Import and initialize
 
 ```typescript
 import { AfriexSDK, Environment } from "@afriex/sdk";
-```
 
-### 2. Initialize the client
-
-```typescript
 const afriex = new AfriexSDK({
   apiKey: process.env.AFRIEX_API_KEY,
-  environment: "staging", // 'staging' or 'production'
+  environment: "staging", // or 'production'
 });
 ```
 
-### 3. Make a request
+### 2. Make requests
 
 ```typescript
-// Create a customer
+// Create customer
 const customer = await afriex.customers.create({
   fullName: "John Doe",
   email: "john@example.com",
@@ -47,7 +39,7 @@ const customer = await afriex.customers.create({
   countryCode: "US",
 });
 
-// Get balance
+// Check balance
 const balances = await afriex.balance.getBalance({
   currencies: ["USD", "NGN"],
 });
@@ -56,31 +48,31 @@ console.log("Customer:", customer);
 console.log("Balances:", balances);
 ```
 
-## Configuration Options
+## Configuration
 
-| Option             | Type          | Default             | Description                                         |
-| :----------------- | :------------ | :------------------ | :-------------------------------------------------- |
-| `apiKey`           | `string`      | **Required**        | Your Afriex API key.                                |
-| `environment`      | `string`      | `'production'`      | Target environment (`'staging'` or `'production'`). |
-| `webhookPublicKey` | `string`      | -                   | Afriex public key for webhook verification.         |
-| `retryConfig`      | `RetryConfig` | `{ maxRetries: 0 }` | Configuration for request retries.                  |
+| Option             | Type          | Default             | Description                         |
+| :----------------- | :------------ | :------------------ | :---------------------------------- |
+| `apiKey`           | `string`      | Required            | Your Afriex API key                 |
+| `environment`      | `string`      | `'production'`      | `'staging'` or `'production'`       |
+| `webhookPublicKey` | `string`      | -                   | Public key for webhook verification |
+| `retryConfig`      | `RetryConfig` | `{ maxRetries: 0 }` | Request retry configuration         |
 
-### Retry Configuration
+### Enable Retries
 
-By default, retries are **disabled**. You can enable them by passing a `retryConfig`:
+Retries are disabled by default. Enable them:
 
 ```typescript
 const afriex = new AfriexSDK({
   apiKey: "...",
   retryConfig: {
     maxRetries: 3,
-    retryDelay: 1000, // 1 second
+    retryDelay: 1000, // milliseconds
     retryableStatusCodes: [408, 429, 500, 502, 503, 504],
   },
 });
 ```
 
-## Server URLs
+## Environments
 
 | Environment | URL                              |
 | :---------- | :------------------------------- |

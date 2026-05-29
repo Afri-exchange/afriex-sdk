@@ -4,7 +4,7 @@ title: Balance
 
 # Balance API
 
-Get your organization's wallet balances and manage sandbox funds during development.
+Get wallet balances and manage sandbox funds.
 
 ## Get Balance
 
@@ -16,7 +16,7 @@ const balances = await afriex.balance.getBalance({
 // Returns: { USD: 10000, NGN: 5000000, GBP: 8000 }
 ```
 
-You can also pass an array of currencies:
+Or pass an array:
 
 ```typescript
 const balances = await afriex.balance.getBalance({
@@ -24,7 +24,7 @@ const balances = await afriex.balance.getBalance({
 });
 ```
 
-## Get Balance for Single Currency
+## Get Single Currency Balance
 
 ```typescript
 const usdBalance = await afriex.balance.getBalanceForCurrency("USD");
@@ -33,8 +33,6 @@ console.log("USD Balance:", usdBalance); // 10000
 ```
 
 ## Response Format
-
-The balance response is a map of currency codes to amounts:
 
 ```typescript
 {
@@ -49,10 +47,7 @@ The balance response is a map of currency codes to amounts:
 import { Callout } from "nextra/components";
 
 <Callout type="warning">
-  This endpoint is only available in the **sandbox/staging** environment. It
-  will return a `403 Forbidden` response in production. Use it during
-  integration development to credit your test wallet without making real
-  transfers.
+  Sandbox-only. Returns `403 Forbidden` in production.
 </Callout>
 
 ```typescript
@@ -65,16 +60,14 @@ console.log(transaction.transactionId); // '69d6005dab82306f11b03360'
 console.log(transaction.status); // 'SUCCESS'
 ```
 
-### Parameters
+**Parameters:**
 
-| Parameter  | Type     | Required | Description                                                    |
-| ---------- | -------- | -------- | -------------------------------------------------------------- |
-| `amount`   | `number` | Yes      | A positive number representing the amount to credit.           |
-| `currency` | `string` | Yes      | Uppercase 3-letter ISO 4217 currency code (e.g. `USD`, `NGN`). |
+| Parameter  | Type     | Required | Description                        |
+| :--------- | :------- | :------- | :--------------------------------- |
+| `amount`   | `number` | Yes      | Positive number to credit          |
+| `currency` | `string` | Yes      | ISO 4217 code (e.g., `USD`, `NGN`) |
 
-### Response
-
-Returns a `TopUpTransaction` object:
+**Response:**
 
 ```typescript
 {
