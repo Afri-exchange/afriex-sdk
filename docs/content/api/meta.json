@@ -1,0 +1,13 @@
+{
+  "title": "API Reference",
+  "pages": [
+    "index",
+    "customers",
+    "transactions",
+    "payment-methods",
+    "checkout",
+    "balance",
+    "rates",
+    "webhooks"
+  ]
+}

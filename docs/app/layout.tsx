@@ -1,9 +1,7 @@
-import { Footer, Layout, Navbar } from "nextra-theme-docs";
-import { Head } from "nextra/components";
-import { getPageMap } from "nextra/page-map";
+import { RootProvider } from "fumadocs-ui/provider/next";
 import { Analytics } from "@vercel/analytics/next";
-import "nextra-theme-docs/style.css";
 import type { ReactNode } from "react";
+import "./globals.css";
 
 export const metadata = {
   title: {
@@ -18,38 +16,11 @@ export const metadata = {
   },
 };
 
-const navbar = (
-  <Navbar
-    logo={
-      <span style={{ fontWeight: 700, fontSize: "1.25rem" }}>Afriex SDK</span>
-    }
-    projectLink="https://github.com/codewithveek/afriex_sdk"
-  />
-);
-
-const footer = <Footer>MIT {new Date().getFullYear()} © Afriex</Footer>;
-
-export default async function RootLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
-      <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      </Head>
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <Layout
-          navbar={navbar}
-          pageMap={await getPageMap()}
-          docsRepositoryBase="https://github.com/codewithveek/afriex_sdk/tree/main/docs"
-          footer={footer}
-          sidebar={{ defaultMenuCollapseLevel: 1, toggleButton: true }}
-          toc={{ backToTop: true }}
-        >
-          {children}
-        </Layout>
+        <RootProvider>{children}</RootProvider>
         <Analytics />
       </body>
     </html>

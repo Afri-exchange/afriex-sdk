@@ -1,10 +1,9 @@
-import { useMDXComponents as getThemeComponents } from 'nextra-theme-docs'
+import defaultMdxComponents from "fumadocs-ui/mdx";
+import type { MDXComponents } from "mdx/types";
 
-const themeComponents = getThemeComponents()
-
-export function useMDXComponents(components?: Record<string, React.ComponentType>) {
-    return {
-        ...themeComponents,
-        ...components
-    }
+export function getMDXComponents(components?: MDXComponents): MDXComponents {
+  return {
+    ...defaultMdxComponents,
+    ...components,
+  };
 }

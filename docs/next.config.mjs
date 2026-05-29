@@ -1,10 +1,10 @@
-import nextra from "nextra";
+import { createMDX } from "fumadocs-mdx/next";
 
-const withNextra = nextra({
-  defaultShowCopyCode: true,
-  // Content directory option is not needed - Nextra auto-detects content/ directory
-});
+/** @type {import('next').NextConfig} */
+const config = {
+  reactStrictMode: true,
+};
 
-export default withNextra({
-  // Next.js options
-});
+const withMDX = createMDX();
+
+export default withMDX(config);
