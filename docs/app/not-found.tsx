@@ -48,14 +48,6 @@ export default function NotFound() {
           textDecoration: "none",
           transition: "all 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = "oklch(0.95 0.006 240)";
-          e.currentTarget.style.borderColor = "oklch(0.82 0.008 240)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "oklch(0.97 0.005 240)";
-          e.currentTarget.style.borderColor = "oklch(0.88 0.006 240)";
-        }}
       >
         Back to docs
       </Link>
