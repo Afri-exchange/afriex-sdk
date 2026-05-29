@@ -73,7 +73,7 @@ describe("ValidationBuilder", () => {
       expect(builder.hasErrors()).toBe(true);
       expect(builder.getErrors()[0]).toEqual({
         field: "label",
-        message: "label and amount are mutually exclusive",
+        message: "label and amount can not be used together",
       });
     });
 
