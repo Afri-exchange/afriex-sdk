@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import * as crypto from "crypto";
 import { WebhookService } from "../WebhookService.js";
 import { HttpClient } from "@afriex/core";
 
@@ -11,10 +12,53 @@ const mockHttpClient = {
 
 describe("WebhookService", () => {
   let webhookService: WebhookService;
+  const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
+    modulusLength: 2048,
+    publicKeyEncoding: { type: "spki", format: "pem" },
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
     webhookService = new WebhookService(mockHttpClient);
+  });
+
+  describe("verification", () => {
+    it("should verify a valid signature", () => {
+      const service = new WebhookService(undefined, publicKey);
+      const payload = JSON.stringify({ event: "CUSTOMER.CREATED", data: {} });
+      const signer = crypto.createSign("SHA256");
+      signer.update(payload);
+      const signature = signer.sign(privateKey, "base64");
+
+      expect(service.verify(payload, signature)).toBe(true);
+    });
+
+    it("should return false when public key is not configured", () => {
+      expect(webhookService.verify("payload", "signature")).toBe(false);
+    });
+
+    it("should verify and parse a valid payload", () => {
+      const service = new WebhookService(undefined, publicKey);
+      const webhookPayload = {
+        event: "CUSTOMER.CREATED",
+        data: { customerId: "cust-123", name: "John Doe" },
+      };
+      const payload = JSON.stringify(webhookPayload);
+      const signer = crypto.createSign("SHA256");
+      signer.update(payload);
+      const signature = signer.sign(privateKey, "base64");
+
+      expect(service.verifyAndParse(payload, signature)).toEqual(
+        webhookPayload
+      );
+    });
+
+    it("should throw when verifyAndParse is used without a public key", () => {
+      expect(() => webhookService.verifyAndParse("{}", "signature")).toThrow(
+        "Public key is required for webhook verification"
+      );
+    });
   });
 
   describe("triggerTestWebhook", () => {
@@ -60,6 +104,17 @@ describe("WebhookService", () => {
       await expect(
         webhookService.triggerTestWebhook(invalidRequest)
       ).rejects.toThrow("Validation failed");
+    });
+
+    it("should throw when no http client is configured", async () => {
+      const service = new WebhookService(undefined, publicKey);
+
+      await expect(
+        service.triggerTestWebhook({
+          event: "CUSTOMER.CREATED",
+          resourceId: "cust_123",
+        })
+      ).rejects.toThrow("HTTP client is required to trigger test webhooks");
     });
 
     it("should support all customer event types", async () => {

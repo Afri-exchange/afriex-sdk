@@ -1,6 +1,6 @@
 # @afriex/webhooks
 
-Webhook verification for the Afriex SDK. Verify webhook signatures using RSA public key.
+Webhook utilities for the Afriex SDK. Handles both signature verification and sandbox test triggering. `WebhookVerifier` remains available as a compatibility wrapper for verification-only usage.
 
 ## Installation
 

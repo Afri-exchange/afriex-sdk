@@ -5,7 +5,7 @@ import { PaymentMethodService } from "@afriex/payment-methods";
 import { BalanceService } from "@afriex/balance";
 import { RateService } from "@afriex/rates";
 import { CheckoutService } from "@afriex/checkout";
-import { WebhookVerifier, WebhookService } from "@afriex/webhooks";
+import { WebhookService } from "@afriex/webhooks";
 
 export interface AfriexSDKConfig extends AfriexConfig {
   webhookPublicKey?: string;
@@ -18,8 +18,8 @@ export class AfriexSDK extends AfriexClient {
   public readonly balance: BalanceService;
   public readonly rates: RateService;
   public readonly checkout: CheckoutService;
-  public readonly webhookVerifier?: WebhookVerifier;
   public readonly webhooks: WebhookService;
+  public readonly webhookVerifier?: WebhookService;
 
   constructor(config: AfriexSDKConfig) {
     super(config);
@@ -32,10 +32,10 @@ export class AfriexSDK extends AfriexClient {
     this.balance = new BalanceService(httpClient);
     this.rates = new RateService(httpClient);
     this.checkout = new CheckoutService(httpClient);
-    this.webhooks = new WebhookService(httpClient);
+    this.webhooks = new WebhookService(httpClient, config.webhookPublicKey);
 
     if (config.webhookPublicKey) {
-      this.webhookVerifier = new WebhookVerifier(config.webhookPublicKey);
+      this.webhookVerifier = this.webhooks;
     }
   }
 }
