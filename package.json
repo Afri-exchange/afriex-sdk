@@ -29,5 +29,10 @@
     "node": ">=22.13.0",
     "pnpm": ">=9.0.0"
   },
-  "packageManager": "pnpm@9.15.9"
+  "packageManager": "pnpm@9.15.9",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Afri-exchange/afriex-sdk"
+  },
+  "author": "Victory Lucky <luckyvictory54@gmail.com>"
 }

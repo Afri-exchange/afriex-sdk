@@ -35,5 +35,11 @@
   "license": "MIT",
   "dependencies": {
     "ky": "^2.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Afri-exchange/afriex-sdk",
+    "directory": "packages/core"
+  },
+  "author": "Victory Lucky <luckyvictory54@gmail.com>"
 }

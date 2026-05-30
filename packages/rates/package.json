@@ -32,5 +32,11 @@
   "publishConfig": {
     "access": "public"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Afri-exchange/afriex-sdk",
+    "directory": "packages/rates"
+  },
+  "author": "Victory Lucky <luckyvictory54@gmail.com>"
 }
