@@ -10,79 +10,68 @@ Create hosted payment sessions. Afriex handles the payment UI; you redirect cust
 
 ```typescript
 const session = await afriex.checkout.createSession({
+  amount: 500000,
+  currency: "NGN",
+  merchantReference: "order-2026-05-12-001",
+  redirectUrl: "https://yourapp.com/checkout/return",
   customer: {
-    fullName: "John Doe",
+    name: "John Doe",
     email: "john@example.com",
-    phone: "+1234567890",
-    countryCode: "US",
+    phone: "+2348192837465",
+    countryCode: "NG",
   },
-  transaction: {
-    sourceAmount: "100.00",
-    sourceCurrency: "USD",
-    destinationAmount: "75000.00",
-    destinationCurrency: "NGN",
-    type: "WITHDRAW",
-    destinationId: "payment-method-id",
-    meta: {
-      idempotencyKey: "unique-session-123",
-      reference: "order-456",
-      narration: "Payment for order #456",
-    },
+  channels: ["VIRTUAL_BANK_ACCOUNT"],
+  metadata: {
+    orderId: "order-456",
+    cartId: "cart-123",
   },
-  successUrl: "https://yourapp.com/success",
-  cancelUrl: "https://yourapp.com/cancel",
-  webhookUrl: "https://yourapp.com/webhook", // Optional
 });
 
 // Redirect customer to session.checkoutUrl
-console.log(session.checkoutUrl); // https://checkout.afriex.com/...
+console.log(session.checkoutUrl); // https://checkout.afriex.com/pay/...
 ```
 
 **Response:**
 
 ```typescript
 {
-  checkoutId: string;
   checkoutUrl: string; // Redirect customer here
-  expiresAt: string; // ISO 8601 timestamp
 }
 ```
 
 ## Parameters
 
-| Field                             | Type     | Required           | Description                                        |
-| :-------------------------------- | :------- | :----------------- | :------------------------------------------------- |
-| `customer.fullName`               | `string` | Yes                | Customer's full name                               |
-| `customer.email`                  | `string` | Yes                | Customer's email address                           |
-| `customer.phone`                  | `string` | Yes                | Phone number with country code                     |
-| `customer.countryCode`            | `string` | Yes                | ISO 3166-1 alpha-2 code                            |
-| `transaction.sourceAmount`        | `string` | Yes                | Amount debited in source currency                  |
-| `transaction.sourceCurrency`      | `string` | Yes                | Source currency code (e.g., `USD`)                 |
-| `transaction.destinationAmount`   | `string` | Yes                | Amount credited in destination currency            |
-| `transaction.destinationCurrency` | `string` | Yes                | Destination currency code (e.g., `NGN`)            |
-| `transaction.type`                | `string` | -                  | `WITHDRAW` (default), `DEPOSIT`, or `SWAP`         |
-| `transaction.destinationId`       | `string` | Yes for `WITHDRAW` | Payment method to send funds to                    |
-| `transaction.sourceId`            | `string` | Yes for `DEPOSIT`  | Payment method to pull funds from                  |
-| `transaction.meta.idempotencyKey` | `string` | Yes                | Unique key to prevent duplicate sessions           |
-| `transaction.meta.reference`      | `string` | Yes                | Your internal reference (order ID, invoice number) |
-| `transaction.meta.narration`      | `string` | -                  | Transaction description shown to customer          |
-| `successUrl`                      | `string` | Yes                | Redirect URL after successful payment              |
-| `cancelUrl`                       | `string` | Yes                | Redirect URL if customer cancels                   |
-| `webhookUrl`                      | `string` | -                  | Webhook endpoint for transaction updates           |
+| Field                  | Type       | Required | Description                                                  |
+| :--------------------- | :--------- | :------- | :----------------------------------------------------------- |
+| `amount`               | `number`   | Yes      | Amount in minor currency units. Minimum value is `100`       |
+| `currency`             | `string`   | Yes      | Uppercase 3-letter ISO 4217 currency code, for example `NGN` |
+| `merchantReference`    | `string`   | Yes      | Unique merchant-supplied reference for the session           |
+| `redirectUrl`          | `string`   | Yes      | HTTPS URL to redirect the customer to after checkout         |
+| `customer.name`        | `string`   | Yes      | Customer's full name                                         |
+| `customer.email`       | `string`   | Yes      | Customer's email address                                     |
+| `customer.phone`       | `string`   | Yes      | Phone number in E.164 format                                 |
+| `customer.countryCode` | `string`   | Yes      | ISO 3166-1 alpha-2 country code                              |
+| `channels`             | `string[]` | No       | Allowed payment channels. Defaults to `VIRTUAL_BANK_ACCOUNT` |
+| `metadata`             | `object`   | No       | Optional flat key/value metadata with string values          |
 
 ## Session Flow
 
-1. **Create session** with customer and transaction details
+1. **Create session** with amount, customer details, `merchantReference`, and `redirectUrl`
 2. **Redirect customer** to `checkoutUrl`
 3. **Customer completes payment** on Afriex-hosted page
-4. **Afriex redirects** to `successUrl` or `cancelUrl`
-5. **Receive webhook** with final transaction status (if `webhookUrl` provided)
+4. **Afriex redirects** the customer back to `redirectUrl`
+5. **Receive webhook** on your configured callback URL for session updates
 
 import { Callout } from "fumadocs-ui/components/callout";
 
 <Callout type="note">
-  Sessions expire after a set duration (check `expiresAt`). Create a new session
-  if expired.
+  `amount` is denominated in minor units. For example, to charge NGN 5,000.00,
+  send `500000`.
+</Callout>
+
+<Callout type="tip">
+  Use `merchantReference` as your end-to-end identifier for lookup,
+  reconciliation, and webhook matching.
 </Callout>
 
 ## Use Cases

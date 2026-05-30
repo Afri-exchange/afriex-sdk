@@ -6,6 +6,11 @@ import {
 } from "./types.js";
 
 export class CheckoutService {
+  private static readonly supportedChannels = new Set([
+    "VIRTUAL_BANK_ACCOUNT",
+    "MOBILE_MONEY",
+  ]);
+
   private httpClient: HttpClient;
 
   constructor(httpClient: HttpClient) {
@@ -35,51 +40,99 @@ export class CheckoutService {
     request: CreateCheckoutSessionRequest
   ): void {
     new ValidationBuilder()
-      // Validate customer
-      .required("customer.fullName", request.customer?.fullName)
+      .required("amount", request.amount)
+      .condition(
+        "amount",
+        request.amount !== undefined && !Number.isInteger(request.amount),
+        "amount must be an integer value in minor units"
+      )
+      .condition(
+        "amount",
+        typeof request.amount === "number" && request.amount < 100,
+        "amount must be at least 100"
+      )
+      .required("currency", request.currency)
+      .condition(
+        "currency",
+        request.currency !== undefined &&
+          request.currency !== "" &&
+          request.currency.trim().length !== 3,
+        "currency must be a 3-letter ISO 4217 code"
+      )
+      .required("merchantReference", request.merchantReference)
+      .required("redirectUrl", request.redirectUrl)
+      .condition(
+        "redirectUrl",
+        request.redirectUrl !== undefined &&
+          request.redirectUrl !== "" &&
+          !this.isHttpsUrl(request.redirectUrl),
+        "redirectUrl must be a valid HTTPS URL"
+      )
       .required("customer.email", request.customer?.email)
       .required("customer.phone", request.customer?.phone)
       .required("customer.countryCode", request.customer?.countryCode)
-      // Validate transaction
-      .required("transaction.sourceAmount", request.transaction?.sourceAmount)
-      .required(
-        "transaction.sourceCurrency",
-        request.transaction?.sourceCurrency
-      )
-      .required(
-        "transaction.destinationAmount",
-        request.transaction?.destinationAmount
-      )
-      .required(
-        "transaction.destinationCurrency",
-        request.transaction?.destinationCurrency
-      )
-      .required("transaction.type", request.transaction?.type)
-      .required("transaction.meta", request.transaction?.meta)
-      .required(
-        "transaction.meta.idempotencyKey",
-        request.transaction?.meta?.idempotencyKey
-      )
-      .required(
-        "transaction.meta.reference",
-        request.transaction?.meta?.reference
-      )
-      // Validate URLs
-      .required("successUrl", request.successUrl)
-      .required("cancelUrl", request.cancelUrl)
-      // Validate type-specific fields
+      .required("customer.name", request.customer?.name)
       .condition(
-        "transaction.destinationId",
-        request.transaction?.type === "WITHDRAW" &&
-          !request.transaction?.destinationId,
-        "destinationId is required for WITHDRAW transactions"
+        "customer.countryCode",
+        request.customer?.countryCode !== undefined &&
+          request.customer.countryCode !== "" &&
+          request.customer.countryCode.trim().length !== 2,
+        "customer.countryCode must be a 2-letter ISO country code"
       )
       .condition(
-        "transaction.sourceId",
-        request.transaction?.type === "DEPOSIT" &&
-          !request.transaction?.sourceId,
-        "sourceId is required for DEPOSIT transactions"
+        "channels",
+        this.hasInvalidChannels(request.channels),
+        "channels contains an unsupported payment channel"
+      )
+      .condition(
+        "metadata",
+        this.hasInvalidMetadata(request.metadata),
+        "metadata values must be strings"
       )
       .throwIfInvalid();
+  }
+
+  private hasInvalidChannels(
+    channels: CreateCheckoutSessionRequest["channels"] | unknown
+  ): boolean {
+    if (channels === undefined) {
+      return false;
+    }
+
+    if (!Array.isArray(channels)) {
+      return true;
+    }
+
+    return channels.some(
+      (channel) =>
+        typeof channel !== "string" ||
+        !CheckoutService.supportedChannels.has(channel)
+    );
+  }
+
+  private hasInvalidMetadata(
+    metadata: CreateCheckoutSessionRequest["metadata"] | unknown
+  ): boolean {
+    if (metadata === undefined) {
+      return false;
+    }
+
+    if (
+      metadata === null ||
+      typeof metadata !== "object" ||
+      Array.isArray(metadata)
+    ) {
+      return true;
+    }
+
+    return Object.values(metadata).some((value) => typeof value !== "string");
+  }
+
+  private isHttpsUrl(url: string): boolean {
+    try {
+      return new URL(url).protocol === "https:";
+    } catch {
+      return false;
+    }
   }
 }

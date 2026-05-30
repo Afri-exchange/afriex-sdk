@@ -100,7 +100,7 @@ export type {
   CheckoutSession,
   CreateCheckoutSessionRequest,
   CheckoutCustomer,
-  CheckoutTransaction,
+  CheckoutChannel,
 } from "@afriex/checkout";
 
 export type {

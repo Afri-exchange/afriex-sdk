@@ -3,43 +3,26 @@
  */
 
 export interface CheckoutCustomer {
-  fullName: string;
+  name: string;
   email: string;
   phone: string;
   countryCode: string;
 }
 
-export interface CheckoutTransactionMeta {
-  narration?: string;
-  idempotencyKey: string;
-  reference: string;
-  merchantId?: string;
-}
-
-export interface CheckoutTransaction {
-  sourceAmount: string;
-  sourceCurrency: string;
-  destinationAmount: string;
-  destinationCurrency: string;
-  type: "WITHDRAW" | "DEPOSIT";
-  destinationId?: string;
-  sourceId?: string;
-  /** Required: must include idempotencyKey and reference */
-  meta: CheckoutTransactionMeta;
-}
+export type CheckoutChannel = "VIRTUAL_BANK_ACCOUNT" | "MOBILE_MONEY";
 
 export interface CreateCheckoutSessionRequest {
+  amount: number;
+  currency: string;
+  merchantReference: string;
+  redirectUrl: string;
   customer: CheckoutCustomer;
-  transaction: CheckoutTransaction;
-  successUrl: string;
-  cancelUrl: string;
-  webhookUrl?: string;
+  channels?: CheckoutChannel[];
+  metadata?: Record<string, string>;
 }
 
 export interface CheckoutSession {
-  checkoutId: string;
   checkoutUrl: string;
-  expiresAt: string;
 }
 
 export interface CreateCheckoutSessionResponse {

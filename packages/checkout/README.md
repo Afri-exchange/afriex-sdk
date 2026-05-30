@@ -21,32 +21,28 @@ const checkoutService = new CheckoutService(httpClient);
 
 // Create a checkout session
 const session = await checkoutService.createSession({
+  amount: 500000,
+  currency: "NGN",
+  merchantReference: "order-2026-05-12-001",
+  redirectUrl: "https://yourapp.com/checkout/return",
   customer: {
-    fullName: "John Doe",
+    name: "John Doe",
     email: "john@example.com",
-    phone: "+1234567890",
-    countryCode: "US",
+    phone: "+2348192837465",
+    countryCode: "NG",
   },
-  transaction: {
-    sourceAmount: "100.00",
-    sourceCurrency: "USD",
-    destinationAmount: "100.00",
-    destinationCurrency: "NGN",
-    type: "WITHDRAW",
-    destinationId: "pm_123",
-    meta: {
-      idempotencyKey: "unique-key",
-      reference: "order-123",
-    },
+  channels: ["VIRTUAL_BANK_ACCOUNT"],
+  metadata: {
+    orderId: "ord_123",
+    cartId: "cart_456",
   },
-  successUrl: "https://yourapp.com/success",
-  cancelUrl: "https://yourapp.com/cancel",
-  webhookUrl: "https://yourapp.com/webhooks",
 });
 
 // Redirect user to checkout URL
 window.location.href = session.checkoutUrl;
 ```
+
+`amount` is sent in minor units. For example, NGN 5,000.00 should be passed as `500000`.
 
 ## API
 
@@ -56,15 +52,17 @@ Creates a hosted checkout session where customers can complete payments.
 
 **Parameters:**
 
-- `request.customer` - Customer information (fullName, email, phone, countryCode)
-- `request.transaction` - Transaction details (amounts, currencies, type, payment method IDs)
-- `request.successUrl` - URL to redirect to after successful payment
-- `request.cancelUrl` - URL to redirect to if payment is cancelled
-- `request.webhookUrl` - Optional webhook URL for payment notifications
+- `request.amount` - Integer amount in minor currency units, minimum `100`
+- `request.currency` - Uppercase 3-letter ISO 4217 currency code
+- `request.merchantReference` - Unique reference used to identify the session end-to-end
+- `request.redirectUrl` - HTTPS URL to return the customer to after checkout
+- `request.customer` - Customer information (`name`, `email`, `phone`, `countryCode`)
+- `request.channels` - Optional allowed payment channels. Defaults to `VIRTUAL_BANK_ACCOUNT` when omitted
+- `request.metadata` - Optional flat key/value metadata where all values are strings
 
 **Returns:**
 
-- `CheckoutSession` - Contains checkoutId, checkoutUrl, and expiresAt
+- `CheckoutSession` - Contains the hosted `checkoutUrl`
 
 ## License
 
