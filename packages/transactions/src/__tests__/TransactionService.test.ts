@@ -86,6 +86,45 @@ describe("TransactionService", () => {
       ).rejects.toThrow(ValidationError);
     });
 
+    it("should create a SWAP transaction without customerId or destinationAmount", async () => {
+      const mockTransaction = {
+        transactionId: "txn-swap-123",
+        status: "COMPLETED",
+        sourceAmount: "100",
+        sourceCurrency: "USD",
+        destinationAmount: "155000",
+        destinationCurrency: "NGN",
+        type: "SWAP",
+      };
+
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: mockTransaction,
+      });
+
+      const result = await transactionService.create({
+        type: "SWAP",
+        sourceAmount: "100",
+        sourceCurrency: "USD",
+        destinationCurrency: "NGN",
+        meta: {
+          idempotencyKey: "swap-key-123",
+          reference: "swap-ref-123",
+        },
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith("/transaction", {
+        type: "SWAP",
+        sourceAmount: "100",
+        sourceCurrency: "USD",
+        destinationCurrency: "NGN",
+        meta: {
+          idempotencyKey: "swap-key-123",
+          reference: "swap-ref-123",
+        },
+      });
+      expect(result).toEqual(mockTransaction);
+    });
+
     it("should throw ValidationError when sourceAmount is missing", async () => {
       await expect(
         transactionService.create({
@@ -247,6 +286,40 @@ describe("TransactionService", () => {
         params: { page: 1, limit: 20 },
       });
       expect(result).toEqual(mockResponse);
+    });
+
+    it("should serialize array filters as comma-separated query params", async () => {
+      const mockResponse = {
+        data: [],
+        page: 0,
+        total: 0,
+      };
+
+      (mockHttpClient.get as Mock).mockResolvedValue(mockResponse);
+
+      await transactionService.list({
+        transactionId: "txn-123",
+        reference: "order-123",
+        status: ["PENDING", "PROCESSING"],
+        type: ["DEPOSIT", "WITHDRAW"],
+        channel: ["BANK_ACCOUNT", "MOBILE_MONEY"],
+        currency: ["USD", "NGN"],
+        fromDate: "2025-01-01T00:00:00.000Z",
+        toDate: "2025-01-31T23:59:59.999Z",
+      });
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith("/transaction", {
+        params: {
+          transactionId: "txn-123",
+          reference: "order-123",
+          status: "PENDING,PROCESSING",
+          type: "DEPOSIT,WITHDRAW",
+          channel: "BANK_ACCOUNT,MOBILE_MONEY",
+          currency: "USD,NGN",
+          fromDate: "2025-01-01T00:00:00.000Z",
+          toDate: "2025-01-31T23:59:59.999Z",
+        },
+      });
     });
   });
 });

@@ -66,9 +66,22 @@ const wallet = await paymentMethods.getCryptoWallet({
   asset: "USDT", // or 'USDC'
 });
 
-// Get virtual account (production only)
-const virtualAccount = await paymentMethods.getVirtualAccount({
-  currency: "NGN", // USD, NGN, GBP, or EUR
+// List virtual accounts (production only)
+const virtualAccounts = await paymentMethods.listVirtualAccounts({
+  currency: "NGN",
+  customerId: "customer-id",
+});
+
+// Create a virtual account (production only)
+const virtualAccount = await paymentMethods.createVirtualAccount({
+  currency: "NGN",
+  label: "SALES",
+  customerId: "customer-id",
+});
+
+// Get the pool account for a country (production only)
+const poolAccount = await paymentMethods.listPoolAccounts({
+  country: "NG",
 });
 ```
 
@@ -135,13 +148,31 @@ Get crypto wallet address. **Production only.**
 
 **Optional:** `customerId`
 
-### `getVirtualAccount(params: GetVirtualAccountParams): Promise<PaymentMethod>`
+### `listVirtualAccounts(params: ListVirtualAccountsParams): Promise<VirtualAccountListResponse>`
 
-Get virtual account. **Production only.**
+List existing virtual accounts. **Production only.**
 
-**Required:** `currency` (`USD`, `NGN`, `GBP`, or `EUR`)
+**Required:** `currency`
 
-**Optional:** `amount`, `customerId`
+**Optional:** `customerId`, `reference`
+
+### `createVirtualAccount(params: CreateVirtualAccountParams): Promise<PaymentMethod>`
+
+Create a virtual account. **Production only.**
+
+**Required:** `currency`
+
+**Optional:** `customerId`, `country`, `label`, `amount`, `reference`
+
+**Constraint:** `label` and `amount` are mutually exclusive
+
+### `listPoolAccounts(params: ListPoolAccountsParams): Promise<PaymentMethod>`
+
+Get the pool account for a country. **Production only.**
+
+**Required:** `country`
+
+**Optional:** `customerId`
 
 ## License
 

@@ -107,7 +107,7 @@ Get existing virtual accounts for a customer:
 ```typescript
 const response = await afriex.paymentMethods.listVirtualAccounts({
   customerId: "customer-id",
-  currency: "USD", // Optional filter
+  currency: "USD",
 });
 
 // Returns: { data: VirtualAccount[], total, page }
@@ -121,7 +121,7 @@ Generate a new virtual account:
 // With fixed amount label
 const account = await afriex.paymentMethods.createVirtualAccount({
   currency: "USD",
-  label: "Payment for Order #123",
+  label: "SALES",
   customerId: "optional-customer-id",
 });
 
@@ -148,20 +148,18 @@ const account = await afriex.paymentMethods.createVirtualAccount({
 
 ## List Pool Accounts
 
-Get shared business pool accounts:
+Get the pool account for a supported country:
 
 ```typescript
-const response = await afriex.paymentMethods.listPoolAccounts({
+const poolAccount = await afriex.paymentMethods.listPoolAccounts({
   customerId: "customer-id",
   country: "NG",
-  currency: "NGN",
-  amount: 25000,
 });
 
-// Returns: { data: PoolAccount[], total, page }
+// Returns: PaymentMethod
 ```
 
-**Pool accounts** are shared across multiple customers in a country. Use for high-volume operations where individual virtual accounts aren't needed.
+**Pool accounts** are shared across multiple customers in a country. Use the `reference` on the returned payment method to reconcile incoming deposits.
 
 <Callout type="note">
   Virtual accounts and pool accounts are production-only.

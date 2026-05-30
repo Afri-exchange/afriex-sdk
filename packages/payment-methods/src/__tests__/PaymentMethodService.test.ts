@@ -240,7 +240,11 @@ describe("PaymentMethodService", () => {
           params: { currency: "USD" },
         }
       );
-      expect(result).toEqual(mockPaymentMethods);
+      expect(result).toEqual({
+        data: mockPaymentMethods,
+        page: 1,
+        total: 2,
+      });
     });
   });
 
@@ -283,30 +287,34 @@ describe("PaymentMethodService", () => {
 
   describe("listPoolAccounts", () => {
     it("should list pool accounts", async () => {
-      const mockPaymentMethods = [
-        {
-          paymentMethodId: "pm-pool-123",
-          accountNumber: "111222333",
-        },
-      ];
+      const mockPaymentMethod = {
+        paymentMethodId: "pm-pool-123",
+        accountNumber: "111222333",
+      };
 
       (mockHttpClient.get as Mock).mockResolvedValue({
-        data: mockPaymentMethods,
-        page: 1,
-        total: 1,
+        data: mockPaymentMethod,
       });
 
       const result = await paymentMethodService.listPoolAccounts({
-        currency: "USD",
+        country: "NG",
       });
 
       expect(mockHttpClient.get).toHaveBeenCalledWith(
         "/payment-method/pool-account",
         {
-          params: { currency: "USD" },
+          params: { country: "NG" },
         }
       );
-      expect(result).toEqual(mockPaymentMethods);
+      expect(result).toEqual(mockPaymentMethod);
+    });
+
+    it("should throw when country is missing", async () => {
+      await expect(
+        paymentMethodService.listPoolAccounts({
+          country: "",
+        })
+      ).rejects.toThrow("Country is required");
     });
   });
 });

@@ -47,10 +47,15 @@ const paymentMethod = await afriex.paymentMethods.create({
 // Transactions
 const transaction = await afriex.transactions.create({
   customerId: customer.customerId,
-  destinationAmount: 50000,
+  sourceAmount: "100",
+  destinationAmount: "50000",
   sourceCurrency: "USD",
   destinationCurrency: "NGN",
   destinationId: paymentMethod.paymentMethodId,
+  meta: {
+    idempotencyKey: "quick-start-transaction-1",
+    reference: "order-123",
+  },
 });
 
 // Rates

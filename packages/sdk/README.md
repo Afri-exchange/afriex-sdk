@@ -13,55 +13,62 @@ pnpm add @afriex/sdk
 ## Quick Start
 
 ```typescript
-import { AfriexSDK } from '@afriex/sdk';
+import { AfriexSDK } from "@afriex/sdk";
 // or use the alias
-import { Afriex } from '@afriex/sdk';
+import { Afriex } from "@afriex/sdk";
 
 const afriex = new AfriexSDK({
-    apiKey: 'your-api-key',
-    environment: 'production', // or 'staging' (default: 'production')
-    webhookPublicKey: '-----BEGIN PUBLIC KEY-----...' // optional
+  apiKey: "your-api-key",
+  environment: "production", // or 'staging' (default: 'production')
+  webhookPublicKey: "-----BEGIN PUBLIC KEY-----...", // optional
 });
 
 // Customers
 const customer = await afriex.customers.create({
-    fullName: 'John Doe',
-    email: 'john@example.com',
-    phone: '+1234567890',
-    countryCode: 'US'
+  fullName: "John Doe",
+  email: "john@example.com",
+  phone: "+1234567890",
+  countryCode: "US",
 });
 
 // Payment Methods
 const paymentMethod = await afriex.paymentMethods.create({
-    customerId: customer.customerId,
-    channel: 'BANK_ACCOUNT',
-    accountName: 'John Doe',
-    accountNumber: '1234567890',
-    countryCode: 'NG',
-    institution: {
-        institutionCode: '058',
-        institutionName: 'GTBank'
-    }
+  customerId: customer.customerId,
+  channel: "BANK_ACCOUNT",
+  accountName: "John Doe",
+  accountNumber: "1234567890",
+  countryCode: "NG",
+  institution: {
+    institutionCode: "058",
+    institutionName: "GTBank",
+  },
 });
 
 // Transactions
 const transaction = await afriex.transactions.create({
-    customerId: customer.customerId,
-    destinationAmount: 50000,
-    sourceCurrency: 'USD',
-    destinationCurrency: 'NGN',
-    destinationId: paymentMethod.paymentMethodId
+  customerId: customer.customerId,
+  sourceAmount: "100",
+  destinationAmount: "50000",
+  sourceCurrency: "USD",
+  destinationCurrency: "NGN",
+  destinationId: paymentMethod.paymentMethodId,
+  meta: {
+    idempotencyKey: "quick-start-transaction-1",
+    reference: "order-123",
+  },
 });
 
 // Rates
-const rate = await afriex.rates.getRate('USD', 'NGN');
+const rate = await afriex.rates.getRate("USD", "NGN");
 
 // Balance
-const balances = await afriex.balance.getBalance({ currencies: ['USD', 'NGN'] });
+const balances = await afriex.balance.getBalance({
+  currencies: ["USD", "NGN"],
+});
 
 // Webhook Verification (only if webhookPublicKey provided)
 if (afriex.webhooks) {
-    const isValid = afriex.webhooks.verify(payload, signature);
+  const isValid = afriex.webhooks.verify(payload, signature);
 }
 ```
 
@@ -80,9 +87,9 @@ if (afriex.webhooks) {
 
 ```typescript
 interface AfriexSDKConfig {
-    apiKey: string;           // Required - Your Afriex API key
-    environment?: 'staging' | 'production';  // Default: 'production'
-    webhookPublicKey?: string; // Optional - Afriex's public key for webhooks
+  apiKey: string; // Required - Your Afriex API key
+  environment?: "staging" | "production"; // Default: 'production'
+  webhookPublicKey?: string; // Optional - Afriex's public key for webhooks
 }
 ```
 

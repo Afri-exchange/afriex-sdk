@@ -14,6 +14,7 @@ import {
   CreateVirtualAccountParams,
   VirtualAccountListResponse,
   ListPoolAccountsParams,
+  PoolAccountResponse,
   InstitutionCodesParams,
   InstitutionCodesResponse,
 } from "./types.js";
@@ -170,16 +171,15 @@ export class PaymentMethodService {
    */
   async listVirtualAccounts(
     params: ListVirtualAccountsParams
-  ): Promise<PaymentMethod[]> {
+  ): Promise<VirtualAccountListResponse> {
     if (!params.currency) {
       throw new ValidationError("Currency is required");
     }
 
-    const response = await this.httpClient.get<VirtualAccountListResponse>(
+    return this.httpClient.get<VirtualAccountListResponse>(
       "/payment-method/virtual-account",
       { params }
     );
-    return response.data;
   }
 
   /**
@@ -211,12 +211,12 @@ export class PaymentMethodService {
    */
   async listPoolAccounts(
     params: ListPoolAccountsParams
-  ): Promise<PaymentMethod[]> {
-    if (!params.currency) {
-      throw new ValidationError("Currency is required");
+  ): Promise<PaymentMethod> {
+    if (!params.country) {
+      throw new ValidationError("Country is required");
     }
 
-    const response = await this.httpClient.get<VirtualAccountListResponse>(
+    const response = await this.httpClient.get<PoolAccountResponse>(
       "/payment-method/pool-account",
       { params }
     );

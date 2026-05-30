@@ -14,7 +14,7 @@ export interface RatesResponse {
 
 export interface GetRatesParams {
   /** Comma-separated list or array of base currency symbols */
-  toSymbols: string | string[];
+  toSymbols?: string | string[];
   /** Comma-separated list or array of target currency symbols */
-  fromSymbols: string | string[];
+  fromSymbols?: string | string[];
 }

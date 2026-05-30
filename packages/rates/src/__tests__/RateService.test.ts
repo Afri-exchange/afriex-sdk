@@ -58,22 +58,62 @@ describe("RateService", () => {
       expect(result).toEqual(mockRatesData);
     });
 
-    it("should throw ValidationError when fromSymbols is missing", async () => {
-      await expect(
-        rateService.getRates({
-          fromSymbols: "",
-          toSymbols: "NGN",
-        })
-      ).rejects.toThrow(ValidationError);
+    it("should allow fromSymbols to be omitted", async () => {
+      const mockRatesData = {
+        rates: { USD: { NGN: "1550.00" } },
+        updatedAt: 1707249600,
+      };
+
+      (mockHttpClient.get as Mock).mockResolvedValue({
+        data: mockRatesData,
+      });
+
+      const result = await rateService.getRates({
+        toSymbols: "NGN",
+      });
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith("/org/rates", {
+        params: { fromSymbols: undefined, toSymbols: "NGN" },
+      });
+      expect(result).toEqual(mockRatesData);
     });
 
-    it("should throw ValidationError when toSymbols is missing", async () => {
-      await expect(
-        rateService.getRates({
-          fromSymbols: "USD",
-          toSymbols: "",
-        })
-      ).rejects.toThrow(ValidationError);
+    it("should allow toSymbols to be omitted", async () => {
+      const mockRatesData = {
+        rates: { USD: { NGN: "1550.00", GBP: "0.79" } },
+        updatedAt: 1707249600,
+      };
+
+      (mockHttpClient.get as Mock).mockResolvedValue({
+        data: mockRatesData,
+      });
+
+      const result = await rateService.getRates({
+        fromSymbols: "USD",
+      });
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith("/org/rates", {
+        params: { fromSymbols: "USD", toSymbols: undefined },
+      });
+      expect(result).toEqual(mockRatesData);
+    });
+
+    it("should allow both filters to be omitted", async () => {
+      const mockRatesData = {
+        rates: { USD: { NGN: "1550.00" } },
+        updatedAt: 1707249600,
+      };
+
+      (mockHttpClient.get as Mock).mockResolvedValue({
+        data: mockRatesData,
+      });
+
+      const result = await rateService.getRates();
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith("/org/rates", {
+        params: { fromSymbols: undefined, toSymbols: undefined },
+      });
+      expect(result).toEqual(mockRatesData);
     });
   });
 

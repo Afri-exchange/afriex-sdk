@@ -69,6 +69,8 @@ export type {
   CreateTransactionRequest,
   ListTransactionsParams,
   TransactionListResponse,
+  TransactionListType,
+  TransactionChannel,
   TransactionType,
   TransactionStatus,
   TransactionMeta,
@@ -90,6 +92,7 @@ export type {
   CreateVirtualAccountParams,
   ListPoolAccountsParams,
   VirtualAccountListResponse,
+  PoolAccountResponse,
 } from "@afriex/payment-methods";
 
 export type { BalanceResponse, GetBalanceParams } from "@afriex/balance";
@@ -115,6 +118,9 @@ export type {
   TransactionEventType,
   TransactionWebhookData,
   TransactionWebhookStatus,
+  CheckoutSessionWebhookPayload,
+  CheckoutSessionEventType,
+  CheckoutSessionWebhookData,
   TriggerWebhookRequest,
   WebhookEventType,
 } from "@afriex/webhooks";

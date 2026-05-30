@@ -1,5 +1,17 @@
 # @afriex/customers
 
+## 1.4.0
+
+### Minor Changes
+
+- Align the SDK with the current Afriex API contract.
+
+  - update checkout session types and validation to the hosted checkout payload
+  - fix virtual account and pool account request and response shapes
+  - support SWAP transaction semantics, transaction filters, and missing status values
+  - allow optional rate filters, expose customer list filters, and add checkout session webhook events
+  - refresh public docs and examples to match the corrected API surface
+
 ## 1.2.0
 
 ### Minor Changes

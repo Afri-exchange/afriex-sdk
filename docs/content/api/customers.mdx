@@ -44,13 +44,17 @@ const customer = await afriex.customers.get("customer-id");
 
 ```typescript
 const response = await afriex.customers.list({
-  page: 1,
+  page: 0,
   limit: 20,
+  email: "john@example.com",
+  phone: "+2348192837465",
 });
 
 console.log(response.data); // Customer[]
 console.log(response.total); // Total count
 ```
+
+`email` and `phone` are optional exact-match filters for narrowing the list.
 
 ## Update KYC
 

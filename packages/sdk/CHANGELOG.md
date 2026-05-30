@@ -1,5 +1,27 @@
 # @afriex/sdk
 
+## 2.0.0
+
+### Major Changes
+
+- Align the SDK with the current Afriex API contract.
+
+  - update checkout session types and validation to the hosted checkout payload
+  - fix virtual account and pool account request and response shapes
+  - support SWAP transaction semantics, transaction filters, and missing status values
+  - allow optional rate filters, expose customer list filters, and add checkout session webhook events
+  - refresh public docs and examples to match the corrected API surface
+
+### Patch Changes
+
+- Updated dependencies
+  - @afriex/checkout@2.0.0
+  - @afriex/payment-methods@2.0.0
+  - @afriex/transactions@1.4.0
+  - @afriex/rates@1.4.0
+  - @afriex/webhooks@1.4.0
+  - @afriex/customers@1.4.0
+
 ## 1.2.0
 
 ### Minor Changes

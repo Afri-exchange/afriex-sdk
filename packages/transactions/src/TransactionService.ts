@@ -50,8 +50,18 @@ export class TransactionService {
   async list(
     params?: ListTransactionsParams
   ): Promise<TransactionListResponse> {
+    const normalizedParams = params
+      ? {
+          ...params,
+          status: this.joinQueryValues(params.status),
+          type: this.joinQueryValues(params.type),
+          channel: this.joinQueryValues(params.channel),
+          currency: this.joinQueryValues(params.currency),
+        }
+      : undefined;
+
     return this.httpClient.get<TransactionListResponse>("/transaction", {
-      params,
+      params: normalizedParams,
     });
   }
 
@@ -59,9 +69,17 @@ export class TransactionService {
     const type = request.type ?? DEFAULT_TRANSACTION_TYPE;
 
     new ValidationBuilder()
-      .required("customerId", request.customerId)
+      .condition(
+        "customerId",
+        type !== "SWAP" && !request.customerId,
+        "Customer ID is required for DEPOSIT and WITHDRAW transactions"
+      )
       .required("sourceAmount", request.sourceAmount)
-      .required("destinationAmount", request.destinationAmount)
+      .condition(
+        "destinationAmount",
+        type !== "SWAP" && !request.destinationAmount,
+        "Destination amount is required for DEPOSIT and WITHDRAW transactions"
+      )
       .required("sourceCurrency", request.sourceCurrency)
       .required("destinationCurrency", request.destinationCurrency)
       .required("meta", request.meta)
@@ -79,5 +97,15 @@ export class TransactionService {
         "Source ID is required for DEPOSIT transactions"
       )
       .throwIfInvalid();
+  }
+
+  private joinQueryValues(
+    value?: string | string[]
+  ): string | undefined {
+    if (Array.isArray(value)) {
+      return value.join(",");
+    }
+
+    return value;
   }
 }

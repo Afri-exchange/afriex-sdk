@@ -16,17 +16,9 @@ export class RateService {
    * @param params.toSymbols - Comma-separated list or array of target currencies (e.g., 'NGN,USD,GBP,KES')
    * @returns Rates response with nested rate maps
    */
-  async getRates(params: GetRatesParams): Promise<RatesResponse> {
-    if (!params.fromSymbols || !params.toSymbols) {
-      throw new ValidationError("Base currencies and symbols are required");
-    }
-
-    const fromSymbols = Array.isArray(params.fromSymbols)
-      ? params.fromSymbols.join(",")
-      : params.fromSymbols;
-    const toSymbols = Array.isArray(params.toSymbols)
-      ? params.toSymbols.join(",")
-      : params.toSymbols;
+  async getRates(params: GetRatesParams = {}): Promise<RatesResponse> {
+    const fromSymbols = this.normalizeSymbols(params.fromSymbols);
+    const toSymbols = this.normalizeSymbols(params.toSymbols);
 
     const response = await this.httpClient.get<{ data: RatesResponse }>(
       "/org/rates",
@@ -78,5 +70,13 @@ export class RateService {
     const rate = parseFloat(rateStr);
 
     return amount * rate;
+  }
+
+  private normalizeSymbols(value?: string | string[]): string | undefined {
+    if (Array.isArray(value)) {
+      return value.join(",");
+    }
+
+    return value;
   }
 }

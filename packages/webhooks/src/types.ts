@@ -101,11 +101,24 @@ export interface TransactionWebhookPayload {
   data: TransactionWebhookData;
 }
 
+// Checkout session webhook events
+export type CheckoutSessionEventType = "CHECKOUT_SESSION.CREATED";
+
+export interface CheckoutSessionWebhookData {
+  [key: string]: unknown;
+}
+
+export interface CheckoutSessionWebhookPayload {
+  event: CheckoutSessionEventType;
+  data: CheckoutSessionWebhookData;
+}
+
 // Union type for all webhook payloads
 export type WebhookPayload =
   | CustomerWebhookPayload
   | PaymentMethodWebhookPayload
-  | TransactionWebhookPayload;
+  | TransactionWebhookPayload
+  | CheckoutSessionWebhookPayload;
 
 // Webhook signature header
 export const WEBHOOK_SIGNATURE_HEADER = "x-webhook-signature";
@@ -114,7 +127,8 @@ export const WEBHOOK_SIGNATURE_HEADER = "x-webhook-signature";
 export type WebhookEventType =
   | CustomerEventType
   | PaymentMethodEventType
-  | TransactionEventType;
+  | TransactionEventType
+  | CheckoutSessionEventType;
 
 export interface TriggerWebhookRequest {
   /**

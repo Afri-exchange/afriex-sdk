@@ -31,13 +31,21 @@ app.post("/webhook", (req, res) => {
 
     switch (event.event) {
       case "CUSTOMER.CREATED":
+      case "CUSTOMER.UPDATED":
+      case "CUSTOMER.DELETED":
         console.log("Customer created:", event.data);
         break;
       case "TRANSACTION.CREATED":
+      case "TRANSACTION.UPDATED":
         console.log("Transaction created:", event.data);
         break;
       case "PAYMENT_METHOD.CREATED":
+      case "PAYMENT_METHOD.UPDATED":
+      case "PAYMENT_METHOD.DELETED":
         console.log("Payment method created:", event.data);
+        break;
+      case "CHECKOUT_SESSION.CREATED":
+        console.log("Checkout session created:", event.data);
         break;
     }
 
@@ -76,16 +84,21 @@ const result = await afriex.webhooks.triggerTestWebhook({
 console.log(result); // { success: true, message: "..." }
 ```
 
+For `CHECKOUT_SESSION.CREATED`, use the checkout session UUID as `resourceId`.
+
 **Supported Events:**
 
-| Event                    | Resource Type     |
-| :----------------------- | :---------------- |
-| `CUSTOMER.CREATED`       | Customer ID       |
-| `CUSTOMER.UPDATED`       | Customer ID       |
-| `TRANSACTION.CREATED`    | Transaction ID    |
-| `TRANSACTION.UPDATED`    | Transaction ID    |
-| `PAYMENT_METHOD.CREATED` | Payment Method ID |
-| `PAYMENT_METHOD.UPDATED` | Payment Method ID |
+| Event                      | Resource Type         |
+| :------------------------- | :-------------------- |
+| `CUSTOMER.CREATED`         | Customer ID           |
+| `CUSTOMER.UPDATED`         | Customer ID           |
+| `CUSTOMER.DELETED`         | Customer ID           |
+| `TRANSACTION.CREATED`      | Transaction ID        |
+| `TRANSACTION.UPDATED`      | Transaction ID        |
+| `PAYMENT_METHOD.CREATED`   | Payment Method ID     |
+| `PAYMENT_METHOD.UPDATED`   | Payment Method ID     |
+| `PAYMENT_METHOD.DELETED`   | Payment Method ID     |
+| `CHECKOUT_SESSION.CREATED` | Checkout Session UUID |
 
 import { Callout } from "fumadocs-ui/components/callout";
 
@@ -170,5 +183,20 @@ import { Callout } from "fumadocs-ui/components/callout";
     institution: { institutionId?, institutionName?, institutionCode? },
     recipient: { recipientName?, recipientEmail?, recipientPhone? }
   }
+}
+```
+
+### Checkout Session Events
+
+| Event                      | Description              |
+| :------------------------- | :----------------------- |
+| `CHECKOUT_SESSION.CREATED` | Checkout session created |
+
+**Payload:**
+
+```typescript
+{
+  event: 'CHECKOUT_SESSION.CREATED',
+  data: Record<string, unknown>
 }
 ```

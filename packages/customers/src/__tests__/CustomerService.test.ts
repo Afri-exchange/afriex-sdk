@@ -111,6 +111,29 @@ describe("CustomerService", () => {
       });
       expect(result).toEqual(mockResponse);
     });
+
+    it("should list customers with email and phone filters", async () => {
+      const mockResponse = {
+        data: [{ customerId: "cust-1", email: "john@example.com" }],
+        page: 0,
+        total: 1,
+      };
+
+      (mockHttpClient.get as Mock).mockResolvedValue(mockResponse);
+
+      const result = await customerService.list({
+        email: "john@example.com",
+        phone: "+2348192837465",
+      });
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith("/customer", {
+        params: {
+          email: "john@example.com",
+          phone: "+2348192837465",
+        },
+      });
+      expect(result).toEqual(mockResponse);
+    });
   });
 
   describe("delete", () => {

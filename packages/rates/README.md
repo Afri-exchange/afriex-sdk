@@ -22,7 +22,7 @@ const client = new AfriexClient({
 
 const rates = new RateService(client.getHttpClient());
 
-// Get rates for specific currencies (required)
+// Get rates for specific currencies
 const response = await rates.getRates({
   fromSymbols: ["USD", "GBP"],
   toSymbols: ["NGN", "KES", "GHS"],
@@ -35,6 +35,9 @@ const response = await rates.getRates({
   toSymbols: "NGN,KES",
 });
 
+// Get all available rates
+const allRates = await rates.getRates();
+
 // Get a single rate
 const rate = await rates.getRate("USD", "NGN");
 // Returns: '1550.00' (string)
@@ -46,16 +49,18 @@ const result = await rates.convert(100, "USD", "NGN");
 
 ## API Reference
 
-### `getRates(params: GetRatesParams): Promise<RatesResponse>`
+### `getRates(params?: GetRatesParams): Promise<RatesResponse>`
 
 Get exchange rates.
 
-**Endpoint:** `GET /v2/public/rates`
+**Endpoint:** `GET /org/rates`
 
 **Parameters:**
 
-- `fromSymbols` (required): Base currency or array of currencies
-- `toSymbols` (required): Target currency or array of currencies
+- `fromSymbols` (optional): Base currency or array of currencies
+- `toSymbols` (optional): Target currency or array of currencies
+
+If either filter is omitted, the API returns all matching base or target currencies.
 
 **Returns:** `RatesResponse` with nested rate maps
 

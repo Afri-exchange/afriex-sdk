@@ -48,23 +48,40 @@ const transaction = await afriex.transactions.create({
 });
 ```
 
+### Swap
+
+Exchange funds between currencies in the business wallet:
+
+```typescript
+const transaction = await afriex.transactions.create({
+  type: "SWAP",
+  sourceAmount: "10",
+  sourceCurrency: "USD",
+  destinationCurrency: "NGN",
+  meta: {
+    idempotencyKey: "unique-key-789",
+    reference: "swap-101",
+  },
+});
+```
+
 ## Parameters
 
-| Field                 | Type        | Required           | Description                                |
-| :-------------------- | :---------- | :----------------- | :----------------------------------------- |
-| `customerId`          | `string`    | Yes                | Customer ID                                |
-| `sourceAmount`        | `${number}` | Yes                | Amount in source currency                  |
-| `destinationAmount`   | `${number}` | Yes                | Amount in destination currency             |
-| `sourceCurrency`      | `string`    | Yes                | Source currency (e.g., `USD`)              |
-| `destinationCurrency` | `string`    | Yes                | Destination currency (e.g., `NGN`)         |
-| `type`                | `string`    | -                  | `WITHDRAW` (default), `DEPOSIT`, or `SWAP` |
-| `destinationId`       | `string`    | Yes for `WITHDRAW` | Payment method to send to                  |
-| `sourceId`            | `string`    | Yes for `DEPOSIT`  | Payment method to pull from                |
-| `meta.idempotencyKey` | `string`    | Yes                | Unique key to prevent duplicates           |
-| `meta.reference`      | `string`    | Yes                | Your internal reference                    |
-| `meta.narration`      | `string`    | -                  | Transaction description                    |
-| `meta.invoice`        | `string`    | -                  | Base64-encoded invoice document            |
-| `meta.merchantId`     | `string`    | -                  | Your merchant identifier                   |
+| Field                 | Type        | Required                         | Description                                                                |
+| :-------------------- | :---------- | :------------------------------- | :------------------------------------------------------------------------- |
+| `customerId`          | `string`    | Yes for `DEPOSIT` and `WITHDRAW` | Customer ID. Optional for `SWAP` when using the business wallet            |
+| `sourceAmount`        | `${number}` | Yes                              | Amount in source currency                                                  |
+| `destinationAmount`   | `${number}` | Yes for `DEPOSIT` and `WITHDRAW` | Amount in destination currency. Optional for `SWAP`; the API calculates it |
+| `sourceCurrency`      | `string`    | Yes                              | Source currency (e.g., `USD`)                                              |
+| `destinationCurrency` | `string`    | Yes                              | Destination currency (e.g., `NGN`)                                         |
+| `type`                | `string`    | -                                | `WITHDRAW` (default), `DEPOSIT`, or `SWAP`                                 |
+| `destinationId`       | `string`    | Yes for `WITHDRAW`               | Payment method to send to                                                  |
+| `sourceId`            | `string`    | Yes for `DEPOSIT`                | Payment method to pull from                                                |
+| `meta.idempotencyKey` | `string`    | Yes                              | Unique key to prevent duplicates                                           |
+| `meta.reference`      | `string`    | Yes                              | Your internal reference                                                    |
+| `meta.narration`      | `string`    | -                                | Transaction description                                                    |
+| `meta.invoice`        | `string`    | -                                | Base64-encoded invoice document                                            |
+| `meta.merchantId`     | `string`    | -                                | Your merchant identifier                                                   |
 
 ## Get Transaction
 
@@ -76,25 +93,49 @@ const transaction = await afriex.transactions.get("transaction-id");
 
 ```typescript
 const response = await afriex.transactions.list({
-  page: 1,
+  page: 0,
   limit: 20,
+  status: ["PENDING", "PROCESSING"],
+  currency: ["USD", "NGN"],
+  fromDate: "2025-01-01T00:00:00.000Z",
+  toDate: "2025-01-31T23:59:59.999Z",
 });
 
 console.log(response.data); // Transaction[]
 ```
 
+**Supported filters:**
+
+| Field           | Type                 | Description                                        |
+| :-------------- | :------------------- | :------------------------------------------------- |
+| `transactionId` | `string`             | Filter by Afriex transaction ID                    |
+| `reference`     | `string`             | Filter by `meta.reference`                         |
+| `status`        | `string \| string[]` | One or more transaction statuses                   |
+| `type`          | `string \| string[]` | One or more transaction types                      |
+| `channel`       | `string \| string[]` | One or more source or destination payment channels |
+| `currency`      | `string \| string[]` | One or more 3-letter currency codes                |
+| `fromDate`      | `string`             | ISO 8601 lower bound for creation time             |
+| `toDate`        | `string`             | ISO 8601 upper bound for creation time             |
+
 ## Status Values
 
-| Status       | Description                  |
-| :----------- | :--------------------------- |
-| `PENDING`    | Created, awaiting processing |
-| `PROCESSING` | Currently processing         |
-| `COMPLETED`  | Completed successfully       |
-| `SUCCESS`    | Successful                   |
-| `FAILED`     | Failed                       |
-| `CANCELLED`  | Cancelled                    |
-| `REFUNDED`   | Refunded                     |
-| `RETRY`      | Retrying                     |
-| `REJECTED`   | Rejected                     |
-| `IN_REVIEW`  | Under review                 |
-| `UNKNOWN`    | Status unknown               |
+| Status                       | Description                    |
+| :--------------------------- | :----------------------------- |
+| `PENDING`                    | Created, awaiting processing   |
+| `PROCESSING`                 | Currently processing           |
+| `COMPLETED`                  | Completed successfully         |
+| `SUCCESS`                    | Successful                     |
+| `FAILED`                     | Failed                         |
+| `CANCELLED`                  | Cancelled                      |
+| `REFUNDED`                   | Refunded                       |
+| `RETRY`                      | Retrying                       |
+| `SCHEDULED`                  | Scheduled for later execution  |
+| `CUSTOMER_ACTION_REQUIRED`   | Waiting on customer action     |
+| `REJECTED`                   | Rejected                       |
+| `IN_REVIEW`                  | Under review                   |
+| `DISPUTED`                   | Dispute opened                 |
+| `DISPUTE_RESOLVED`           | Dispute resolved               |
+| `DISPUTE_WON`                | Dispute resolved in your favor |
+| `DISPUTE_LOST`               | Dispute resolved against you   |
+| `DISPUTE_EVIDENCE_SUBMITTED` | Evidence submitted for dispute |
+| `UNKNOWN`                    | Status unknown                 |

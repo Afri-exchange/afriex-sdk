@@ -9,6 +9,7 @@ export const DEFAULT_TRANSACTION_TYPE: TransactionType = "WITHDRAW";
 
 export const TransactionStatus = {
   CANCELLED: "CANCELLED",
+  COMPLETED: "COMPLETED",
   SUCCESS: "SUCCESS",
   FAILED: "FAILED",
   PENDING: "PENDING",
@@ -28,6 +29,29 @@ export const TransactionStatus = {
 } as const;
 export type TransactionStatus =
   (typeof TransactionStatus)[keyof typeof TransactionStatus];
+
+export type TransactionListType =
+  | TransactionType
+  | "REVERSAL"
+  | "SCHEDULED"
+  | "SEND";
+
+export type TransactionChannel =
+  | "BANK_ACCOUNT"
+  | "MOBILE_MONEY"
+  | "CARD"
+  | "CRYPTO"
+  | "VIRTUAL_BANK_ACCOUNT"
+  | "ACH_BANK_ACCOUNT"
+  | "INTERAC"
+  | "PAYBILL_TILL"
+  | "RFP"
+  | "UPI"
+  | "VIRTUAL_CARD"
+  | "SWIFT"
+  | "WE_CHAT"
+  | "ALIPAY"
+  | "WALLET";
 
 /**
  * The `meta` object passed when creating a transaction. `idempotencyKey` and `reference` are required.
@@ -74,12 +98,8 @@ export interface Transaction {
  * Common fields shared by all transaction creation variants
  */
 interface CreateTransactionBase {
-  /** The unique identifier of the customer */
-  customerId: string;
   /** The transaction amount in the source currency */
   sourceAmount: `${number}`;
-  /** The transaction amount in the destination currency */
-  destinationAmount: `${number}`;
   destinationCurrency: string;
   sourceCurrency: string;
   /** Required transaction metadata. Must include idempotencyKey and reference. */
@@ -88,11 +108,18 @@ interface CreateTransactionBase {
   sourceId?: string;
 }
 
+interface CreateCustomerTransactionBase extends CreateTransactionBase {
+  /** The unique identifier of the customer */
+  customerId: string;
+  /** The transaction amount in the destination currency */
+  destinationAmount: `${number}`;
+}
+
 /**
  * Withdraw transaction — sends funds to a destination payment method.
  * `type` defaults to `WITHDRAW` if omitted.
  */
-interface CreateWithdrawTransaction extends CreateTransactionBase {
+interface CreateWithdrawTransaction extends CreateCustomerTransactionBase {
   type?: "WITHDRAW";
   /** The ID of the destination payment method to send funds to */
   destinationId: string;
@@ -101,7 +128,7 @@ interface CreateWithdrawTransaction extends CreateTransactionBase {
 /**
  * Deposit transaction — pulls funds from a source payment method.
  */
-interface CreateDepositTransaction extends CreateTransactionBase {
+interface CreateDepositTransaction extends CreateCustomerTransactionBase {
   type: "DEPOSIT";
   /** The ID of the source payment method to pull funds from */
   sourceId: string;
@@ -109,9 +136,12 @@ interface CreateDepositTransaction extends CreateTransactionBase {
 
 /**
  * Swap transaction — exchanges between currencies.
+ * The API calculates the final destination amount.
  */
 interface CreateSwapTransaction extends CreateTransactionBase {
   type: "SWAP";
+  customerId?: string;
+  destinationAmount?: `${number}`;
 }
 
 /**
@@ -126,6 +156,14 @@ export type CreateTransactionRequest =
 export interface ListTransactionsParams {
   page?: number;
   limit?: number;
+  transactionId?: string;
+  reference?: string;
+  status?: TransactionStatus | TransactionStatus[];
+  type?: TransactionListType | TransactionListType[];
+  channel?: TransactionChannel | TransactionChannel[];
+  currency?: string | string[];
+  fromDate?: string;
+  toDate?: string;
 }
 
 export interface TransactionListResponse {

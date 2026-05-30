@@ -129,5 +129,21 @@ describe("WebhookService", () => {
         });
       }
     });
+
+    it("should support checkout session webhook events", async () => {
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        success: true,
+      });
+
+      await webhookService.triggerTestWebhook({
+        event: "CHECKOUT_SESSION.CREATED",
+        resourceId: "123e4567-e89b-12d3-a456-426614174000",
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith("/webhooks/trigger", {
+        event: "CHECKOUT_SESSION.CREATED",
+        resourceId: "123e4567-e89b-12d3-a456-426614174000",
+      });
+    });
   });
 });

@@ -23,12 +23,20 @@ console.log(response.rates);
 console.log(response.updatedAt); // Unix timestamp
 ```
 
+You can omit either filter to broaden the response, or omit both to fetch all available rate pairs:
+
+```typescript
+const allRates = await afriex.rates.getRates();
+```
+
 **Parameters:**
 
 | Field         | Type                 | Description                                |
 | :------------ | :------------------- | :----------------------------------------- |
 | `fromSymbols` | `string \| string[]` | Base currencies (comma-separated or array) |
 | `toSymbols`   | `string \| string[]` | Target currencies                          |
+
+Both fields are optional. If omitted, the API returns all matching base or target currencies.
 
 ## Get Single Rate
 

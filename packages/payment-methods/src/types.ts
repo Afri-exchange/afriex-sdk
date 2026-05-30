@@ -160,13 +160,17 @@ export interface VirtualAccountListResponse {
   total: number;
 }
 
+export interface PoolAccountResponse {
+  data: PaymentMethod;
+}
+
 /**
  * Parameters for listing pool accounts
  * GET /payment-method/pool-account
  */
 export interface ListPoolAccountsParams {
-  /** The 3-letter ISO 4217 currency code */
-  currency: string;
-  /** Optional customer ID. If not provided, lists business pool accounts. */
+  /** ISO 3166-1 alpha-2 country code */
+  country: string;
+  /** Optional customer ID. If not provided, returns the business pool account. */
   customerId?: string;
 }
