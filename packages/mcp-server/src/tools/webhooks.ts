@@ -1,0 +1,103 @@
+import { z } from "zod";
+import type { ToolRegistry } from "./index.js";
+
+export function registerWebhookTools(registry: ToolRegistry): void {
+  const { server } = registry;
+
+  server.tool(
+    "afriex_verify_webhook_signature",
+    "Verify the signature of an incoming webhook payload from Afriex. Use this to confirm that a webhook was genuinely sent by Afriex. Returns whether the signature is valid.",
+    {
+      payload: z.string().min(1).describe("The raw webhook payload body as a string (the entire JSON body, unparsed)"),
+      signature: z
+        .string()
+        .min(1)
+        .describe("The signature from the x-webhook-signature header of the webhook request"),
+    },
+    async ({ payload, signature }) => {
+      try {
+        const sdk = registry.getSdk();
+        const isValid = sdk.webhooks.verify(payload, signature);
+        return {
+          content: [
+            {
+              type: "text",
+              text: isValid
+                ? "Webhook signature is VALID. The webhook was genuinely sent by Afriex."
+                : "Webhook signature is INVALID. The webhook may have been tampered with or the webhookPublicKey may not be configured.",
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Error verifying webhook: ${error}` }],
+        };
+      }
+    },
+  );
+
+  server.tool(
+    "afriex_verify_and_parse_webhook",
+    "Verify an incoming webhook signature and parse the payload. Throws an error if the signature is invalid. Returns the parsed webhook payload with event type and data.",
+    {
+      payload: z.string().min(1).describe("The raw webhook payload body as a string"),
+      signature: z
+        .string()
+        .min(1)
+        .describe("The signature from the x-webhook-signature header of the webhook request"),
+    },
+    async ({ payload, signature }) => {
+      try {
+        const sdk = registry.getSdk();
+        const parsed = sdk.webhooks.verifyAndParse(payload, signature);
+        return {
+          content: [{ type: "text", text: JSON.stringify(parsed, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Webhook verification failed: ${error}` }],
+        };
+      }
+    },
+  );
+
+  server.tool(
+    "afriex_trigger_test_webhook",
+    "[SANDBOX ONLY] Manually trigger a test webhook event for development and testing. Fires a real signed webhook to the business's configured callback URL. Only works in staging/sandbox environment.",
+    {
+      event: z
+        .enum([
+          "CUSTOMER.CREATED",
+          "CUSTOMER.UPDATED",
+          "CUSTOMER.DELETED",
+          "PAYMENT_METHOD.CREATED",
+          "PAYMENT_METHOD.UPDATED",
+          "PAYMENT_METHOD.DELETED",
+          "TRANSACTION.CREATED",
+          "TRANSACTION.UPDATED",
+          "CHECKOUT_SESSION.CREATED",
+        ])
+        .describe("The webhook event type to trigger"),
+      resourceId: z
+        .string()
+        .min(1)
+        .describe("The resource ID (customerId, paymentMethodId, transactionId, or checkoutSessionId) to use in the test payload"),
+    },
+    async ({ event, resourceId }) => {
+      try {
+        const sdk = registry.getSdk();
+        const result = await sdk.webhooks.triggerTestWebhook({ event, resourceId });
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Error triggering test webhook: ${error}` }],
+        };
+      }
+    },
+  );
+}
