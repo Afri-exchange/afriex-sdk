@@ -4,18 +4,20 @@ import type { ToolRegistry } from "./index.js";
 export function registerCustomerTools(registry: ToolRegistry): void {
   const { server } = registry;
 
-  server.tool(
+  server.registerTool(
     "afriex_create_customer",
-    "Create a new customer (end-user) for the business. A customer represents the person sending or receiving money through Afriex.",
     {
-      fullName: z.string().min(1).describe("Customer's full name"),
-      email: z.string().email().describe("Customer's email address"),
-      phone: z.string().min(1).describe("Customer's phone number with country code"),
-      countryCode: z
-        .string()
-        .length(2)
-        .toUpperCase()
-        .describe("Two-letter ISO country code, e.g. NG, GH, KE, US, GB"),
+      description: "Create a new customer (end-user) for the business. A customer represents the person sending or receiving money through Afriex.",
+      inputSchema: {
+        fullName: z.string().min(1).describe("Customer's full name"),
+        email: z.string().email().describe("Customer's email address"),
+        phone: z.string().min(1).describe("Customer's phone number with country code"),
+        countryCode: z
+          .string()
+          .length(2)
+          .toUpperCase()
+          .describe("Two-letter ISO country code, e.g. NG, GH, KE, US, GB"),
+      },
     },
     async ({ fullName, email, phone, countryCode }) => {
       try {
@@ -33,11 +35,13 @@ export function registerCustomerTools(registry: ToolRegistry): void {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "afriex_get_customer",
-    "Get a single customer by their unique identifier.",
     {
-      customerId: z.string().min(1).describe("The customer's unique identifier"),
+      description: "Get a single customer by their unique identifier.",
+      inputSchema: {
+        customerId: z.string().min(1).describe("The customer's unique identifier"),
+      },
     },
     async ({ customerId }) => {
       try {
@@ -55,14 +59,16 @@ export function registerCustomerTools(registry: ToolRegistry): void {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "afriex_list_customers",
-    "List all customers for the business with optional pagination.",
     {
-      page: z.number().int().positive().optional().describe("Page number for pagination"),
-      limit: z.number().int().positive().optional().describe("Maximum number of customers per page"),
-      email: z.string().email().optional().describe("Filter by email address"),
-      phone: z.string().optional().describe("Filter by phone number"),
+      description: "List all customers for the business with optional pagination.",
+      inputSchema: {
+        page: z.number().int().positive().optional().describe("Page number for pagination"),
+        limit: z.number().int().positive().optional().describe("Maximum number of customers per page"),
+        email: z.string().email().optional().describe("Filter by email address"),
+        phone: z.string().optional().describe("Filter by phone number"),
+      },
     },
     async ({ page, limit, email, phone }) => {
       try {
@@ -80,14 +86,16 @@ export function registerCustomerTools(registry: ToolRegistry): void {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "afriex_update_customer_kyc",
-    "Update a customer's KYC (Know Your Customer) information. Attach identity verification data to a customer profile.",
     {
-      customerId: z.string().min(1).describe("The customer's unique identifier"),
-      kyc: z
-        .record(z.string(), z.string())
-        .describe("KYC data as key-value pairs. Common fields: idType, idNumber, dateOfBirth, address, country, idFrontImage, idBackImage, selfieImage"),
+      description: "Update a customer's KYC (Know Your Customer) information. Attach identity verification data to a customer profile.",
+      inputSchema: {
+        customerId: z.string().min(1).describe("The customer's unique identifier"),
+        kyc: z
+          .record(z.string(), z.string())
+          .describe("KYC data as key-value pairs. Common fields: idType, idNumber, dateOfBirth, address, country, idFrontImage, idBackImage, selfieImage"),
+      },
     },
     async ({ customerId, kyc }) => {
       try {
@@ -105,11 +113,13 @@ export function registerCustomerTools(registry: ToolRegistry): void {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "afriex_delete_customer",
-    "Permanently delete a customer by their unique identifier.",
     {
-      customerId: z.string().min(1).describe("The customer's unique identifier"),
+      description: "Permanently delete a customer by their unique identifier.",
+      inputSchema: {
+        customerId: z.string().min(1).describe("The customer's unique identifier"),
+      },
     },
     async ({ customerId }) => {
       try {

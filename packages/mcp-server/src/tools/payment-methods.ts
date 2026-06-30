@@ -4,42 +4,44 @@ import type { ToolRegistry } from "./index.js";
 export function registerPaymentMethodTools(registry: ToolRegistry): void {
   const { server } = registry;
 
-  server.tool(
+  server.registerTool(
     "afriex_create_payment_method",
-    "Create a new payment method (bank account, mobile money, etc.) for a customer. Payment methods are used as sources or destinations for transactions.",
     {
-      channel: z
-        .enum(["BANK_ACCOUNT", "MOBILE_MONEY", "SWIFT", "UPI", "INTERAC", "WE_CHAT", "ALIPAY", "PAYBILL_TILL"])
-        .describe("Payment channel type"),
-      customerId: z.string().min(1).describe("The customer's unique identifier"),
-      accountName: z.string().min(1).describe("Name on the bank account or mobile money account"),
-      accountNumber: z.string().min(1).describe("Account number or mobile money phone number"),
-      countryCode: z
-        .string()
-        .length(2)
-        .toUpperCase()
-        .describe("Two-letter ISO country code, e.g. NG, GH, KE, US"),
-      institution: z
-        .object({
-          institutionId: z.string().optional().describe("Institution ID from afriex_get_institutions"),
-          institutionName: z.string().optional().describe("Bank or provider name"),
-          institutionCode: z.string().optional().describe("Bank or provider code"),
-          institutionAddress: z.string().optional().describe("Bank branch address"),
-        })
-        .describe("Institution (bank/mobile money provider) details"),
-      type: z
-        .enum(["WITHDRAW", "DEPOSIT"])
-        .optional()
-        .describe("Capability: WITHDRAW (send funds to this method, default) or DEPOSIT (pull funds from this method)"),
-      recipient: z
-        .object({
-          recipientEmail: z.string().optional(),
-          recipientPhone: z.string().optional(),
-          recipientName: z.string().optional(),
-          recipientAddress: z.string().optional(),
-        })
-        .optional()
-        .describe("Recipient contact information"),
+      description: "Create a new payment method (bank account, mobile money, etc.) for a customer. Payment methods are used as sources or destinations for transactions.",
+      inputSchema: {
+        channel: z
+          .enum(["BANK_ACCOUNT", "MOBILE_MONEY", "SWIFT", "UPI", "INTERAC", "WE_CHAT", "ALIPAY", "PAYBILL_TILL"])
+          .describe("Payment channel type"),
+        customerId: z.string().min(1).describe("The customer's unique identifier"),
+        accountName: z.string().min(1).describe("Name on the bank account or mobile money account"),
+        accountNumber: z.string().min(1).describe("Account number or mobile money phone number"),
+        countryCode: z
+          .string()
+          .length(2)
+          .toUpperCase()
+          .describe("Two-letter ISO country code, e.g. NG, GH, KE, US"),
+        institution: z
+          .object({
+            institutionId: z.string().optional().describe("Institution ID from afriex_get_institutions"),
+            institutionName: z.string().optional().describe("Bank or provider name"),
+            institutionCode: z.string().optional().describe("Bank or provider code"),
+            institutionAddress: z.string().optional().describe("Bank branch address"),
+          })
+          .describe("Institution (bank/mobile money provider) details"),
+        type: z
+          .enum(["WITHDRAW", "DEPOSIT"])
+          .optional()
+          .describe("Capability: WITHDRAW (send funds to this method, default) or DEPOSIT (pull funds from this method)"),
+        recipient: z
+          .object({
+            recipientEmail: z.string().optional(),
+            recipientPhone: z.string().optional(),
+            recipientName: z.string().optional(),
+            recipientAddress: z.string().optional(),
+          })
+          .optional()
+          .describe("Recipient contact information"),
+      },
     },
     async ({ channel, customerId, accountName, accountNumber, countryCode, institution, type, recipient }) => {
       try {
@@ -66,11 +68,13 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "afriex_get_payment_method",
-    "Get a single payment method by its unique identifier.",
     {
-      paymentMethodId: z.string().min(1).describe("The payment method's unique identifier"),
+      description: "Get a single payment method by its unique identifier.",
+      inputSchema: {
+        paymentMethodId: z.string().min(1).describe("The payment method's unique identifier"),
+      },
     },
     async ({ paymentMethodId }) => {
       try {
@@ -88,12 +92,14 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "afriex_list_payment_methods",
-    "List all payment methods with pagination.",
     {
-      page: z.number().int().positive().optional().describe("Page number for pagination"),
-      limit: z.number().int().positive().optional().describe("Payment methods per page"),
+      description: "List all payment methods with pagination.",
+      inputSchema: {
+        page: z.number().int().positive().optional().describe("Page number for pagination"),
+        limit: z.number().int().positive().optional().describe("Payment methods per page"),
+      },
     },
     async ({ page, limit }) => {
       try {
@@ -111,11 +117,13 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "afriex_delete_payment_method",
-    "Delete a payment method by its unique identifier.",
     {
-      paymentMethodId: z.string().min(1).describe("The payment method's unique identifier"),
+      description: "Delete a payment method by its unique identifier.",
+      inputSchema: {
+        paymentMethodId: z.string().min(1).describe("The payment method's unique identifier"),
+      },
     },
     async ({ paymentMethodId }) => {
       try {
@@ -133,18 +141,20 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "afriex_get_institutions",
-    "List banks or mobile money providers available for a specific country and channel. Use the returned codes to create payment methods.",
     {
-      channel: z
-        .enum(["BANK_ACCOUNT", "MOBILE_MONEY"])
-        .describe("Payment channel to list institutions for"),
-      countryCode: z
-        .string()
-        .length(2)
-        .toUpperCase()
-        .describe("Two-letter ISO country code, e.g. NG, GH, KE, US"),
+      description: "List banks or mobile money providers available for a specific country and channel. Use the returned codes to create payment methods.",
+      inputSchema: {
+        channel: z
+          .enum(["BANK_ACCOUNT", "MOBILE_MONEY"])
+          .describe("Payment channel to list institutions for"),
+        countryCode: z
+          .string()
+          .length(2)
+          .toUpperCase()
+          .describe("Two-letter ISO country code, e.g. NG, GH, KE, US"),
+      },
     },
     async ({ channel, countryCode }) => {
       try {
@@ -162,23 +172,25 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "afriex_resolve_account",
-    "Resolve account details (account holder name) for a bank account or mobile money number. Use this to verify account details before creating a payment method.",
     {
-      channel: z
-        .enum(["BANK_ACCOUNT", "MOBILE_MONEY"])
-        .describe("Payment channel type"),
-      accountNumber: z.string().min(1).describe("Account number or mobile money phone number to resolve"),
-      countryCode: z
-        .string()
-        .length(2)
-        .toUpperCase()
-        .describe("Two-letter ISO country code, e.g. NG, GH, KE"),
-      institutionCode: z
-        .string()
-        .optional()
-        .describe("Institution code (required for BANK_ACCOUNT channel)"),
+      description: "Resolve account details (account holder name) for a bank account or mobile money number. Use this to verify account details before creating a payment method.",
+      inputSchema: {
+        channel: z
+          .enum(["BANK_ACCOUNT", "MOBILE_MONEY"])
+          .describe("Payment channel type"),
+        accountNumber: z.string().min(1).describe("Account number or mobile money phone number to resolve"),
+        countryCode: z
+          .string()
+          .length(2)
+          .toUpperCase()
+          .describe("Two-letter ISO country code, e.g. NG, GH, KE"),
+        institutionCode: z
+          .string()
+          .optional()
+          .describe("Institution code (required for BANK_ACCOUNT channel)"),
+      },
     },
     async ({ channel, accountNumber, countryCode, institutionCode }) => {
       try {
@@ -201,12 +213,14 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "afriex_get_crypto_wallet",
-    "Get or create a crypto wallet address for a customer. Only works in production. Currently supports USDT and USDC.",
     {
-      asset: z.enum(["USDT", "USDC"]).describe("Crypto asset: USDT (Tether) or USDC (USD Coin)"),
-      customerId: z.string().min(1).describe("The customer's unique identifier"),
+      description: "Get or create a crypto wallet address for a customer. Only works in production. Currently supports USDT and USDC.",
+      inputSchema: {
+        asset: z.enum(["USDT", "USDC"]).describe("Crypto asset: USDT (Tether) or USDC (USD Coin)"),
+        customerId: z.string().min(1).describe("The customer's unique identifier"),
+      },
     },
     async ({ asset, customerId }) => {
       try {
@@ -224,16 +238,18 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "afriex_list_virtual_accounts",
-    "List all active virtual accounts for a customer or business. `currency` is required.",
     {
-      currency: z
-        .string()
-        .length(3)
-        .toUpperCase()
-        .describe("Three-letter currency code, e.g. NGN, GHS, KES"),
-      customerId: z.string().optional().describe("Customer ID to filter by. Omit to list business-level virtual accounts."),
+      description: "List all active virtual accounts for a customer or business. `currency` is required.",
+      inputSchema: {
+        currency: z
+          .string()
+          .length(3)
+          .toUpperCase()
+          .describe("Three-letter currency code, e.g. NGN, GHS, KES"),
+        customerId: z.string().optional().describe("Customer ID to filter by. Omit to list business-level virtual accounts."),
+      },
     },
     async ({ currency, customerId }) => {
       try {
@@ -251,19 +267,21 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "afriex_create_virtual_account",
-    "Create a new dedicated virtual bank account for a customer or business. Pass `customerId` to assign to an end-user; omit to create a business-level account.",
     {
-      currency: z
-        .string()
-        .length(3)
-        .toUpperCase()
-        .describe("Three-letter currency code for the virtual account, e.g. NGN"),
-      customerId: z.string().optional().describe("Customer ID to assign this virtual account to"),
-      country: z.string().length(2).toUpperCase().optional().describe("Optional two-letter ISO country code"),
-      label: z.string().optional().describe("Label for static virtual accounts (e.g. 'SALES', 'OPERATIONS'). Cannot be used with amount."),
-      amount: z.number().positive().optional().describe("Amount for dynamic virtual accounts. Cannot be used with label."),
+      description: "Create a new dedicated virtual bank account for a customer or business. Pass `customerId` to assign to an end-user; omit to create a business-level account.",
+      inputSchema: {
+        currency: z
+          .string()
+          .length(3)
+          .toUpperCase()
+          .describe("Three-letter currency code for the virtual account, e.g. NGN"),
+        customerId: z.string().optional().describe("Customer ID to assign this virtual account to"),
+        country: z.string().length(2).toUpperCase().optional().describe("Optional two-letter ISO country code"),
+        label: z.string().optional().describe("Label for static virtual accounts (e.g. 'SALES', 'OPERATIONS'). Cannot be used with amount."),
+        amount: z.number().positive().optional().describe("Amount for dynamic virtual accounts. Cannot be used with label."),
+      },
     },
     async ({ currency, customerId, country, label, amount }) => {
       try {
@@ -287,15 +305,17 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "afriex_get_pool_account",
-    "Get the pool account for a specific country. Use the reference on the response to reconcile incoming deposits.",
     {
-      country: z
-        .string()
-        .length(2)
-        .toUpperCase()
-        .describe("Two-letter ISO country code, e.g. NG, GH, KE"),
+      description: "Get the pool account for a specific country. Use the reference on the response to reconcile incoming deposits.",
+      inputSchema: {
+        country: z
+          .string()
+          .length(2)
+          .toUpperCase()
+          .describe("Two-letter ISO country code, e.g. NG, GH, KE"),
+      },
     },
     async ({ country }) => {
       try {

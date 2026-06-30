@@ -53,15 +53,23 @@ export function validateConfig(config: McpServerConfig): void {
       "Get your API key from https://business.afriex.com"
     );
   }
+}
+
+export function validateHttpConfig(config: McpServerConfig): void {
   if (config.authMode === "api-key" && !config.apiKey) {
     throw new Error(
       "AFRIEX_MCP_API_KEY is required when auth mode is 'api-key'. " +
-      "Set it to a secret value that MCP clients will use to authenticate."
+      "Set it to a secret value that MCP clients will send as x-api-key."
     );
   }
   if (config.authMode === "bearer" && !config.bearerToken) {
     throw new Error(
       "AFRIEX_MCP_BEARER_TOKEN is required when auth mode is 'bearer'."
+    );
+  }
+  if (config.authMode === "oauth" && !config.oauth?.issuerUrl && !config.oauth?.jwksUrl) {
+    throw new Error(
+      "OAUTH_ISSUER_URL or OAUTH_JWKS_URL is required when auth mode is 'oauth'."
     );
   }
 }

@@ -28,8 +28,11 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsc --watch",
+    "watch": "tsc -p tsconfig.json --watch",
+    "dev": "tsc -p tsconfig.json && node --watch ./dist/index.js",
     "start": "node ./dist/index.js",
+    "start:http": "node ./dist/index.js --http",
+    "start:oauth": "node ./dist/index.js --http --oauth",
     "prepublishOnly": "npm run build",
     "type-check": "tsc --noEmit"
   },

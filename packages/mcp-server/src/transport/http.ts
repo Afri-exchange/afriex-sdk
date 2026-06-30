@@ -4,7 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
-import type { McpServerConfig } from "../config.js";
+import { type McpServerConfig, validateHttpConfig } from "../config.js";
 import { createAuthMiddleware } from "../auth/index.js";
 
 type McpRequest = IncomingMessage & { auth?: AuthInfo };
@@ -13,6 +13,8 @@ export async function startHttpServer(
   server: McpServer,
   config: McpServerConfig,
 ): Promise<void> {
+  validateHttpConfig(config);
+
   const app = express();
 
   app.use(cors());
