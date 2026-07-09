@@ -29,10 +29,10 @@ function firstHeaderValue(value: string | string[] | undefined): string | undefi
 }
 
 /**
- * Resolves the Afriex credentials for a single tool call. Per-request credentials
- * (from a validated OAuth grant, or — when explicitly enabled — client-supplied
- * headers) take priority over the server-wide static key, so one deployment can
- * serve many tenants each bringing their own Afriex API key.
+ * Resolves the Afriex credentials for a single tool call. Per-request
+ * credentials — a validated OAuth grant, or a client-supplied
+ * x-afriex-api-key header — take priority over the server-wide static key,
+ * so one deployment can serve many tenants each bringing their own key.
  */
 function resolveCredentials(
   config: McpServerConfig,
@@ -46,16 +46,14 @@ function resolveCredentials(
     };
   }
 
-  if (config.allowClientCredentials) {
-    const headers = extra?.requestInfo?.headers;
-    const headerKey = firstHeaderValue(headers?.["x-afriex-api-key"]);
-    if (headerKey) {
-      const headerEnv = firstHeaderValue(headers?.["x-afriex-environment"]) as
-        | "staging"
-        | "production"
-        | undefined;
-      return { apiKey: headerKey, environment: headerEnv || config.environment };
-    }
+  const headers = extra?.requestInfo?.headers;
+  const headerKey = firstHeaderValue(headers?.["x-afriex-api-key"]);
+  if (headerKey) {
+    const headerEnv = firstHeaderValue(headers?.["x-afriex-environment"]) as
+      | "staging"
+      | "production"
+      | undefined;
+    return { apiKey: headerKey, environment: headerEnv || config.environment };
   }
 
   return undefined;

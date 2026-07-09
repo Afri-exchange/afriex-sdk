@@ -31,13 +31,27 @@ export function createAuthMiddleware(config: McpServerConfig): AuthMiddleware {
   }
 }
 
+/**
+ * A caller supplying their own x-afriex-api-key is inherently self-authorizing
+ * — the worst a bad key does is fail against the caller's own Afriex account,
+ * so no separate gate is needed. x-api-key only matters as a fallback: it
+ * protects the server's own static AFRIEX_API_KEY from being used by callers
+ * who didn't bring their own key.
+ */
 function createApiKeyMiddleware(apiKey: string): AuthMiddleware {
   return (req, res, next) => {
+    if (req.headers["x-afriex-api-key"]) {
+      next();
+      return;
+    }
+
     const provided = req.headers["x-api-key"] as string | undefined;
-    if (!provided || provided !== apiKey) {
+    if (!apiKey || !provided || provided !== apiKey) {
       res.status(401).json({
         error: "Unauthorized",
-        message: "Valid x-api-key header is required",
+        message:
+          "Send your own key via x-afriex-api-key, or a valid x-api-key header " +
+          "matching this server's configured AFRIEX_API_KEY.",
       });
       return;
     }

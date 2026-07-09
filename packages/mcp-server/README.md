@@ -54,11 +54,10 @@ The server exposes 20+ tools covering every Afriex API endpoint:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `AFRIEX_API_KEY` | Unless multi-tenant | — | Your Afriex API key. Also doubles as the MCP client credential in `api-key` mode (sent as `x-api-key`) |
+| `AFRIEX_API_KEY` | stdio only | — | Your Afriex API key. Required in stdio mode. In `--http` mode it's optional — the fallback for callers that don't send their own `x-afriex-api-key` header |
 | `AFRIEX_ENVIRONMENT` | No | `production` | `staging` or `production` |
 | `AFRIEX_MCP_AUTH_MODE` | No | `api-key` | Auth mode: `api-key`, `bearer`, or `oauth` |
 | `AFRIEX_MCP_BEARER_TOKEN` | See below | — | Bearer token for MCP clients (required in `bearer` mode) |
-| `AFRIEX_MCP_ALLOW_CLIENT_CREDENTIALS` | No | `false` | `true` to accept per-request `x-afriex-api-key` / `x-afriex-environment` headers (multi-tenant deployments) |
 | `AFRIEX_WEBHOOK_PUBLIC_KEY` | No | — | Public key for webhook signature verification |
 | `AFRIEX_LOG_LEVEL` | No | `info` | `debug`, `info`, `warn`, or `error` |
 | `PORT` | No | `3001` | HTTP server port |
@@ -83,13 +82,33 @@ The server exposes 20+ tools covering every Afriex API endpoint:
 
 ## Authentication Modes
 
-### API Key (default for stdio)
+### API Key (default)
+
+Two ways to authenticate, and you can mix them:
+
+**Bring your own key** — any request can send `x-afriex-api-key` directly.
+It's used as-is; there's no separate validation step, since a bad key just
+fails naturally against the real Afriex API. This is the default pattern —
+no server config needed beyond starting the server:
+
+```bash
+npx @afriex/mcp-server --http
+# Clients send: x-afriex-api-key: sk_your_afriex_api_key
+```
+
+**Shared server key** — if you'd rather the server hold one key on behalf
+of all callers (a private, single-tenant deployment), set `AFRIEX_API_KEY`
+and gate it behind `x-api-key`:
 
 ```bash
 export AFRIEX_API_KEY="sk_your_afriex_api_key"
 npx @afriex/mcp-server --http
 # Clients send: x-api-key: sk_your_afriex_api_key
 ```
+
+`x-api-key` is only checked when a request doesn't bring its own
+`x-afriex-api-key` — it exists purely to stop strangers from spending
+*your* server's key, since a self-supplied key needs no such protection.
 
 ### Bearer Token
 
@@ -123,6 +142,16 @@ back that path with a persistent volume if you deploy in a container.
 The Afriex API key is never embedded in a token in the clear — access
 tokens carry it as AES-256-GCM ciphertext (`OAUTH_ENCRYPTION_KEY`), readable
 only by this server. See `src/oauth/providers/custom.ts` for the full flow.
+
+**What this looks like for an actual end user:** all of DCR, building the
+`/authorize` URL with PKCE, and exchanging the code for tokens is done by
+the MCP client (Claude.ai's remote connector, Claude Desktop, etc.), not by
+a human. The only part a person sees is the consent page — click "Connect,"
+a browser tab opens, paste your Afriex API key, click Authorize, done. The
+client handles the rest invisibly and reconnects silently using the refresh
+token from then on. Manually registering a client and constructing PKCE
+parameters by hand (see below) is only for testing this server without a
+real MCP client in the loop.
 
 ### OAuth 2.1 — Auth0 or WorkOS
 
@@ -158,10 +187,10 @@ regardless of which provider is active.
 
 ## Multi-Tenant Deployments (bring-your-own-key)
 
-For a shared, public endpoint (e.g. `https://mcp.afriex.com/mcp`) where each
-caller supplies their own Afriex API key rather than sharing one baked into
-the server, set `AFRIEX_MCP_ALLOW_CLIENT_CREDENTIALS=true`. `AFRIEX_API_KEY`
-becomes optional, and each request may include:
+This is the default behavior, not an opt-in flag: any `--http` deployment
+can serve many tenants, each supplying their own key. `AFRIEX_API_KEY`
+doesn't need to be set at all for a shared, public endpoint (e.g.
+`https://mcp.afriex.com/mcp`):
 
 ```json
 {
@@ -177,14 +206,12 @@ becomes optional, and each request may include:
 }
 ```
 
-`x-afriex-api-key` is used directly as that request's Afriex credential —
-there's no separate validation step, since an invalid key simply fails
-naturally at the Afriex API layer. This can be combined with any auth mode
-(`api-key`/`bearer` gate the MCP endpoint itself; the header supplies the
-per-tenant Afriex key on top), or with OAuth, where the bound key comes from
-the validated token instead and the header becomes unnecessary. SDK
-instances are cached per (key, environment) pair so repeated calls from the
-same tenant don't pay reconstruction cost.
+In `api-key` auth mode (the default), sending `x-afriex-api-key` also
+satisfies the gate — see "Authentication Modes" above. In `bearer`/`oauth`
+mode, that gate still applies first, and the header (or, in OAuth's case,
+the key bound to the access token) determines which Afriex account the
+call operates on. SDK instances are cached per (key, environment) pair so
+repeated calls from the same tenant don't pay reconstruction cost.
 
 ## Client Configuration
 
@@ -232,12 +259,16 @@ Add to `claude_desktop_config.json`:
     "afriex": {
       "url": "http://your-server:3001/mcp",
       "headers": {
-        "x-api-key": "sk_your_afriex_api_key"
+        "x-afriex-api-key": "sk_your_afriex_api_key"
       }
     }
   }
 }
 ```
+
+Use `x-api-key` instead only if this deployment holds one shared
+`AFRIEX_API_KEY` on the server side and you're relying on that (see
+"Authentication Modes").
 
 ## Deployment
 

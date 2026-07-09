@@ -11,12 +11,6 @@ export interface McpServerConfig {
   afriexApiKey: string;
   webhookPublicKey?: string;
   logLevel: "debug" | "info" | "warn" | "error";
-  /**
-   * When true, HTTP requests may carry x-afriex-api-key / x-afriex-environment
-   * headers that override the server-wide AFRIEX_API_KEY for that single call.
-   * Lets one deployment serve many tenants, each bringing their own key.
-   */
-  allowClientCredentials: boolean;
 }
 
 export interface OAuthConfig {
@@ -82,17 +76,23 @@ export function loadConfigFromEnv(): McpServerConfig {
     afriexApiKey: process.env.AFRIEX_API_KEY || "",
     webhookPublicKey: process.env.AFRIEX_WEBHOOK_PUBLIC_KEY,
     logLevel: (process.env.AFRIEX_LOG_LEVEL as "debug" | "info" | "warn" | "error") || "info",
-    allowClientCredentials: process.env.AFRIEX_MCP_ALLOW_CLIENT_CREDENTIALS === "true",
   };
 }
 
-export function validateConfig(config: McpServerConfig): void {
-  if (!config.afriexApiKey && !config.allowClientCredentials) {
+/**
+ * stdio mode has no per-request channel — the server-wide key is the only way
+ * it can ever get credentials, so it's required there. HTTP mode always has an
+ * alternative (an x-afriex-api-key header, or an OAuth-bound key), so
+ * AFRIEX_API_KEY is optional there; a request with no credentials at all fails
+ * cleanly at that request instead of at startup.
+ */
+export function validateConfig(config: McpServerConfig, useHttp: boolean): void {
+  if (!config.afriexApiKey && !useHttp) {
     throw new Error(
-      "AFRIEX_API_KEY environment variable is required. " +
+      "AFRIEX_API_KEY environment variable is required in stdio mode. " +
       "Get your API key from https://business.afriex.com. " +
-      "(If this is a multi-tenant deployment where clients supply their own key per request, " +
-      "set AFRIEX_MCP_ALLOW_CLIENT_CREDENTIALS=true instead.)"
+      "(In --http mode this is optional — clients can send their own key via " +
+      "the x-afriex-api-key header, or authenticate via OAuth instead.)"
     );
   }
 }
