@@ -16,7 +16,7 @@ export type AuthMiddleware = (
 export function createAuthMiddleware(config: McpServerConfig): AuthMiddleware {
   switch (config.authMode) {
     case "api-key":
-      return createApiKeyMiddleware(config.apiKey!);
+      return createApiKeyMiddleware(config.afriexApiKey);
     case "bearer":
       return createBearerMiddleware(config.bearerToken!);
     case "oauth":

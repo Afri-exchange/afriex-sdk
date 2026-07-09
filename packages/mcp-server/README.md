@@ -54,10 +54,9 @@ The server exposes 20+ tools covering every Afriex API endpoint:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `AFRIEX_API_KEY` | Yes | — | Your Afriex API key |
+| `AFRIEX_API_KEY` | Yes | — | Your Afriex API key. Also doubles as the MCP client credential in `api-key` mode (sent as `x-api-key`) |
 | `AFRIEX_ENVIRONMENT` | No | `production` | `staging` or `production` |
 | `AFRIEX_MCP_AUTH_MODE` | No | `api-key` | Auth mode: `api-key`, `bearer`, or `oauth` |
-| `AFRIEX_MCP_API_KEY` | See below | — | API key for MCP clients (required in `api-key` mode) |
 | `AFRIEX_MCP_BEARER_TOKEN` | See below | — | Bearer token for MCP clients (required in `bearer` mode) |
 | `AFRIEX_WEBHOOK_PUBLIC_KEY` | No | — | Public key for webhook signature verification |
 | `AFRIEX_LOG_LEVEL` | No | `info` | `debug`, `info`, `warn`, or `error` |
@@ -82,9 +81,8 @@ When using `--oauth` mode, set these variables for your OAuth provider:
 
 ```bash
 export AFRIEX_API_KEY="sk_your_afriex_api_key"
-export AFRIEX_MCP_API_KEY="mcp-secret-key"
 npx @afriex/mcp-server --http
-# Clients send: x-api-key: mcp-secret-key
+# Clients send: x-api-key: sk_your_afriex_api_key
 ```
 
 ### Bearer Token
@@ -155,7 +153,7 @@ Add to `claude_desktop_config.json`:
     "afriex": {
       "url": "http://your-server:3001/mcp",
       "headers": {
-        "x-api-key": "mcp-secret-key"
+        "x-api-key": "sk_your_afriex_api_key"
       }
     }
   }

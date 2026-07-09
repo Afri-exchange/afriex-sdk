@@ -20,10 +20,11 @@ OPTIONS
   --help               Show this help
 
 ENVIRONMENT VARIABLES
-  AFRIEX_API_KEY            (required) Your Afriex API key
+  AFRIEX_API_KEY            (required) Your Afriex API key. In HTTP api-key
+                            mode, MCP clients also authenticate with this
+                            same key via the x-api-key header.
   AFRIEX_ENVIRONMENT        "staging" or "production" (default: production)
   AFRIEX_MCP_AUTH_MODE      "api-key" | "bearer" | "oauth" (default: api-key)
-  AFRIEX_MCP_API_KEY        API key for MCP clients to use (api-key mode)
   AFRIEX_MCP_BEARER_TOKEN   Bearer token for MCP clients (bearer mode)
   AFRIEX_WEBHOOK_PUBLIC_KEY Public key for webhook signature verification
   AFRIEX_LOG_LEVEL          "debug" | "info" | "warn" | "error"

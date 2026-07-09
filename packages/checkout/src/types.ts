@@ -9,7 +9,7 @@ export interface CheckoutCustomer {
   countryCode: string;
 }
 
-export type CheckoutChannel = "VIRTUAL_BANK_ACCOUNT" | "MOBILE_MONEY";
+export type CheckoutChannel = "CARD" | "VIRTUAL_BANK_ACCOUNT" | "MOBILE_MONEY";
 
 export interface CreateCheckoutSessionRequest {
   amount: number;

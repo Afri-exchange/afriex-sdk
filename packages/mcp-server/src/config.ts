@@ -2,7 +2,6 @@ export type AuthMode = "api-key" | "bearer" | "oauth";
 
 export interface McpServerConfig {
   authMode: AuthMode;
-  apiKey?: string;
   bearerToken?: string;
   oauth?: OAuthConfig;
   port: number;
@@ -26,7 +25,6 @@ export interface OAuthConfig {
 export function loadConfigFromEnv(): McpServerConfig {
   return {
     authMode: (process.env.AFRIEX_MCP_AUTH_MODE as AuthMode) || "api-key",
-    apiKey: process.env.AFRIEX_MCP_API_KEY,
     bearerToken: process.env.AFRIEX_MCP_BEARER_TOKEN,
     oauth: {
       issuerUrl: process.env.OAUTH_ISSUER_URL,
@@ -56,12 +54,6 @@ export function validateConfig(config: McpServerConfig): void {
 }
 
 export function validateHttpConfig(config: McpServerConfig): void {
-  if (config.authMode === "api-key" && !config.apiKey) {
-    throw new Error(
-      "AFRIEX_MCP_API_KEY is required when auth mode is 'api-key'. " +
-      "Set it to a secret value that MCP clients will send as x-api-key."
-    );
-  }
   if (config.authMode === "bearer" && !config.bearerToken) {
     throw new Error(
       "AFRIEX_MCP_BEARER_TOKEN is required when auth mode is 'bearer'."
