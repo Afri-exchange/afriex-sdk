@@ -1,6 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyOptions } from "jose";
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import type { McpServerConfig, OAuthConfig } from "../config.js";
+import { decryptSecret, loadEncryptionKey } from "../oauth/crypto.js";
 
 export interface AuthResult {
   authenticated: boolean;
@@ -13,6 +15,8 @@ export type AuthMiddleware = (
   res: Response,
   next: NextFunction,
 ) => void | Promise<void>;
+
+type AuthenticatedRequest = Request & { auth?: AuthInfo };
 
 export function createAuthMiddleware(config: McpServerConfig): AuthMiddleware {
   switch (config.authMode) {
@@ -81,6 +85,7 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
     jwksUrl = `${oauth.issuerUrl.replace(/\/$/, "")}/.well-known/jwks.json`;
   }
   const jwks: RemoteJWKSet | undefined = jwksUrl ? createRemoteJWKSet(new URL(jwksUrl)) : undefined;
+  const encryptionKey = oauth.encryptionKey ? loadEncryptionKey(oauth.encryptionKey) : undefined;
 
   return async (req, res, next) => {
     const header = req.headers.authorization as string | undefined;
@@ -101,14 +106,19 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
     const token = header.slice(7);
 
     try {
-      const isValid = await validateOAuthToken(token, oauth, jwks);
-      if (!isValid) {
+      const authInfo = await validateOAuthToken(token, oauth, jwks, encryptionKey);
+      if (!authInfo) {
         res.status(401).json({
           error: "invalid_token",
           message: "The access token is invalid or expired",
         });
         return;
       }
+      // Populates extra.authInfo in tool callbacks (see shared/protocol.d.ts /
+      // server/streamableHttp.js — the transport reads req.auth verbatim).
+      // Without this, OAuth mode authenticated the transport but tool
+      // handlers had no way to know which client/grant made the call.
+      (req as AuthenticatedRequest).auth = authInfo;
       next();
     } catch {
       res.status(500).json({
@@ -123,17 +133,19 @@ async function validateOAuthToken(
   token: string,
   oauth: OAuthConfig,
   jwks: RemoteJWKSet | undefined,
-): Promise<boolean> {
+  encryptionKey: Buffer | undefined,
+): Promise<AuthInfo | undefined> {
   try {
     if (jwks) {
-      return await validateJwtWithJwks(token, jwks, oauth);
+      return await validateJwtWithJwks(token, jwks, oauth, encryptionKey);
     }
     if (oauth.issuerUrl) {
-      return await validateTokenWithUserinfo(token, oauth.issuerUrl);
+      const valid = await validateTokenWithUserinfo(token, oauth.issuerUrl);
+      return valid ? { token, clientId: "unknown", scopes: [] } : undefined;
     }
-    return false;
+    return undefined;
   } catch {
-    return false;
+    return undefined;
   }
 }
 
@@ -141,7 +153,8 @@ async function validateJwtWithJwks(
   token: string,
   jwks: RemoteJWKSet,
   oauth: OAuthConfig,
-): Promise<boolean> {
+  encryptionKey: Buffer | undefined,
+): Promise<AuthInfo | undefined> {
   try {
     const options: JWTVerifyOptions = {};
     if (oauth.audience) options.audience = oauth.audience;
@@ -150,10 +163,45 @@ async function validateJwtWithJwks(
     // jwtVerify cryptographically verifies the signature against the key
     // matching the token's `kid` and checks `exp`/`nbf`, `aud`, and `iss`.
     // A forged token — even one with a valid-looking header/payload — fails here.
-    await jwtVerify(token, jwks, options);
-    return true;
+    const { payload } = await jwtVerify(token, jwks, options);
+
+    const scope = typeof payload.scope === "string" ? payload.scope : "";
+    const clientId =
+      typeof payload.client_id === "string"
+        ? payload.client_id
+        : typeof payload.sub === "string"
+          ? payload.sub
+          : "unknown";
+
+    const authInfo: AuthInfo = {
+      token,
+      clientId,
+      scopes: scope.split(" ").filter(Boolean),
+      expiresAt: typeof payload.exp === "number" ? payload.exp : undefined,
+    };
+
+    // Per-tenant Afriex credentials, if this token carries them. The custom
+    // provider always sets afx_key (AES-256-GCM ciphertext, never the raw
+    // key — see oauth/providers/custom.ts). External providers (Auth0/WorkOS)
+    // only carry it if configured to inject the same encrypted claim; see
+    // oauth/providers/auth0.ts for that contract. If absent, the token is
+    // still valid — tool calls just fall back to this server's static key.
+    const encryptedApiKey = payload.afx_key;
+    if (typeof encryptedApiKey === "string" && encryptionKey) {
+      try {
+        const afriexApiKey = decryptSecret(encryptedApiKey, encryptionKey);
+        authInfo.extra = {
+          afriexApiKey,
+          afriexEnvironment: typeof payload.afx_env === "string" ? payload.afx_env : undefined,
+        };
+      } catch {
+        // Ciphertext didn't decrypt under our key (e.g. a foreign token) — ignore, token stays valid.
+      }
+    }
+
+    return authInfo;
   } catch {
-    return false;
+    return undefined;
   }
 }
 

@@ -6,6 +6,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { type McpServerConfig, validateHttpConfig } from "../config.js";
 import { createAuthMiddleware } from "../auth/index.js";
+import { createOAuthProvider } from "../oauth/providers/index.js";
 
 type McpRequest = IncomingMessage & { auth?: AuthInfo };
 
@@ -67,37 +68,25 @@ export async function startHttpServer(
   });
 }
 
-function setupOAuthEndpoints(app: express.Express, _config: McpServerConfig): void {
-  const serverBaseUrl = `http://${_config.host}:${_config.port}`;
+function setupOAuthEndpoints(app: express.Express, config: McpServerConfig): void {
+  const provider = createOAuthProvider(config);
+  const baseUrl = config.oauth?.issuerUrl || config.oauth?.audience || `http://${config.host}:${config.port}`;
 
   app.get("/.well-known/oauth-protected-resource", (_req, res) => {
+    const metadata = provider.getAuthorizationServerMetadata(baseUrl);
     res.json({
-      resource: serverBaseUrl,
-      authorization_servers: [_config.oauth?.issuerUrl || serverBaseUrl],
-      scopes: ["read", "write"],
+      resource: config.oauth?.audience || baseUrl,
+      authorization_servers: [metadata.issuer],
+      scopes: metadata.scopes_supported ?? [],
     });
   });
 
   app.get("/.well-known/oauth-authorization-server", (_req, res) => {
-    const issuer = _config.oauth?.issuerUrl || serverBaseUrl;
-    res.json({
-      issuer,
-      authorization_endpoint: _config.oauth?.authorizationEndpoint || `${issuer}/authorize`,
-      token_endpoint: _config.oauth?.tokenEndpoint || `${issuer}/token`,
-      token_endpoint_auth_methods_supported: ["none", "client_secret_basic"],
-      response_types_supported: ["code"],
-      grant_types_supported: ["authorization_code", "refresh_token"],
-      code_challenge_methods_supported: ["S256"],
-      scopes_supported: ["read", "write"],
-    });
+    res.json(provider.getAuthorizationServerMetadata(baseUrl));
   });
 
-  app.post("/register", (_req, res) => {
-    res.status(501).json({
-      error: "not_implemented",
-      message:
-        "Dynamic client registration is not implemented. " +
-        "Configure your OAuth client ID manually or use a supported external authorization server.",
-    });
-  });
+  // Each provider mounts whatever it hosts itself — everything for "custom",
+  // nothing for "auth0" (Auth0 hosts its own endpoints directly), a 501 stub
+  // for "workos" (see oauth/providers/workos.ts).
+  provider.mountRoutes(app, config);
 }

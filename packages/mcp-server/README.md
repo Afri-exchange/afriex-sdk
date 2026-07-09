@@ -54,10 +54,11 @@ The server exposes 20+ tools covering every Afriex API endpoint:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `AFRIEX_API_KEY` | Yes | — | Your Afriex API key. Also doubles as the MCP client credential in `api-key` mode (sent as `x-api-key`) |
+| `AFRIEX_API_KEY` | Unless multi-tenant | — | Your Afriex API key. Also doubles as the MCP client credential in `api-key` mode (sent as `x-api-key`) |
 | `AFRIEX_ENVIRONMENT` | No | `production` | `staging` or `production` |
 | `AFRIEX_MCP_AUTH_MODE` | No | `api-key` | Auth mode: `api-key`, `bearer`, or `oauth` |
 | `AFRIEX_MCP_BEARER_TOKEN` | See below | — | Bearer token for MCP clients (required in `bearer` mode) |
+| `AFRIEX_MCP_ALLOW_CLIENT_CREDENTIALS` | No | `false` | `true` to accept per-request `x-afriex-api-key` / `x-afriex-environment` headers (multi-tenant deployments) |
 | `AFRIEX_WEBHOOK_PUBLIC_KEY` | No | — | Public key for webhook signature verification |
 | `AFRIEX_LOG_LEVEL` | No | `info` | `debug`, `info`, `warn`, or `error` |
 | `PORT` | No | `3001` | HTTP server port |
@@ -65,15 +66,20 @@ The server exposes 20+ tools covering every Afriex API endpoint:
 
 ### OAuth Configuration
 
-When using `--oauth` mode, set these variables for your OAuth provider:
+`OAUTH_PROVIDER` picks which authorization server backs `--oauth` mode. All three implement the same interface (see `src/oauth/types.ts`), so switching is a config change, not a code change.
 
-| Variable | Description |
-|----------|-------------|
-| `OAUTH_ISSUER_URL` | OAuth issuer URL (e.g. `https://your-tenant.auth0.com`) |
-| `OAUTH_JWKS_URL` | JWKS URL for token validation (defaults to `{issuer}/.well-known/jwks.json`) |
-| `OAUTH_AUDIENCE` | Expected audience claim in the access token |
-| `OAUTH_CLIENT_ID` | OAuth client ID |
-| `OAUTH_CLIENT_SECRET` | OAuth client secret |
+| Variable | Applies to | Description |
+|----------|-----------|-------------|
+| `OAUTH_PROVIDER` | all | `custom` (default, self-hosted) \| `workos` \| `auth0` |
+| `OAUTH_AUDIENCE` | all | **Required.** This server's public URL for `custom`, or your provider's API identifier for `workos`/`auth0` |
+| `OAUTH_ISSUER_URL` | workos, auth0 | Issuer URL. Defaults to `OAUTH_AUDIENCE` for `custom` |
+| `OAUTH_JWKS_URL` | workos, auth0 | JWKS URL, if not derivable from the issuer |
+| `OAUTH_ENCRYPTION_KEY` | custom | **Required.** 32-byte hex key that encrypts Afriex API keys at rest. Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+| `OAUTH_DB_PATH` | custom | SQLite file path (default `./afriex-mcp-oauth.db`) — stores registered clients, auth codes, refresh tokens, and the signing key |
+| `OAUTH_ACCESS_TOKEN_TTL` | custom | Access token lifetime in seconds (default `3600`) |
+| `OAUTH_REFRESH_TOKEN_TTL` | custom | Refresh token lifetime in seconds (default 30 days) |
+| `OAUTH_AUTH0_DOMAIN` | auth0 | Your Auth0 tenant domain, e.g. `your-tenant.us.auth0.com` |
+| `OAUTH_WORKOS_CLIENT_ID`, `OAUTH_WORKOS_API_KEY` | workos | Scaffold only — see `src/oauth/providers/workos.ts` |
 
 ## Authentication Modes
 
@@ -95,17 +101,90 @@ npx @afriex/mcp-server --http
 # Clients send: Authorization: Bearer your-bearer-token
 ```
 
-### OAuth 2.1
+### OAuth 2.1 — custom provider (self-hosted, default)
+
+No external identity provider needed. "Login" is a consent screen that takes
+the caller's existing Afriex API key, confirms it against the real Afriex
+API, and issues tokens bound to it.
 
 ```bash
-export AFRIEX_API_KEY="sk_your_afriex_api_key"
-export OAUTH_ISSUER_URL="https://your-tenant.auth0.com/"
-export OAUTH_AUDIENCE="https://api.afriex.com"
+export OAUTH_ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+export OAUTH_AUDIENCE="https://mcp.afriex.com"   # this server's own public URL
 npx @afriex/mcp-server --http --oauth
 ```
 
+Flow: an MCP client registers via `POST /register` (RFC 7591 Dynamic Client
+Registration, supported out of the box), sends the user to `GET /authorize`
+with PKCE, the user pastes their Afriex API key into the consent page, and
+the client exchanges the resulting code at `POST /token`. Signing keys and
+all client/token state persist in the SQLite file at `OAUTH_DB_PATH` —
+back that path with a persistent volume if you deploy in a container.
+
+The Afriex API key is never embedded in a token in the clear — access
+tokens carry it as AES-256-GCM ciphertext (`OAUTH_ENCRYPTION_KEY`), readable
+only by this server. See `src/oauth/providers/custom.ts` for the full flow.
+
+### OAuth 2.1 — Auth0 or WorkOS
+
+For an external, already-hosted authorization server instead of running
+your own:
+
+```bash
+export OAUTH_PROVIDER="auth0"
+export OAUTH_AUTH0_DOMAIN="your-tenant.us.auth0.com"
+export OAUTH_AUDIENCE="https://api.afriex.com"   # the API identifier configured in Auth0
+npx @afriex/mcp-server --http --oauth
+```
+
+With this provider, MCP clients talk to Auth0 directly for `/authorize`,
+`/token`, and Dynamic Client Registration (Auth0 supports OIDC DCR at
+`/oidc/register` natively) — this server only validates the resulting JWTs.
+`OAUTH_PROVIDER=workos` follows the same shape but is a scaffold, not a
+finished integration; see `src/oauth/providers/workos.ts` for what's left.
+
+One thing external providers can't do automatically: this server expects
+the validated JWT to carry the Afriex API key as an encrypted `afx_key`
+claim (same `OAUTH_ENCRYPTION_KEY` scheme as the custom provider) so it
+knows which tenant is calling. For Auth0 that means adding a Login Action
+that looks up the user's Afriex key and injects it as a custom claim — see
+the comment block at the top of `src/oauth/providers/auth0.ts`. Without it,
+tokens still validate, but tool calls fall back to this server's own static
+`AFRIEX_API_KEY` — fine for a single-tenant OAuth-gated deployment, not for
+multi-tenant.
+
 The server serves OAuth 2.1 Protected Resource Metadata (RFC 9728) and
-Authorization Server Metadata (RFC 8414) for MCP client auto-discovery.
+Authorization Server Metadata (RFC 8414) for MCP client auto-discovery
+regardless of which provider is active.
+
+## Multi-Tenant Deployments (bring-your-own-key)
+
+For a shared, public endpoint (e.g. `https://mcp.afriex.com/mcp`) where each
+caller supplies their own Afriex API key rather than sharing one baked into
+the server, set `AFRIEX_MCP_ALLOW_CLIENT_CREDENTIALS=true`. `AFRIEX_API_KEY`
+becomes optional, and each request may include:
+
+```json
+{
+  "mcpServers": {
+    "afriex": {
+      "url": "https://mcp.afriex.com/mcp",
+      "headers": {
+        "x-afriex-api-key": "sk_your_afriex_api_key",
+        "x-afriex-environment": "production"
+      }
+    }
+  }
+}
+```
+
+`x-afriex-api-key` is used directly as that request's Afriex credential —
+there's no separate validation step, since an invalid key simply fails
+naturally at the Afriex API layer. This can be combined with any auth mode
+(`api-key`/`bearer` gate the MCP endpoint itself; the header supplies the
+per-tenant Afriex key on top), or with OAuth, where the bound key comes from
+the validated token instead and the header becomes unnecessary. SDK
+instances are cached per (key, environment) pair so repeated calls from the
+same tenant don't pay reconstruction cost.
 
 ## Client Configuration
 
@@ -162,18 +241,34 @@ Add to `claude_desktop_config.json`:
 
 ## Deployment
 
-### Vercel / Cloudflare Workers
+The HTTP transport is a plain Express app (`src/transport/http.ts`) — deploy
+it like any Node HTTP service, behind a reverse proxy with TLS for a real
+domain (e.g. `https://mcp.afriex.com`).
 
-The HTTP transport uses Streamable HTTP which works with serverless platforms.
-For Vercel, deploy the Express handler as a serverless function.
-
-### Docker
+### Container / VM (recommended once OAuth is enabled)
 
 ```dockerfile
 FROM node:22-alpine
-RUN npx @afriex/mcp-server --http --port=3001
+WORKDIR /app
+COPY . .
+RUN npm run build
 EXPOSE 3001
+CMD ["node", "dist/index.js", "--http", "--oauth", "--port=3001"]
 ```
+
+With the `custom` OAuth provider, mount a persistent volume for
+`OAUTH_DB_PATH` — it holds registered clients, refresh tokens, and the
+signing key, and losing it invalidates every issued token and forces
+clients to re-register.
+
+### Vercel / Cloudflare Workers
+
+The Streamable HTTP transport itself works fine on serverless platforms in
+`api-key`/`bearer` mode, or `oauth` mode with an external provider
+(Auth0/WorkOS) that doesn't need local storage. It's a poor fit for the
+`custom` OAuth provider specifically, since SQLite needs a persistent disk
+that most serverless platforms don't give you across invocations — use a
+container instead, or point `OAUTH_PROVIDER` at Auth0/WorkOS.
 
 ## Development
 

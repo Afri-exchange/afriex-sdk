@@ -17,9 +17,9 @@ export function registerBalanceTools(registry: ToolRegistry): void {
           .describe("Currency codes to fetch balances for"),
       },
     },
-    async ({ currencies }) => {
+    async ({ currencies }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const balances = await sdk.balance.getBalance({ currencies });
         return {
           content: [{ type: "text", text: JSON.stringify(balances, null, 2) }],
@@ -46,9 +46,9 @@ export function registerBalanceTools(registry: ToolRegistry): void {
           .describe("Uppercase 3-letter ISO currency code, e.g. USD, NGN, GBP"),
       },
     },
-    async ({ amount, currency }) => {
+    async ({ amount, currency }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const result = await sdk.balance.topUpSandbox({ amount, currency });
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],

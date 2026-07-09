@@ -43,9 +43,9 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .describe("Recipient contact information"),
       },
     },
-    async ({ channel, customerId, accountName, accountNumber, countryCode, institution, type, recipient }) => {
+    async ({ channel, customerId, accountName, accountNumber, countryCode, institution, type, recipient }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const pm = await sdk.paymentMethods.create({
           channel,
           customerId,
@@ -76,9 +76,9 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
         paymentMethodId: z.string().min(1).describe("The payment method's unique identifier"),
       },
     },
-    async ({ paymentMethodId }) => {
+    async ({ paymentMethodId }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const pm = await sdk.paymentMethods.get(paymentMethodId);
         return {
           content: [{ type: "text", text: JSON.stringify(pm, null, 2) }],
@@ -101,9 +101,9 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
         limit: z.number().int().positive().optional().describe("Payment methods per page"),
       },
     },
-    async ({ page, limit }) => {
+    async ({ page, limit }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const pms = await sdk.paymentMethods.list({ page, limit });
         return {
           content: [{ type: "text", text: JSON.stringify(pms, null, 2) }],
@@ -125,9 +125,9 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
         paymentMethodId: z.string().min(1).describe("The payment method's unique identifier"),
       },
     },
-    async ({ paymentMethodId }) => {
+    async ({ paymentMethodId }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         await sdk.paymentMethods.delete(paymentMethodId);
         return {
           content: [{ type: "text", text: `Payment method ${paymentMethodId} deleted successfully.` }],
@@ -156,9 +156,9 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .describe("Two-letter ISO country code, e.g. NG, GH, KE, US"),
       },
     },
-    async ({ channel, countryCode }) => {
+    async ({ channel, countryCode }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const institutions = await sdk.paymentMethods.getInstitutions({ channel, countryCode });
         return {
           content: [{ type: "text", text: JSON.stringify(institutions, null, 2) }],
@@ -192,9 +192,9 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .describe("Institution code (required for BANK_ACCOUNT channel)"),
       },
     },
-    async ({ channel, accountNumber, countryCode, institutionCode }) => {
+    async ({ channel, accountNumber, countryCode, institutionCode }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const result = await sdk.paymentMethods.resolveAccount({
           channel,
           accountNumber,
@@ -222,9 +222,9 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
         customerId: z.string().min(1).describe("The customer's unique identifier"),
       },
     },
-    async ({ asset, customerId }) => {
+    async ({ asset, customerId }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const wallet = await sdk.paymentMethods.getCryptoWallet({ asset, customerId });
         return {
           content: [{ type: "text", text: JSON.stringify(wallet, null, 2) }],
@@ -251,9 +251,9 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
         customerId: z.string().optional().describe("Customer ID to filter by. Omit to list business-level virtual accounts."),
       },
     },
-    async ({ currency, customerId }) => {
+    async ({ currency, customerId }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const accounts = await sdk.paymentMethods.listVirtualAccounts({ currency, customerId });
         return {
           content: [{ type: "text", text: JSON.stringify(accounts, null, 2) }],
@@ -283,9 +283,9 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
         amount: z.number().positive().optional().describe("Amount for dynamic virtual accounts. Cannot be used with label."),
       },
     },
-    async ({ currency, customerId, country, label, amount }) => {
+    async ({ currency, customerId, country, label, amount }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const account = await sdk.paymentMethods.createVirtualAccount({
           currency,
           customerId,
@@ -317,9 +317,9 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .describe("Two-letter ISO country code, e.g. NG, GH, KE"),
       },
     },
-    async ({ country }) => {
+    async ({ country }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const account = await sdk.paymentMethods.listPoolAccounts({ country });
         return {
           content: [{ type: "text", text: JSON.stringify(account, null, 2) }],

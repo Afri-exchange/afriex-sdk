@@ -60,9 +60,9 @@ export function registerTransactionTools(registry: ToolRegistry): void {
           .describe("Transaction metadata with idempotencyKey and reference"),
       },
     },
-    async (params) => {
+    async (params, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const { meta, ...rest } = params;
         const transaction = await sdk.transactions.create({
           ...rest,
@@ -88,9 +88,9 @@ export function registerTransactionTools(registry: ToolRegistry): void {
         transactionId: z.string().min(1).describe("The transaction's unique identifier"),
       },
     },
-    async ({ transactionId }) => {
+    async ({ transactionId }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const transaction = await sdk.transactions.get(transactionId);
         return {
           content: [{ type: "text", text: JSON.stringify(transaction, null, 2) }],
@@ -133,9 +133,9 @@ export function registerTransactionTools(registry: ToolRegistry): void {
         toDate: z.string().optional().describe("End date filter (ISO 8601 format)"),
       },
     },
-    async (params) => {
+    async (params, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const transactions = await sdk.transactions.list(params as Parameters<typeof sdk.transactions.list>[0]);
         return {
           content: [{ type: "text", text: JSON.stringify(transactions, null, 2) }],

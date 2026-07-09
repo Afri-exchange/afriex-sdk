@@ -19,9 +19,9 @@ export function registerRateTools(registry: ToolRegistry): void {
           .describe("Target currency codes, comma-separated or array. E.g. 'NGN,KES,GHS' or ['NGN', 'KES', 'GHS']. If omitted, returns rates against all target currencies."),
       },
     },
-    async ({ fromSymbols, toSymbols }) => {
+    async ({ fromSymbols, toSymbols }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const rates = await sdk.rates.getRates({ fromSymbols, toSymbols });
         return {
           content: [{ type: "text", text: JSON.stringify(rates, null, 2) }],
@@ -45,9 +45,9 @@ export function registerRateTools(registry: ToolRegistry): void {
         to: z.string().length(3).toUpperCase().describe("Target currency code, e.g. NGN"),
       },
     },
-    async ({ amount, from, to }) => {
+    async ({ amount, from, to }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const converted = await sdk.rates.convert(amount, from, to);
         return {
           content: [{ type: "text", text: `${amount} ${from} = ${converted} ${to}` }],

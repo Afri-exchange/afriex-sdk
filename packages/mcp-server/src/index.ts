@@ -20,19 +20,46 @@ OPTIONS
   --help               Show this help
 
 ENVIRONMENT VARIABLES
-  AFRIEX_API_KEY            (required) Your Afriex API key. In HTTP api-key
-                            mode, MCP clients also authenticate with this
-                            same key via the x-api-key header.
-  AFRIEX_ENVIRONMENT        "staging" or "production" (default: production)
-  AFRIEX_MCP_AUTH_MODE      "api-key" | "bearer" | "oauth" (default: api-key)
-  AFRIEX_MCP_BEARER_TOKEN   Bearer token for MCP clients (bearer mode)
-  AFRIEX_WEBHOOK_PUBLIC_KEY Public key for webhook signature verification
-  AFRIEX_LOG_LEVEL          "debug" | "info" | "warn" | "error"
-  PORT                      HTTP server port
-  HOST                      HTTP server host (default: 0.0.0.0)
-  OAUTH_ISSUER_URL          OAuth issuer URL (oauth mode)
-  OAUTH_JWKS_URL            JWKS URL for token validation (oauth mode)
-  OAUTH_AUDIENCE            Expected token audience (oauth mode)
+  AFRIEX_API_KEY                  Your Afriex API key. Required unless
+                                   AFRIEX_MCP_ALLOW_CLIENT_CREDENTIALS=true.
+                                   In HTTP api-key mode, MCP clients also
+                                   authenticate with this same key via the
+                                   x-api-key header.
+  AFRIEX_ENVIRONMENT              "staging" or "production" (default: production)
+  AFRIEX_MCP_AUTH_MODE            "api-key" | "bearer" | "oauth" (default: api-key)
+  AFRIEX_MCP_BEARER_TOKEN         Bearer token for MCP clients (bearer mode)
+  AFRIEX_MCP_ALLOW_CLIENT_CREDENTIALS
+                                   "true" to let each HTTP request supply its own
+                                   x-afriex-api-key (+ optional x-afriex-environment)
+                                   header, overriding the server-wide key. For
+                                   multi-tenant deployments where each caller
+                                   brings their own Afriex API key.
+  AFRIEX_WEBHOOK_PUBLIC_KEY        Public key for webhook signature verification
+  AFRIEX_LOG_LEVEL                 "debug" | "info" | "warn" | "error"
+  PORT                             HTTP server port
+  HOST                             HTTP server host (default: 0.0.0.0)
+
+OAUTH (oauth mode)
+  OAUTH_PROVIDER            "custom" | "workos" | "auth0" (default: custom)
+  OAUTH_AUDIENCE             (required) This server's public URL for the
+                              custom provider, or your provider's API identifier
+  OAUTH_ISSUER_URL           OAuth issuer URL (defaults to OAUTH_AUDIENCE for
+                              the custom provider; required for workos/auth0
+                              unless OAUTH_JWKS_URL is set)
+  OAUTH_JWKS_URL              JWKS URL for token validation
+
+  --- custom provider (self-hosted authorization server) ---
+  OAUTH_ENCRYPTION_KEY        (required) 32-byte hex key encrypting Afriex API
+                               keys at rest. Generate with:
+                               node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  OAUTH_DB_PATH                SQLite file path (default: ./afriex-mcp-oauth.db)
+  OAUTH_ACCESS_TOKEN_TTL       Access token lifetime in seconds (default: 3600)
+  OAUTH_REFRESH_TOKEN_TTL      Refresh token lifetime in seconds (default: 30 days)
+
+  --- workos / auth0 providers (external authorization server) ---
+  OAUTH_AUTH0_DOMAIN           Auth0 tenant domain, e.g. your-tenant.us.auth0.com
+  OAUTH_WORKOS_CLIENT_ID       WorkOS client ID (scaffold — see oauth/providers/workos.ts)
+  OAUTH_WORKOS_API_KEY         WorkOS API key (scaffold)
 `);
 }
 

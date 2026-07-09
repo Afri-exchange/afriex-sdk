@@ -50,9 +50,9 @@ export function registerCheckoutTools(registry: ToolRegistry): void {
           .describe("Optional metadata key-value pairs (values must be strings)"),
       },
     },
-    async ({ amount, currency, merchantReference, redirectUrl, customer, channels, metadata }) => {
+    async ({ amount, currency, merchantReference, redirectUrl, customer, channels, metadata }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const session = await sdk.checkout.createSession({
           amount,
           currency,

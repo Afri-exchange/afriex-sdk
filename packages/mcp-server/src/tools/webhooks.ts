@@ -16,9 +16,9 @@ export function registerWebhookTools(registry: ToolRegistry): void {
           .describe("The signature from the x-webhook-signature header of the webhook request"),
       },
     },
-    async ({ payload, signature }) => {
+    async ({ payload, signature }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const isValid = sdk.webhooks.verify(payload, signature);
         return {
           content: [
@@ -51,9 +51,9 @@ export function registerWebhookTools(registry: ToolRegistry): void {
           .describe("The signature from the x-webhook-signature header of the webhook request"),
       },
     },
-    async ({ payload, signature }) => {
+    async ({ payload, signature }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const parsed = sdk.webhooks.verifyAndParse(payload, signature);
         return {
           content: [{ type: "text", text: JSON.stringify(parsed, null, 2) }],
@@ -91,9 +91,9 @@ export function registerWebhookTools(registry: ToolRegistry): void {
           .describe("The resource ID (customerId, paymentMethodId, transactionId, or checkoutSessionId) to use in the test payload"),
       },
     },
-    async ({ event, resourceId }) => {
+    async ({ event, resourceId }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const result = await sdk.webhooks.triggerTestWebhook({ event, resourceId });
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],

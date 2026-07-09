@@ -19,9 +19,9 @@ export function registerCustomerTools(registry: ToolRegistry): void {
           .describe("Two-letter ISO country code, e.g. NG, GH, KE, US, GB"),
       },
     },
-    async ({ fullName, email, phone, countryCode }) => {
+    async ({ fullName, email, phone, countryCode }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const customer = await sdk.customers.create({ fullName, email, phone, countryCode });
         return {
           content: [{ type: "text", text: JSON.stringify(customer, null, 2) }],
@@ -43,9 +43,9 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         customerId: z.string().min(1).describe("The customer's unique identifier"),
       },
     },
-    async ({ customerId }) => {
+    async ({ customerId }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const customer = await sdk.customers.get(customerId);
         return {
           content: [{ type: "text", text: JSON.stringify(customer, null, 2) }],
@@ -70,9 +70,9 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         phone: z.string().optional().describe("Filter by phone number"),
       },
     },
-    async ({ page, limit, email, phone }) => {
+    async ({ page, limit, email, phone }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const customers = await sdk.customers.list({ page, limit, email, phone });
         return {
           content: [{ type: "text", text: JSON.stringify(customers, null, 2) }],
@@ -97,9 +97,9 @@ export function registerCustomerTools(registry: ToolRegistry): void {
           .describe("KYC data as key-value pairs. Common fields: idType, idNumber, dateOfBirth, address, country, idFrontImage, idBackImage, selfieImage"),
       },
     },
-    async ({ customerId, kyc }) => {
+    async ({ customerId, kyc }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         const customer = await sdk.customers.updateKyc(customerId, { kyc });
         return {
           content: [{ type: "text", text: JSON.stringify(customer, null, 2) }],
@@ -121,9 +121,9 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         customerId: z.string().min(1).describe("The customer's unique identifier"),
       },
     },
-    async ({ customerId }) => {
+    async ({ customerId }, extra) => {
       try {
-        const sdk = registry.getSdk();
+        const sdk = registry.getSdk(extra);
         await sdk.customers.delete(customerId);
         return {
           content: [{ type: "text", text: `Customer ${customerId} deleted successfully.` }],
