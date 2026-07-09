@@ -29,58 +29,50 @@ function firstHeaderValue(value: string | string[] | undefined): string | undefi
 }
 
 /**
- * Resolves the Afriex credentials for a single tool call. Per-request
- * credentials — a validated OAuth grant, or a client-supplied
- * x-afriex-api-key header — take priority over the server-wide static key,
- * so one deployment can serve many tenants each bringing their own key.
+ * Resolves the Afriex API key and environment for a single tool call. Each
+ * is resolved independently, in the same priority order: a validated OAuth
+ * grant, then a client-supplied header, then the server's static config.
+ * This lets a caller override just the environment (e.g. force staging)
+ * while still relying on the server's shared key, or vice versa.
  */
 function resolveCredentials(
   config: McpServerConfig,
   extra?: ToolExtra,
 ): { apiKey: string; environment: "staging" | "production" } | undefined {
   const authExtra = extra?.authInfo?.extra as Record<string, unknown> | undefined;
-  if (authExtra?.afriexApiKey) {
-    return {
-      apiKey: String(authExtra.afriexApiKey),
-      environment: (authExtra.afriexEnvironment as "staging" | "production") || config.environment,
-    };
-  }
-
   const headers = extra?.requestInfo?.headers;
-  const headerKey = firstHeaderValue(headers?.["x-afriex-api-key"]);
-  if (headerKey) {
-    const headerEnv = firstHeaderValue(headers?.["x-afriex-environment"]) as
-      | "staging"
-      | "production"
-      | undefined;
-    return { apiKey: headerKey, environment: headerEnv || config.environment };
-  }
 
-  return undefined;
+  const apiKey =
+    (authExtra?.afriexApiKey ? String(authExtra.afriexApiKey) : undefined) ||
+    firstHeaderValue(headers?.["x-afriex-api-key"]) ||
+    config.afriexApiKey ||
+    undefined;
+
+  if (!apiKey) return undefined;
+
+  const environment =
+    (authExtra?.afriexEnvironment as "staging" | "production" | undefined) ||
+    (firstHeaderValue(headers?.["x-afriex-environment"]) as "staging" | "production" | undefined) ||
+    config.environment;
+
+  return { apiKey, environment };
 }
 
 export function createMcpServer(config: McpServerConfig): McpServer {
   const server = new McpServer({
-    name: "afriex-mcp",
+    name: "afriex",
     version: "1.0.0",
   });
 
-  let defaultSdk: AfriexSDK | undefined;
   const sdkCache = new Map<string, AfriexSDK>();
 
   const getSdk = (extra?: ToolExtra): AfriexSDK => {
     const creds = resolveCredentials(config, extra);
     if (!creds) {
-      if (!config.afriexApiKey) {
-        throw new Error(
-          "No Afriex API key available for this request. Configure AFRIEX_API_KEY on the server, " +
-          "or have the client authenticate via OAuth / send an x-afriex-api-key header.",
-        );
-      }
-      if (!defaultSdk) {
-        defaultSdk = buildSdk(config, config.afriexApiKey, config.environment);
-      }
-      return defaultSdk;
+      throw new Error(
+        "No Afriex API key available for this request. Configure AFRIEX_API_KEY on the server, " +
+        "or have the client authenticate via OAuth / send an x-afriex-api-key header.",
+      );
     }
 
     const cacheKey = `${creds.environment}:${creds.apiKey}`;
