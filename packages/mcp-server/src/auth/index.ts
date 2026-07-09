@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
-import type { McpServerConfig } from "../config.js";
+import { createRemoteJWKSet, jwtVerify, type JWTVerifyOptions } from "jose";
+import type { McpServerConfig, OAuthConfig } from "../config.js";
 
 export interface AuthResult {
   authenticated: boolean;
@@ -62,6 +63,8 @@ function createBearerMiddleware(token: string): AuthMiddleware {
   };
 }
 
+type RemoteJWKSet = ReturnType<typeof createRemoteJWKSet>;
+
 function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
   const { oauth } = config;
   if (!oauth?.issuerUrl && !oauth?.jwksUrl) {
@@ -70,10 +73,14 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
     );
   }
 
+  // Explicit JWKS URL (or one derivable from the issuer) means we can verify
+  // JWT signatures locally. Built once so the key set is cached across requests
+  // instead of being re-fetched on every call.
   let jwksUrl = oauth.jwksUrl;
   if (!jwksUrl && oauth.issuerUrl) {
     jwksUrl = `${oauth.issuerUrl.replace(/\/$/, "")}/.well-known/jwks.json`;
   }
+  const jwks: RemoteJWKSet | undefined = jwksUrl ? createRemoteJWKSet(new URL(jwksUrl)) : undefined;
 
   return async (req, res, next) => {
     const header = req.headers.authorization as string | undefined;
@@ -94,7 +101,7 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
     const token = header.slice(7);
 
     try {
-      const isValid = await validateOAuthToken(token, config);
+      const isValid = await validateOAuthToken(token, oauth, jwks);
       if (!isValid) {
         res.status(401).json({
           error: "invalid_token",
@@ -112,13 +119,14 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
   };
 }
 
-async function validateOAuthToken(token: string, config: McpServerConfig): Promise<boolean> {
-  const { oauth } = config;
-  if (!oauth) return false;
-
+async function validateOAuthToken(
+  token: string,
+  oauth: OAuthConfig,
+  jwks: RemoteJWKSet | undefined,
+): Promise<boolean> {
   try {
-    if (oauth.jwksUrl) {
-      return await validateJwtWithJwks(token, oauth.jwksUrl, oauth.audience);
+    if (jwks) {
+      return await validateJwtWithJwks(token, jwks, oauth);
     }
     if (oauth.issuerUrl) {
       return await validateTokenWithUserinfo(token, oauth.issuerUrl);
@@ -131,26 +139,18 @@ async function validateOAuthToken(token: string, config: McpServerConfig): Promi
 
 async function validateJwtWithJwks(
   token: string,
-  jwksUrl: string,
-  audience?: string,
+  jwks: RemoteJWKSet,
+  oauth: OAuthConfig,
 ): Promise<boolean> {
   try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return false;
+    const options: JWTVerifyOptions = {};
+    if (oauth.audience) options.audience = oauth.audience;
+    if (oauth.issuerUrl) options.issuer = oauth.issuerUrl;
 
-    const header = JSON.parse(atob(parts[0])) as Record<string, unknown>;
-    const payload = JSON.parse(atob(parts[1])) as Record<string, unknown>;
-
-    if (payload.exp && Number(payload.exp) * 1000 < Date.now()) return false;
-    if (audience && payload.aud !== audience) return false;
-
-    const response = await fetch(jwksUrl);
-    const { keys } = await response.json() as { keys: Record<string, unknown>[] };
-
-    const kid = String(header.kid ?? "");
-    const key = keys.find((k) => k.kid === kid);
-    if (!key) return false;
-
+    // jwtVerify cryptographically verifies the signature against the key
+    // matching the token's `kid` and checks `exp`/`nbf`, `aud`, and `iss`.
+    // A forged token — even one with a valid-looking header/payload — fails here.
+    await jwtVerify(token, jwks, options);
     return true;
   } catch {
     return false;
