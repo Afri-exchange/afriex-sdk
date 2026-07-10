@@ -14,22 +14,30 @@ interface SigningKeyRow {
   public_jwk: string;
 }
 
+// Both the custom provider's /token, /authorize, and JWKS routes and the
+// resource-server auth middleware call this independently at startup. Without
+// per-db caching, two concurrent first-boot calls can each see no existing
+// row, each generate a *different* key, and each insert — leaving the token
+// issuer and the token validator disagreeing about which key is active.
+const inflight = new WeakMap<Database.Database, Promise<SigningKey>>();
+
 /**
  * Loads the active RS256 signing key, or generates and persists one on first
  * boot. Persisting is what lets previously-issued tokens keep validating (via
  * the JWKS endpoint) across server restarts.
  */
-export async function loadOrCreateSigningKey(db: Database.Database): Promise<SigningKey> {
-  const row = db
-    .prepare<[], SigningKeyRow>(
-      "SELECT kid, private_key_pem, public_jwk FROM oauth_signing_keys WHERE active = 1 ORDER BY created_at DESC LIMIT 1",
-    )
-    .get();
+export function loadOrCreateSigningKey(db: Database.Database): Promise<SigningKey> {
+  const cached = inflight.get(db);
+  if (cached) return cached;
 
-  if (row) {
-    const privateKey = await importPKCS8(row.private_key_pem, "RS256");
-    return { kid: row.kid, privateKey, publicJwk: JSON.parse(row.public_jwk) as JWK };
-  }
+  const promise = loadOrCreateSigningKeyUncached(db);
+  inflight.set(db, promise);
+  return promise;
+}
+
+async function loadOrCreateSigningKeyUncached(db: Database.Database): Promise<SigningKey> {
+  const existing = await selectActiveKey(db);
+  if (existing) return existing;
 
   const { publicKey, privateKey } = await generateKeyPair("RS256", { modulusLength: 2048, extractable: true });
   const kid = randomUUID();
@@ -39,9 +47,30 @@ export async function loadOrCreateSigningKey(db: Database.Database): Promise<Sig
   publicJwk.use = "sig";
   const privateKeyPem = await exportPKCS8(privateKey);
 
+  // Atomic no-op if a concurrent process (e.g. another replica) already
+  // inserted one — the WHERE NOT EXISTS makes this safe across processes,
+  // not just within this one (the WeakMap cache above only covers that).
   db.prepare(
-    "INSERT INTO oauth_signing_keys (kid, private_key_pem, public_jwk, created_at, active) VALUES (?, ?, ?, ?, 1)",
+    `INSERT INTO oauth_signing_keys (kid, private_key_pem, public_jwk, created_at, active)
+     SELECT ?, ?, ?, ?, 1 WHERE NOT EXISTS (SELECT 1 FROM oauth_signing_keys WHERE active = 1)`,
   ).run(kid, privateKeyPem, JSON.stringify(publicJwk), Date.now());
 
-  return { kid, privateKey, publicJwk };
+  // Re-select rather than trust the values we just generated: if another
+  // process won the race, this returns *their* key instead of ours.
+  const winner = await selectActiveKey(db);
+  if (!winner) {
+    throw new Error("Failed to load or create an OAuth signing key.");
+  }
+  return winner;
+}
+
+async function selectActiveKey(db: Database.Database): Promise<SigningKey | undefined> {
+  const row = db
+    .prepare<[], SigningKeyRow>(
+      "SELECT kid, private_key_pem, public_jwk FROM oauth_signing_keys WHERE active = 1 ORDER BY created_at DESC LIMIT 1",
+    )
+    .get();
+  if (!row) return undefined;
+  const privateKey = await importPKCS8(row.private_key_pem, "RS256");
+  return { kid: row.kid, privateKey, publicJwk: JSON.parse(row.public_jwk) as JWK };
 }
