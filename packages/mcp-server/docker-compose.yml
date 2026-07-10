@@ -9,7 +9,7 @@ services:
   afriex-mcp:
     build:
       context: ../..
-      dockerfile: packages/mcp-server/Dockerfile
+      dockerfile: Dockerfile
     image: afriex-mcp-server:latest
     restart: unless-stopped
     ports:

@@ -1,11 +1,19 @@
 # Build from the monorepo root:
-#   docker build -f packages/mcp-server/Dockerfile -t afriex-mcp-server .
+#   docker build -t afriex-mcp-server .
 #
-# This is a pnpm + Turborepo workspace, so @afriex/mcp-server can't be built
-# in isolation — it depends on sibling packages (@afriex/sdk, @afriex/core,
-# etc.) via "workspace:*". `turbo prune` trims the monorepo down to just this
-# package and its dependency graph before installing/building, so the image
-# doesn't carry every package in the workspace.
+# Lives at the repo root (not packages/mcp-server/) on purpose: this is a
+# pnpm + Turborepo workspace, so @afriex/mcp-server can't be built in
+# isolation — it depends on sibling packages (@afriex/sdk, @afriex/core,
+# etc.) via "workspace:*" and every package's tsconfig.json extends the root
+# tsconfig.base.json. The build context has to be the whole repo, and
+# platforms that build straight from a Dockerfile (e.g. Coolify's Dockerfile
+# build pack) use one "Base Directory" setting for both the build context and
+# where they look for a file literally named `Dockerfile` — so root is the
+# only placement that works without extra configuration.
+#
+# `turbo prune` trims the monorepo down to just this package and its
+# dependency graph before installing/building, so the final image doesn't
+# carry every package in the workspace.
 
 FROM node:22-bookworm-slim AS base
 RUN corepack enable
