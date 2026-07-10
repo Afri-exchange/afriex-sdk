@@ -1,8 +1,10 @@
 import type { Request, Response, NextFunction } from "express";
-import { createRemoteJWKSet, jwtVerify, type JWTVerifyOptions } from "jose";
+import { createLocalJWKSet, createRemoteJWKSet, jwtVerify, type JWTVerifyOptions } from "jose";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import type { McpServerConfig, OAuthConfig } from "../config.js";
 import { decryptSecret, loadEncryptionKey } from "../oauth/crypto.js";
+import { getDb } from "../oauth/db.js";
+import { loadOrCreateSigningKey } from "../oauth/keys.js";
 
 export interface AuthResult {
   authenticated: boolean;
@@ -81,7 +83,7 @@ function createBearerMiddleware(token: string): AuthMiddleware {
   };
 }
 
-type RemoteJWKSet = ReturnType<typeof createRemoteJWKSet>;
+type JwksGetter = ReturnType<typeof createLocalJWKSet>;
 
 function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
   const { oauth } = config;
@@ -91,14 +93,20 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
     );
   }
 
-  // Explicit JWKS URL (or one derivable from the issuer) means we can verify
-  // JWT signatures locally. Built once so the key set is cached across requests
-  // instead of being re-fetched on every call.
-  let jwksUrl = oauth.jwksUrl;
-  if (!jwksUrl && oauth.issuerUrl) {
-    jwksUrl = `${oauth.issuerUrl.replace(/\/$/, "")}/.well-known/jwks.json`;
-  }
-  const jwks: RemoteJWKSet | undefined = jwksUrl ? createRemoteJWKSet(new URL(jwksUrl)) : undefined;
+  const jwksPromise: Promise<JwksGetter> =
+    (oauth.provider ?? "custom") === "custom"
+      ? // Same process issues and validates tokens for the custom provider —
+        // resolve the signing key directly instead of round-tripping over
+        // HTTP to our own /.well-known/jwks.json. That self-referential fetch
+        // depends on the server being able to reach its own public URL from
+        // inside its own container, which reverse proxies (Traefik, etc.)
+        // often don't support ("hairpin" routing) — it fails or hangs, and
+        // every OAuth-authenticated request 401s even though the token we
+        // ourselves issued is perfectly valid.
+        loadOrCreateSigningKey(getDb(oauth.dbPath || "./afriex-mcp-oauth.db")).then((key) =>
+          createLocalJWKSet({ keys: [key.publicJwk] }),
+        )
+      : Promise.resolve(resolveRemoteJwks(oauth));
   const encryptionKey = oauth.encryptionKey ? loadEncryptionKey(oauth.encryptionKey) : undefined;
 
   return async (req, res, next) => {
@@ -120,7 +128,8 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
     const token = header.slice(7);
 
     try {
-      const authInfo = await validateOAuthToken(token, oauth, jwks, encryptionKey);
+      const jwks = await jwksPromise;
+      const authInfo = await validateJwtWithJwks(token, jwks, oauth, encryptionKey);
       if (!authInfo) {
         res.status(401).json({
           error: "invalid_token",
@@ -143,29 +152,18 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
   };
 }
 
-async function validateOAuthToken(
-  token: string,
-  oauth: OAuthConfig,
-  jwks: RemoteJWKSet | undefined,
-  encryptionKey: Buffer | undefined,
-): Promise<AuthInfo | undefined> {
-  try {
-    if (jwks) {
-      return await validateJwtWithJwks(token, jwks, oauth, encryptionKey);
-    }
-    if (oauth.issuerUrl) {
-      const valid = await validateTokenWithUserinfo(token, oauth.issuerUrl);
-      return valid ? { token, clientId: "unknown", scopes: [] } : undefined;
-    }
-    return undefined;
-  } catch {
-    return undefined;
+function resolveRemoteJwks(oauth: OAuthConfig): ReturnType<typeof createRemoteJWKSet> {
+  let jwksUrl = oauth.jwksUrl;
+  if (!jwksUrl && oauth.issuerUrl) {
+    jwksUrl = `${oauth.issuerUrl.replace(/\/$/, "")}/.well-known/jwks.json`;
   }
+  // Guaranteed non-empty by the check in createOAuthMiddleware before this runs.
+  return createRemoteJWKSet(new URL(jwksUrl!));
 }
 
 async function validateJwtWithJwks(
   token: string,
-  jwks: RemoteJWKSet,
+  jwks: JwksGetter,
   oauth: OAuthConfig,
   encryptionKey: Buffer | undefined,
 ): Promise<AuthInfo | undefined> {
@@ -216,19 +214,6 @@ async function validateJwtWithJwks(
     return authInfo;
   } catch {
     return undefined;
-  }
-}
-
-async function validateTokenWithUserinfo(token: string, issuerUrl: string): Promise<boolean> {
-  try {
-    const baseUrl = issuerUrl.replace(/\/$/, "");
-    const userinfoUrl = `${baseUrl}/oauth/userinfo`;
-    const response = await fetch(userinfoUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.status === 200;
-  } catch {
-    return false;
   }
 }
 
