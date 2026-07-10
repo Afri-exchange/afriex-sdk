@@ -55,7 +55,7 @@ The server exposes 20+ tools covering every Afriex API endpoint:
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `AFRIEX_API_KEY` | stdio only | — | Your Afriex API key. Required in stdio mode. In `--http` mode it's optional — the fallback for callers that don't send their own `x-afriex-api-key` header |
-| `AFRIEX_ENVIRONMENT` | No | `production` | `staging` or `production` |
+| `AFRIEX_ENVIRONMENT` | No | `staging` | `staging` or `production` |
 | `AFRIEX_MCP_AUTH_MODE` | No | `api-key` | Auth mode: `api-key`, `bearer`, or `oauth` |
 | `AFRIEX_MCP_BEARER_TOKEN` | See below | — | Bearer token for MCP clients (required in `bearer` mode) |
 | `AFRIEX_WEBHOOK_PUBLIC_KEY` | No | — | Public key for webhook signature verification |

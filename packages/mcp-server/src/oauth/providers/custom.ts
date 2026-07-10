@@ -217,7 +217,7 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
       return;
     }
 
-    const environment = afriex_environment === "staging" ? "staging" : "production";
+    const environment = afriex_environment === "production" ? "production" : "staging";
     const consentParams = {
       clientName: client.client_name || client.client_id,
       clientId: client_id!,
@@ -497,8 +497,8 @@ function renderConsentPage(params: ConsentPageParams): string {
 
     <label style="display:block; margin-top:16px;">Environment
       <select name="afriex_environment" style="display:block; width:100%; padding:8px; margin-top:4px;">
-        <option value="production">Production</option>
         <option value="staging">Staging</option>
+        <option value="production">Production</option>
       </select>
     </label>
 

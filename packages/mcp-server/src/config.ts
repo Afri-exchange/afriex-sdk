@@ -72,7 +72,7 @@ export function loadConfigFromEnv(): McpServerConfig {
     },
     port: Number(process.env.PORT) || 3001,
     host: process.env.HOST || "0.0.0.0",
-    environment: (process.env.AFRIEX_ENVIRONMENT as "staging" | "production") || "production",
+    environment: (process.env.AFRIEX_ENVIRONMENT as "staging" | "production") || "staging",
     afriexApiKey: process.env.AFRIEX_API_KEY || "",
     webhookPublicKey: process.env.AFRIEX_WEBHOOK_PUBLIC_KEY,
     logLevel: (process.env.AFRIEX_LOG_LEVEL as "debug" | "info" | "warn" | "error") || "info",

@@ -25,7 +25,7 @@ ENVIRONMENT VARIABLES
                               the fallback key for callers that don't send
                               their own x-afriex-api-key header (and, in
                               api-key auth mode, x-api-key gates access to it).
-  AFRIEX_ENVIRONMENT         "staging" or "production" (default: production)
+  AFRIEX_ENVIRONMENT         "staging" or "production" (default: staging)
   AFRIEX_MCP_AUTH_MODE       "api-key" | "bearer" | "oauth" (default: api-key)
   AFRIEX_MCP_BEARER_TOKEN    Bearer token for MCP clients (bearer mode)
   AFRIEX_WEBHOOK_PUBLIC_KEY  Public key for webhook signature verification
@@ -38,7 +38,7 @@ MULTI-TENANT / BRING-YOUR-OWN-KEY (any --http mode)
     x-afriex-api-key: <caller's Afriex API key>   (used as-is; a bad key just
                                                      fails naturally at the
                                                      Afriex API)
-    x-afriex-environment: staging | production      (optional, default: production)
+    x-afriex-environment: staging | production      (optional, default: staging)
   In api-key auth mode specifically, sending x-afriex-api-key also satisfies
   the gate (no separate x-api-key needed) — you're using your own key, so
   there's nothing to protect. x-api-key is only checked as a fallback when a
