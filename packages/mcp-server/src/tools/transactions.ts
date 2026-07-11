@@ -59,6 +59,7 @@ export function registerTransactionTools(registry: ToolRegistry): void {
           })
           .describe("Transaction metadata with idempotencyKey and reference"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async (params, extra) => {
       try {
@@ -87,6 +88,7 @@ export function registerTransactionTools(registry: ToolRegistry): void {
       inputSchema: {
         transactionId: z.string().min(1).describe("The transaction's unique identifier"),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ transactionId }, extra) => {
       try {
@@ -132,6 +134,7 @@ export function registerTransactionTools(registry: ToolRegistry): void {
         fromDate: z.string().optional().describe("Start date filter (ISO 8601 format)"),
         toDate: z.string().optional().describe("End date filter (ISO 8601 format)"),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async (params, extra) => {
       try {

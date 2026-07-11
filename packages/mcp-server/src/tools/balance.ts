@@ -16,6 +16,7 @@ export function registerBalanceTools(registry: ToolRegistry): void {
           ])
           .describe("Currency codes to fetch balances for"),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ currencies }, extra) => {
       try {
@@ -45,6 +46,7 @@ export function registerBalanceTools(registry: ToolRegistry): void {
           .toUpperCase()
           .describe("Uppercase 3-letter ISO currency code, e.g. USD, NGN, GBP"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ amount, currency }, extra) => {
       try {

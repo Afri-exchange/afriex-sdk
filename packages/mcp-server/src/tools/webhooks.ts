@@ -15,6 +15,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
           .min(1)
           .describe("The signature from the x-webhook-signature header of the webhook request"),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
     async ({ payload, signature }, extra) => {
       try {
@@ -50,6 +51,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
           .min(1)
           .describe("The signature from the x-webhook-signature header of the webhook request"),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
     async ({ payload, signature }, extra) => {
       try {
@@ -90,6 +92,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
           .min(1)
           .describe("The resource ID (customerId, paymentMethodId, transactionId, or checkoutSessionId) to use in the test payload"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ event, resourceId }, extra) => {
       try {

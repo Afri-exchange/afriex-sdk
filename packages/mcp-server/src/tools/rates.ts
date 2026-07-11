@@ -18,6 +18,7 @@ export function registerRateTools(registry: ToolRegistry): void {
           .optional()
           .describe("Target currency codes, comma-separated or array. E.g. 'NGN,KES,GHS' or ['NGN', 'KES', 'GHS']. If omitted, returns rates against all target currencies."),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ fromSymbols, toSymbols }, extra) => {
       try {
@@ -44,6 +45,7 @@ export function registerRateTools(registry: ToolRegistry): void {
         from: z.string().length(3).toUpperCase().describe("Source currency code, e.g. USD"),
         to: z.string().length(3).toUpperCase().describe("Target currency code, e.g. NGN"),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ amount, from, to }, extra) => {
       try {

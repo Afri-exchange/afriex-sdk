@@ -18,6 +18,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
           .toUpperCase()
           .describe("Two-letter ISO country code, e.g. NG, GH, KE, US, GB"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ fullName, email, phone, countryCode }, extra) => {
       try {
@@ -42,6 +43,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       inputSchema: {
         customerId: z.string().min(1).describe("The customer's unique identifier"),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ customerId }, extra) => {
       try {
@@ -69,6 +71,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         email: z.string().email().optional().describe("Filter by email address"),
         phone: z.string().optional().describe("Filter by phone number"),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ page, limit, email, phone }, extra) => {
       try {
@@ -96,6 +99,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
           .record(z.string(), z.string())
           .describe("KYC data as key-value pairs. Common fields: idType, idNumber, dateOfBirth, address, country, idFrontImage, idBackImage, selfieImage"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     async ({ customerId, kyc }, extra) => {
       try {
@@ -120,6 +124,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       inputSchema: {
         customerId: z.string().min(1).describe("The customer's unique identifier"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ customerId }, extra) => {
       try {

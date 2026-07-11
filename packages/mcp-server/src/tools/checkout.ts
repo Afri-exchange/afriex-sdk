@@ -49,6 +49,7 @@ export function registerCheckoutTools(registry: ToolRegistry): void {
           .optional()
           .describe("Optional metadata key-value pairs (values must be strings)"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ amount, currency, merchantReference, redirectUrl, customer, channels, metadata }, extra) => {
       try {

@@ -42,6 +42,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .optional()
           .describe("Recipient contact information"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ channel, customerId, accountName, accountNumber, countryCode, institution, type, recipient }, extra) => {
       try {
@@ -75,6 +76,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       inputSchema: {
         paymentMethodId: z.string().min(1).describe("The payment method's unique identifier"),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ paymentMethodId }, extra) => {
       try {
@@ -100,6 +102,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
         page: z.number().int().positive().optional().describe("Page number for pagination"),
         limit: z.number().int().positive().optional().describe("Payment methods per page"),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ page, limit }, extra) => {
       try {
@@ -124,6 +127,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       inputSchema: {
         paymentMethodId: z.string().min(1).describe("The payment method's unique identifier"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ paymentMethodId }, extra) => {
       try {
@@ -155,6 +159,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .toUpperCase()
           .describe("Two-letter ISO country code, e.g. NG, GH, KE, US"),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ channel, countryCode }, extra) => {
       try {
@@ -191,6 +196,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .optional()
           .describe("Institution code (required for BANK_ACCOUNT channel)"),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ channel, accountNumber, countryCode, institutionCode }, extra) => {
       try {
@@ -221,6 +227,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
         asset: z.enum(["USDT", "USDC"]).describe("Crypto asset: USDT (Tether) or USDC (USD Coin)"),
         customerId: z.string().min(1).describe("The customer's unique identifier"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     async ({ asset, customerId }, extra) => {
       try {
@@ -250,6 +257,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .describe("Three-letter currency code, e.g. NGN, GHS, KES"),
         customerId: z.string().optional().describe("Customer ID to filter by. Omit to list business-level virtual accounts."),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ currency, customerId }, extra) => {
       try {
@@ -282,6 +290,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
         label: z.string().optional().describe("Label for static virtual accounts (e.g. 'SALES', 'OPERATIONS'). Cannot be used with amount."),
         amount: z.number().positive().optional().describe("Amount for dynamic virtual accounts. Cannot be used with label."),
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ currency, customerId, country, label, amount }, extra) => {
       try {
@@ -316,6 +325,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .toUpperCase()
           .describe("Two-letter ISO country code, e.g. NG, GH, KE"),
       },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ country }, extra) => {
       try {
