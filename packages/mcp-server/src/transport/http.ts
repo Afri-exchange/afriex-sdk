@@ -41,6 +41,12 @@ export async function startHttpServer(
   // clients treated as "this isn't a valid MCP server" rather than "this
   // method isn't supported here."
   const mcpHandler = async (req: express.Request, res: express.Response) => {
+    // Hints to any nginx-family proxy in front of this server not to buffer
+    // the SSE response (Traefik itself ignores this, but it's a no-cost
+    // safety net if one is ever added — e.g. a CDN — in front of Traefik).
+    // The actual fix for buffering/compression breaking SSE lives in the
+    // reverse proxy config, not here — see the deploy notes.
+    res.setHeader("X-Accel-Buffering", "no");
     try {
       await transport.handleRequest(req as McpRequest, res as ServerResponse, req.body);
     } catch (error) {
