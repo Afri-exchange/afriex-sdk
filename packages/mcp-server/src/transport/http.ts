@@ -29,13 +29,18 @@ export async function startHttpServer(
 
   await server.connect(transport);
 
-  app.post("/mcp", authMiddleware, async (req, res) => {
+  // The Streamable HTTP spec (and clients that follow it — several MCP
+  // clients probe this as part of connecting) allows GET (to open a
+  // server-initiated SSE stream) and DELETE (session termination) on the
+  // same endpoint as POST, not just POST. transport.handleRequest() already
+  // branches on method internally; without routes for GET/DELETE here,
+  // Express fell through to its default 404 HTML page for those methods
+  // instead of ever reaching the transport or auth middleware — which some
+  // clients treated as "this isn't a valid MCP server" rather than "this
+  // method isn't supported here."
+  const mcpHandler = async (req: express.Request, res: express.Response) => {
     try {
-      await transport.handleRequest(
-        req as McpRequest,
-        res as ServerResponse,
-        (req as express.Request).body,
-      );
+      await transport.handleRequest(req as McpRequest, res as ServerResponse, req.body);
     } catch (error) {
       if (!res.headersSent) {
         res.status(500).json({
@@ -44,7 +49,11 @@ export async function startHttpServer(
         });
       }
     }
-  });
+  };
+
+  app.post("/mcp", authMiddleware, mcpHandler);
+  app.get("/mcp", authMiddleware, mcpHandler);
+  app.delete("/mcp", authMiddleware, mcpHandler);
 
   if (config.authMode === "oauth") {
     setupOAuthEndpoints(app, config);
