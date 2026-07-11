@@ -3,21 +3,18 @@ import cors from "cors";
 import { pinoHttp } from "pino-http";
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { type McpServerConfig, validateHttpConfig } from "../config.js";
 import { createAuthMiddleware } from "../auth/index.js";
+import { createMcpServer } from "../create-server.js";
 import { createOAuthProvider } from "../oauth/providers/index.js";
 import { toResourceUrl } from "../oauth/types.js";
 import { getLogger, reqLogger } from "../logger.js";
 
 type McpRequest = IncomingMessage & { auth?: AuthInfo };
 
-export async function startHttpServer(
-  server: McpServer,
-  config: McpServerConfig,
-): Promise<void> {
+export async function startHttpServer(config: McpServerConfig): Promise<void> {
   validateHttpConfig(config);
   const logger = getLogger();
 
@@ -49,12 +46,6 @@ export async function startHttpServer(
 
   const authMiddleware = createAuthMiddleware(config);
 
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
-  });
-
-  await server.connect(transport);
-
   // The Streamable HTTP spec (and clients that follow it — several MCP
   // clients probe this as part of connecting) allows GET (to open a
   // server-initiated SSE stream) and DELETE (session termination) on the
@@ -82,7 +73,26 @@ export async function startHttpServer(
       },
       "MCP request received",
     );
+
+    // Stateless mode (sessionIdGenerator: undefined — the only mode this
+    // server uses) explicitly forbids reusing one transport across requests:
+    // WebStandardStreamableHTTPServerTransport.handleRequest() throws
+    // "Stateless transport cannot be reused across requests" on the second
+    // call against the same instance. A transport is bound 1:1 to a server
+    // via connect() too (Protocol.connect() throws if already connected), so
+    // both have to be built fresh per request here. createMcpServer() only
+    // does in-memory tool registration (no I/O), so this is cheap.
+    const requestServer = createMcpServer(config);
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+    });
+    res.on("close", () => {
+      transport.close().catch((err) => log.error({ err }, "Error closing per-request MCP transport"));
+      requestServer.close().catch((err) => log.error({ err }, "Error closing per-request MCP server"));
+    });
+
     try {
+      await requestServer.connect(transport);
       await transport.handleRequest(req as McpRequest, res as ServerResponse, req.body);
       log.debug({ durationMs: Date.now() - startedAt, statusCode: res.statusCode }, "MCP request handled");
     } catch (error) {

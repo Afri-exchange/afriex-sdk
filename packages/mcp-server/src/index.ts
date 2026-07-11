@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createMcpServer } from "./create-server.js";
 import { loadConfigFromEnv, validateConfig } from "./config.js";
 import type { McpServerConfig } from "./config.js";
@@ -106,11 +105,16 @@ async function main(): Promise<void> {
     "Starting Afriex MCP server",
   );
 
-  const server: McpServer = createMcpServer(config);
-
   if (useHttp) {
-    await startHttpServer(server, config);
+    // The Streamable HTTP transport in stateless mode (sessionIdGenerator:
+    // undefined — the only mode this server uses) refuses to be reused
+    // across requests: its handleRequest() throws on the second call. HTTP
+    // mode therefore builds a fresh McpServer + transport per request (see
+    // transport/http.ts) rather than one shared instance connected at
+    // startup, unlike the single long-lived connection stdio mode uses below.
+    await startHttpServer(config);
   } else {
+    const server = createMcpServer(config);
     const transport = new StdioServerTransport();
     await server.connect(transport);
     logger.info("Afriex MCP server connected over stdio");
