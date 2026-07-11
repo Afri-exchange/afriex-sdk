@@ -5,6 +5,7 @@ import type { McpServerConfig, OAuthConfig } from "../config.js";
 import { decryptSecret, loadEncryptionKey } from "../oauth/crypto.js";
 import { getDb } from "../oauth/db.js";
 import { loadOrCreateSigningKey } from "../oauth/keys.js";
+import { toResourceUrl } from "../oauth/types.js";
 
 export interface AuthResult {
   authenticated: boolean;
@@ -93,21 +94,33 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
     );
   }
 
-  const jwksPromise: Promise<JwksGetter> =
-    (oauth.provider ?? "custom") === "custom"
-      ? // Same process issues and validates tokens for the custom provider —
-        // resolve the signing key directly instead of round-tripping over
-        // HTTP to our own /.well-known/jwks.json. That self-referential fetch
-        // depends on the server being able to reach its own public URL from
-        // inside its own container, which reverse proxies (Traefik, etc.)
-        // often don't support ("hairpin" routing) — it fails or hangs, and
-        // every OAuth-authenticated request 401s even though the token we
-        // ourselves issued is perfectly valid.
-        loadOrCreateSigningKey(getDb(oauth.dbPath || "./afriex-mcp-oauth.db")).then((key) =>
-          createLocalJWKSet({ keys: [key.publicJwk] }),
-        )
-      : Promise.resolve(resolveRemoteJwks(oauth));
+  const isCustomProvider = (oauth.provider ?? "custom") === "custom";
+
+  const jwksPromise: Promise<JwksGetter> = isCustomProvider
+    ? // Same process issues and validates tokens for the custom provider —
+      // resolve the signing key directly instead of round-tripping over
+      // HTTP to our own /.well-known/jwks.json. That self-referential fetch
+      // depends on the server being able to reach its own public URL from
+      // inside its own container, which reverse proxies (Traefik, etc.)
+      // often don't support ("hairpin" routing) — it fails or hangs, and
+      // every OAuth-authenticated request 401s even though the token we
+      // ourselves issued is perfectly valid.
+      loadOrCreateSigningKey(getDb(oauth.dbPath || "./afriex-mcp-oauth.db")).then((key) =>
+        createLocalJWKSet({ keys: [key.publicJwk] }),
+      )
+    : Promise.resolve(resolveRemoteJwks(oauth));
   const encryptionKey = oauth.encryptionKey ? loadEncryptionKey(oauth.encryptionKey) : undefined;
+
+  // The custom provider signs tokens with `aud` = the /mcp resource URL (see
+  // oauth/providers/custom.ts) to satisfy RFC 9728's requirement that it match
+  // the Protected Resource Metadata `resource` field exactly. External
+  // providers (Auth0/WorkOS) issue whatever `aud` the operator configured on
+  // their side, unrelated to our own URL — leave that one exactly as set.
+  const expectedAudience = oauth.audience
+    ? isCustomProvider
+      ? toResourceUrl(oauth.audience)
+      : oauth.audience
+    : undefined;
 
   return async (req, res, next) => {
     const header = req.headers.authorization as string | undefined;
@@ -129,7 +142,7 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
 
     try {
       const jwks = await jwksPromise;
-      const authInfo = await validateJwtWithJwks(token, jwks, oauth, encryptionKey);
+      const authInfo = await validateJwtWithJwks(token, jwks, oauth, expectedAudience, encryptionKey);
       if (!authInfo) {
         res.status(401).json({
           error: "invalid_token",
@@ -165,11 +178,12 @@ async function validateJwtWithJwks(
   token: string,
   jwks: JwksGetter,
   oauth: OAuthConfig,
+  expectedAudience: string | undefined,
   encryptionKey: Buffer | undefined,
 ): Promise<AuthInfo | undefined> {
   try {
     const options: JWTVerifyOptions = {};
-    if (oauth.audience) options.audience = oauth.audience;
+    if (expectedAudience) options.audience = expectedAudience;
     if (oauth.issuerUrl) options.issuer = oauth.issuerUrl;
 
     // jwtVerify cryptographically verifies the signature against the key

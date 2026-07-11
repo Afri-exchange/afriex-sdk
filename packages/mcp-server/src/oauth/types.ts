@@ -15,6 +15,18 @@ export interface AuthorizationServerMetadata {
 }
 
 /**
+ * Normalizes a configured base URL into the canonical MCP resource URL
+ * (RFC 9728 requires the Protected Resource Metadata `resource` field to
+ * exactly equal the URL the client connects to — for this server, always
+ * the /mcp endpoint, not just the origin). Idempotent so it's safe whether
+ * the operator's OAUTH_AUDIENCE already includes /mcp or not.
+ */
+export function toResourceUrl(baseUrl: string): string {
+  const trimmed = baseUrl.replace(/\/+$/, "");
+  return trimmed.endsWith("/mcp") ? trimmed : `${trimmed}/mcp`;
+}
+
+/**
  * One authorization-server backend behind the `--oauth` flag. `custom` hosts
  * every endpoint itself; `workos`/`auth0` describe an externally-hosted
  * issuer instead. Swapping OAUTH_PROVIDER is meant to be the only change

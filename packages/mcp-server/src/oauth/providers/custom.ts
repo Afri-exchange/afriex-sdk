@@ -4,7 +4,7 @@ import { SignJWT } from "jose";
 import { randomUUID } from "node:crypto";
 import { AfriexSDK } from "@afriex/sdk";
 import type { McpServerConfig } from "../../config.js";
-import type { OAuthProvider, AuthorizationServerMetadata } from "../types.js";
+import { toResourceUrl, type OAuthProvider, type AuthorizationServerMetadata } from "../types.js";
 import { getDb, pruneExpired } from "../db.js";
 import { loadOrCreateSigningKey } from "../keys.js";
 import { encryptSecret, hashToken, randomToken, verifyPkce, loadEncryptionKey, safeEqual } from "../crypto.js";
@@ -85,8 +85,11 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
   const encKey = loadEncryptionKey(oauth.encryptionKey);
   const accessTtl = oauth.accessTokenTtlSeconds ?? 3600;
   const refreshTtl = oauth.refreshTokenTtlSeconds ?? 60 * 60 * 24 * 30;
-  const audience = oauth.audience;
-  const issuer = oauth.issuerUrl || audience;
+  // RFC 9728: the resource server's canonical URI is the actual endpoint
+  // (/mcp), not just the origin — access tokens must carry that as `aud` to
+  // match what a spec-compliant client validates against.
+  const audience = toResourceUrl(oauth.audience);
+  const issuer = oauth.issuerUrl || oauth.audience;
 
   const signingKeyPromise = loadOrCreateSigningKey(db);
   const urlencoded = express.urlencoded({ extended: false });

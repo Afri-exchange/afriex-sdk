@@ -7,6 +7,7 @@ import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { type McpServerConfig, validateHttpConfig } from "../config.js";
 import { createAuthMiddleware } from "../auth/index.js";
 import { createOAuthProvider } from "../oauth/providers/index.js";
+import { toResourceUrl } from "../oauth/types.js";
 
 type McpRequest = IncomingMessage & { auth?: AuthInfo };
 
@@ -17,6 +18,7 @@ export async function startHttpServer(
   validateHttpConfig(config);
 
   const app = express();
+  app.disable("x-powered-by");
 
   app.use(cors());
   app.use(express.json());
@@ -81,14 +83,24 @@ function setupOAuthEndpoints(app: express.Express, config: McpServerConfig): voi
   const provider = createOAuthProvider(config);
   const baseUrl = config.oauth?.issuerUrl || config.oauth?.audience || `http://${config.host}:${config.port}`;
 
-  app.get("/.well-known/oauth-protected-resource", (_req, res) => {
+  const protectedResourceHandler = (_req: express.Request, res: express.Response) => {
     const metadata = provider.getAuthorizationServerMetadata(baseUrl);
     res.json({
-      resource: config.oauth?.audience || baseUrl,
+      // RFC 9728: this MUST exactly equal the URL the client connects to
+      // (the /mcp endpoint, not just the origin) or spec-compliant clients
+      // reject the metadata outright.
+      resource: toResourceUrl(config.oauth?.audience || baseUrl),
       authorization_servers: [metadata.issuer],
       scopes: metadata.scopes_supported ?? [],
     });
-  });
+  };
+
+  // RFC 9728 §3.1 defines two valid discovery locations for a resource that
+  // lives at a sub-path: the origin-root well-known URI, and one with the
+  // resource's own path appended. Different clients probe different ones —
+  // mount both so either strategy finds the same metadata.
+  app.get("/.well-known/oauth-protected-resource", protectedResourceHandler);
+  app.get("/.well-known/oauth-protected-resource/mcp", protectedResourceHandler);
 
   app.get("/.well-known/oauth-authorization-server", (_req, res) => {
     res.json(provider.getAuthorizationServerMetadata(baseUrl));
