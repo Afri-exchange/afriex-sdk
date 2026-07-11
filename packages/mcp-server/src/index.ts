@@ -5,6 +5,7 @@ import { createMcpServer } from "./create-server.js";
 import { loadConfigFromEnv, validateConfig } from "./config.js";
 import type { McpServerConfig } from "./config.js";
 import { startHttpServer } from "./transport/http.js";
+import { initLogger, getLogger } from "./logger.js";
 
 function printUsage(): void {
   console.log(`
@@ -94,6 +95,17 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  const logger = initLogger(config.logLevel);
+  logger.info(
+    {
+      transport: useHttp ? "http" : "stdio",
+      authMode: config.authMode,
+      environment: config.environment,
+      port: useHttp ? config.port : undefined,
+    },
+    "Starting Afriex MCP server",
+  );
+
   const server: McpServer = createMcpServer(config);
 
   if (useHttp) {
@@ -101,10 +113,13 @@ async function main(): Promise<void> {
   } else {
     const transport = new StdioServerTransport();
     await server.connect(transport);
+    logger.info("Afriex MCP server connected over stdio");
   }
 }
 
 main().catch((error) => {
-  console.error("Fatal error:", error);
+  // main() can throw before initLogger() ever runs (e.g. a config error);
+  // getLogger() falls back to a default-level logger in that case.
+  getLogger().fatal({ err: error }, "Fatal error during startup");
   process.exit(1);
 });

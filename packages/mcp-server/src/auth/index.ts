@@ -6,6 +6,7 @@ import { decryptSecret, loadEncryptionKey } from "../oauth/crypto.js";
 import { getDb } from "../oauth/db.js";
 import { loadOrCreateSigningKey } from "../oauth/keys.js";
 import { toResourceUrl } from "../oauth/types.js";
+import { getLogger, reqLogger } from "../logger.js";
 
 export interface AuthResult {
   authenticated: boolean;
@@ -95,6 +96,7 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
   }
 
   const isCustomProvider = (oauth.provider ?? "custom") === "custom";
+  const authLogger = getLogger().child({ module: "oauth-auth" });
 
   const jwksPromise: Promise<JwksGetter> = isCustomProvider
     ? // Same process issues and validates tokens for the custom provider —
@@ -109,6 +111,15 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
         createLocalJWKSet({ keys: [key.publicJwk] }),
       )
     : Promise.resolve(resolveRemoteJwks(oauth));
+
+  // Resolve eagerly (rather than only on first request) so a broken JWKS
+  // source — bad OAUTH_JWKS_URL, unwritable OAUTH_DB_PATH, etc. — shows up
+  // in startup logs immediately instead of surfacing later as every
+  // authenticated request 500ing with no obvious cause.
+  jwksPromise
+    .then(() => authLogger.info({ provider: isCustomProvider ? "custom" : "remote" }, "JWKS resolved"))
+    .catch((err) => authLogger.error({ err }, "Failed to resolve JWKS — all OAuth requests will fail until this is fixed"));
+
   const encryptionKey = oauth.encryptionKey ? loadEncryptionKey(oauth.encryptionKey) : undefined;
 
   // The custom provider signs tokens with `aud` = the /mcp resource URL (see
@@ -123,9 +134,11 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
     : undefined;
 
   return async (req, res, next) => {
+    const log = reqLogger(req);
     const header = req.headers.authorization as string | undefined;
 
     if (!header || !header.startsWith("Bearer ")) {
+      log.warn({ path: req.path }, "OAuth request rejected: missing Bearer token");
       res.status(401);
       res.setHeader(
         "WWW-Authenticate",
@@ -142,21 +155,24 @@ function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
 
     try {
       const jwks = await jwksPromise;
-      const authInfo = await validateJwtWithJwks(token, jwks, oauth, expectedAudience, encryptionKey);
+      const { authInfo, reason } = await validateJwtWithJwks(token, jwks, oauth, expectedAudience, encryptionKey);
       if (!authInfo) {
+        log.warn({ reason, expectedAudience, issuer: oauth.issuerUrl }, "OAuth request rejected: invalid token");
         res.status(401).json({
           error: "invalid_token",
           message: "The access token is invalid or expired",
         });
         return;
       }
+      log.debug({ clientId: authInfo.clientId, scopes: authInfo.scopes }, "OAuth token validated");
       // Populates extra.authInfo in tool callbacks (see shared/protocol.d.ts /
       // server/streamableHttp.js — the transport reads req.auth verbatim).
       // Without this, OAuth mode authenticated the transport but tool
       // handlers had no way to know which client/grant made the call.
       (req as AuthenticatedRequest).auth = authInfo;
       next();
-    } catch {
+    } catch (err) {
+      log.error({ err }, "OAuth request failed: error validating access token (JWKS unavailable?)");
       res.status(500).json({
         error: "server_error",
         message: "Failed to validate access token",
@@ -174,13 +190,19 @@ function resolveRemoteJwks(oauth: OAuthConfig): ReturnType<typeof createRemoteJW
   return createRemoteJWKSet(new URL(jwksUrl!));
 }
 
+interface JwtValidationResult {
+  authInfo?: AuthInfo;
+  /** jose's error name (e.g. "JWTExpired", "JWTClaimValidationFailed" for an aud/iss mismatch) — only set on failure, logged by the caller to distinguish "token expired" from "wrong audience" from "bad signature" instead of one opaque 401. */
+  reason?: string;
+}
+
 async function validateJwtWithJwks(
   token: string,
   jwks: JwksGetter,
   oauth: OAuthConfig,
   expectedAudience: string | undefined,
   encryptionKey: Buffer | undefined,
-): Promise<AuthInfo | undefined> {
+): Promise<JwtValidationResult> {
   try {
     const options: JWTVerifyOptions = {};
     if (expectedAudience) options.audience = expectedAudience;
@@ -225,9 +247,9 @@ async function validateJwtWithJwks(
       }
     }
 
-    return authInfo;
-  } catch {
-    return undefined;
+    return { authInfo };
+  } catch (err) {
+    return { reason: err instanceof Error ? err.name : String(err) };
   }
 }
 

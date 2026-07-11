@@ -1,11 +1,19 @@
 import Database from "better-sqlite3";
+import { getLogger } from "../logger.js";
 
 let db: Database.Database | undefined;
 
 export function getDb(dbPath: string): Database.Database {
   if (db) return db;
 
-  db = new Database(dbPath);
+  const logger = getLogger().child({ module: "oauth-db" });
+  try {
+    db = new Database(dbPath);
+  } catch (err) {
+    logger.fatal({ err, dbPath }, "Failed to open OAuth database — check OAUTH_DB_PATH and that its directory is writable");
+    throw err;
+  }
+  logger.info({ dbPath }, "OAuth database opened");
   db.pragma("journal_mode = WAL");
   db.exec(`
     CREATE TABLE IF NOT EXISTS oauth_clients (

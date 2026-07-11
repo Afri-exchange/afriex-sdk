@@ -1,6 +1,7 @@
 import { generateKeyPair, exportJWK, exportPKCS8, importPKCS8, type CryptoKey, type JWK } from "jose";
 import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
+import { getLogger } from "../logger.js";
 
 export interface SigningKey {
   kid: string;
@@ -36,9 +37,15 @@ export function loadOrCreateSigningKey(db: Database.Database): Promise<SigningKe
 }
 
 async function loadOrCreateSigningKeyUncached(db: Database.Database): Promise<SigningKey> {
-  const existing = await selectActiveKey(db);
-  if (existing) return existing;
+  const logger = getLogger().child({ module: "oauth-keys" });
 
+  const existing = await selectActiveKey(db);
+  if (existing) {
+    logger.info({ kid: existing.kid }, "Loaded existing OAuth signing key");
+    return existing;
+  }
+
+  logger.info("No active OAuth signing key found — generating a new one");
   const { publicKey, privateKey } = await generateKeyPair("RS256", { modulusLength: 2048, extractable: true });
   const kid = randomUUID();
   const publicJwk = await exportJWK(publicKey);
@@ -59,7 +66,13 @@ async function loadOrCreateSigningKeyUncached(db: Database.Database): Promise<Si
   // process won the race, this returns *their* key instead of ours.
   const winner = await selectActiveKey(db);
   if (!winner) {
+    logger.fatal("Failed to load or create an OAuth signing key after insert");
     throw new Error("Failed to load or create an OAuth signing key.");
+  }
+  if (winner.kid !== kid) {
+    logger.info({ kid: winner.kid }, "Lost signing-key generation race to another process — using their key");
+  } else {
+    logger.info({ kid: winner.kid }, "Generated and persisted new OAuth signing key");
   }
   return winner;
 }

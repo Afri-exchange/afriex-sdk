@@ -8,6 +8,7 @@ import { toResourceUrl, type OAuthProvider, type AuthorizationServerMetadata } f
 import { getDb, pruneExpired } from "../db.js";
 import { loadOrCreateSigningKey } from "../keys.js";
 import { encryptSecret, hashToken, randomToken, verifyPkce, loadEncryptionKey, safeEqual } from "../crypto.js";
+import { getLogger, reqLogger } from "../../logger.js";
 
 const AUTH_CODE_TTL_MS = 60_000;
 
@@ -73,6 +74,7 @@ export function createCustomProvider(): OAuthProvider {
 }
 
 function mountCustomRoutes(app: Express, config: McpServerConfig): void {
+  const logger = getLogger().child({ module: "oauth-custom-provider" });
   const oauth = config.oauth;
   if (!oauth?.encryptionKey) {
     throw new Error("OAUTH_ENCRYPTION_KEY is required for the custom OAuth provider.");
@@ -90,6 +92,12 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
   // match what a spec-compliant client validates against.
   const audience = toResourceUrl(oauth.audience);
   const issuer = oauth.issuerUrl || oauth.audience;
+
+  // Logged once at mount time so a misconfigured OAUTH_AUDIENCE/OAUTH_ISSUER_URL
+  // (the most common cause of tokens that validate here but get rejected by
+  // the client, or vice versa) is visible in startup logs rather than only
+  // inferable from a stream of individual 401s.
+  logger.info({ audience, issuer, accessTtl, refreshTtl }, "Custom OAuth provider routes mounted");
 
   const signingKeyPromise = loadOrCreateSigningKey(db);
   const urlencoded = express.urlencoded({ extended: false });
@@ -156,6 +164,7 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
       Date.now(),
     );
 
+    reqLogger(req).info({ clientId, clientName, authMethod }, "OAuth client registered");
     res.status(201).json({
       client_id: clientId,
       ...(clientSecret ? { client_secret: clientSecret } : {}),
@@ -182,6 +191,7 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
     const redirectUris: string[] = client ? JSON.parse(client.redirect_uris) : [];
     if (!client || !redirectUris.includes(redirect_uri)) {
       // Not safe to redirect back — the redirect_uri itself is unverified. Show an error in-page instead.
+      reqLogger(req).warn({ client_id, redirect_uri, knownClient: Boolean(client) }, "Authorize rejected: unknown client or redirect_uri");
       res.status(400).send(renderErrorPage("Unknown client or redirect_uri. This link may be malformed or expired."));
       return;
     }
@@ -236,8 +246,12 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
       return;
     }
 
-    const keyIsValid = await verifyAfriexApiKey(afriex_api_key.trim(), environment);
-    if (!keyIsValid) {
+    const keyCheck = await verifyAfriexApiKey(afriex_api_key.trim(), environment);
+    if (!keyCheck.valid) {
+      reqLogger(req).warn(
+        { client_id, environment, err: keyCheck.error },
+        "Authorize rejected: Afriex API key verification failed",
+      );
       res.status(200).send(
         renderConsentPage({
           ...consentParams,
@@ -264,6 +278,7 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
       Date.now() + AUTH_CODE_TTL_MS,
     );
 
+    reqLogger(req).info({ client_id, environment }, "Authorization code issued");
     const redirectTo = new URL(redirect_uri);
     redirectTo.searchParams.set("code", code);
     if (state) redirectTo.searchParams.set("state", state);
@@ -281,9 +296,11 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
       } else if (body.grant_type === "refresh_token") {
         await handleRefreshTokenGrant(req, res);
       } else {
+        reqLogger(req).warn({ grant_type: body.grant_type }, "Token request rejected: unsupported grant type");
         res.status(400).json({ error: "unsupported_grant_type" });
       }
-    } catch {
+    } catch (err) {
+      reqLogger(req).error({ err, grant_type: body.grant_type }, "Token request failed with an unexpected error");
       res.status(500).json({ error: "server_error" });
     }
   });
@@ -293,10 +310,12 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
     const { code, redirect_uri, client_id, code_verifier } = body;
 
     if (!code || !redirect_uri || !client_id || !code_verifier) {
+      reqLogger(req).warn({ client_id }, "Token request rejected: missing required parameters");
       res.status(400).json({ error: "invalid_request" });
       return;
     }
     if (!(await authenticateClient(req, client_id))) {
+      reqLogger(req).warn({ client_id }, "Token request rejected: client authentication failed");
       res.status(401).json({ error: "invalid_client" });
       return;
     }
@@ -305,10 +324,15 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
     const row = db.prepare<[string], AuthCodeRow>("SELECT * FROM oauth_authorization_codes WHERE code_hash = ?").get(codeHash);
 
     if (!row || row.used || row.expires_at < Date.now() || row.client_id !== client_id || row.redirect_uri !== redirect_uri) {
+      reqLogger(req).warn(
+        { client_id, found: Boolean(row), used: row?.used, expired: row ? row.expires_at < Date.now() : undefined },
+        "Token request rejected: invalid or expired authorization code",
+      );
       res.status(400).json({ error: "invalid_grant" });
       return;
     }
     if (!verifyPkce(code_verifier, row.code_challenge, row.code_challenge_method)) {
+      reqLogger(req).warn({ client_id }, "Token request rejected: PKCE verification failed");
       res.status(400).json({ error: "invalid_grant", error_description: "PKCE verification failed" });
       return;
     }
@@ -317,6 +341,7 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
     db.prepare("UPDATE oauth_authorization_codes SET used = 1 WHERE code_hash = ?").run(codeHash);
 
     const tokens = await issueTokens(client_id, row.encrypted_api_key, row.environment, row.scope);
+    reqLogger(req).info({ client_id, environment: row.environment }, "Access token issued (authorization_code grant)");
     res.status(200).json(tokens);
   }
 
@@ -325,6 +350,7 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
     const { refresh_token, client_id } = body;
 
     if (!refresh_token) {
+      reqLogger(req).warn("Token request rejected: missing refresh_token");
       res.status(400).json({ error: "invalid_request" });
       return;
     }
@@ -333,14 +359,20 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
     const row = db.prepare<[string], RefreshTokenRow>("SELECT * FROM oauth_refresh_tokens WHERE token_hash = ?").get(tokenHash);
 
     if (!row || row.revoked || row.expires_at < Date.now()) {
+      reqLogger(req).warn(
+        { found: Boolean(row), revoked: row?.revoked, expired: row ? row.expires_at < Date.now() : undefined },
+        "Token request rejected: invalid, expired, or revoked refresh token",
+      );
       res.status(400).json({ error: "invalid_grant" });
       return;
     }
     if (client_id && client_id !== row.client_id) {
+      reqLogger(req).warn({ client_id, ownerClientId: row.client_id }, "Token request rejected: client_id mismatch on refresh");
       res.status(400).json({ error: "invalid_grant" });
       return;
     }
     if (!(await authenticateClient(req, row.client_id))) {
+      reqLogger(req).warn({ client_id: row.client_id }, "Token request rejected: client authentication failed on refresh");
       res.status(401).json({ error: "invalid_client" });
       return;
     }
@@ -349,6 +381,7 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
     db.prepare("UPDATE oauth_refresh_tokens SET revoked = 1 WHERE token_hash = ?").run(tokenHash);
 
     const tokens = await issueTokens(row.client_id, row.encrypted_api_key, row.environment, row.scope);
+    reqLogger(req).info({ client_id: row.client_id, environment: row.environment }, "Access token issued (refresh_token grant)");
     res.status(200).json(tokens);
   }
 
@@ -418,13 +451,20 @@ function mountCustomRoutes(app: Express, config: McpServerConfig): void {
   });
 }
 
-async function verifyAfriexApiKey(apiKey: string, environment: "staging" | "production"): Promise<boolean> {
+async function verifyAfriexApiKey(
+  apiKey: string,
+  environment: "staging" | "production",
+): Promise<{ valid: boolean; error?: unknown }> {
   try {
     const sdk = new AfriexSDK({ apiKey, environment, enableLogging: false });
     await sdk.balance.getBalance({ currencies: "USD" });
-    return true;
-  } catch {
-    return false;
+    return { valid: true };
+  } catch (error) {
+    // Deliberately not distinguished from "bad key" in the user-facing consent
+    // page (a network blip and an invalid key look the same to the caller,
+    // and re-entering the key is the correct retry either way) — but the
+    // caller logs `error` so an operator can tell a real outage from a typo.
+    return { valid: false, error };
   }
 }
 

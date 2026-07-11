@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import { pinoHttp } from "pino-http";
+import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -8,6 +10,7 @@ import { type McpServerConfig, validateHttpConfig } from "../config.js";
 import { createAuthMiddleware } from "../auth/index.js";
 import { createOAuthProvider } from "../oauth/providers/index.js";
 import { toResourceUrl } from "../oauth/types.js";
+import { getLogger, reqLogger } from "../logger.js";
 
 type McpRequest = IncomingMessage & { auth?: AuthInfo };
 
@@ -16,9 +19,30 @@ export async function startHttpServer(
   config: McpServerConfig,
 ): Promise<void> {
   validateHttpConfig(config);
+  const logger = getLogger();
 
   const app = express();
   app.disable("x-powered-by");
+
+  // Mounted before everything else so every request is logged — including
+  // ones that never reach a route (bad JSON body, CORS preflight, 404s) —
+  // with a request id that correlates across all log lines for that request.
+  app.use(
+    pinoHttp({
+      logger,
+      genReqId: (req, res) => {
+        const existing = req.headers["x-request-id"];
+        const id = (Array.isArray(existing) ? existing[0] : existing) || randomUUID();
+        res.setHeader("x-request-id", id);
+        return id;
+      },
+      customLogLevel: (_req, res, err) => {
+        if (err || res.statusCode >= 500) return "error";
+        if (res.statusCode >= 400) return "warn";
+        return "debug";
+      },
+    }),
+  );
 
   app.use(cors());
   app.use(express.json());
@@ -47,9 +71,22 @@ export async function startHttpServer(
     // The actual fix for buffering/compression breaking SSE lives in the
     // reverse proxy config, not here — see the deploy notes.
     res.setHeader("X-Accel-Buffering", "no");
+    const log = reqLogger(req);
+    const startedAt = Date.now();
+    log.debug(
+      {
+        mcpMethod: req.method,
+        mcpSessionId: req.headers["mcp-session-id"],
+        hasAuthHeader: Boolean(req.headers.authorization),
+        rpcMethod: req.method === "POST" ? (req.body as { method?: string } | undefined)?.method : undefined,
+      },
+      "MCP request received",
+    );
     try {
       await transport.handleRequest(req as McpRequest, res as ServerResponse, req.body);
+      log.debug({ durationMs: Date.now() - startedAt, statusCode: res.statusCode }, "MCP request handled");
     } catch (error) {
+      log.error({ err: error, durationMs: Date.now() - startedAt }, "MCP request failed");
       if (!res.headersSent) {
         res.status(500).json({
           error: "Internal server error",
@@ -73,24 +110,31 @@ export async function startHttpServer(
 
   return new Promise((resolve) => {
     const httpServer = app.listen(config.port, config.host, () => {
-      console.error(`Afriex MCP server running on http://${config.host}:${config.port}`);
-      console.error(`MCP endpoint: POST http://${config.host}:${config.port}/mcp`);
-      console.error(`Auth mode: ${config.authMode}`);
+      logger.info(
+        { host: config.host, port: config.port, authMode: config.authMode },
+        `Afriex MCP server running on http://${config.host}:${config.port} (MCP endpoint: POST /mcp, auth mode: ${config.authMode})`,
+      );
       resolve();
     });
     httpServer.on("error", (error) => {
-      console.error("Failed to start server:", error);
+      logger.fatal({ err: error }, "Failed to start server");
       process.exit(1);
     });
   });
 }
 
 function setupOAuthEndpoints(app: express.Express, config: McpServerConfig): void {
+  const logger = getLogger().child({ module: "oauth-discovery" });
   const provider = createOAuthProvider(config);
   const baseUrl = config.oauth?.issuerUrl || config.oauth?.audience || `http://${config.host}:${config.port}`;
+  logger.info(
+    { provider: provider.name, baseUrl, audience: config.oauth?.audience },
+    "OAuth endpoints mounted",
+  );
 
-  const protectedResourceHandler = (_req: express.Request, res: express.Response) => {
+  const protectedResourceHandler = (req: express.Request, res: express.Response) => {
     const metadata = provider.getAuthorizationServerMetadata(baseUrl);
+    reqLogger(req).debug({ path: req.path }, "Protected resource metadata requested");
     res.json({
       // RFC 9728: this MUST exactly equal the URL the client connects to
       // (the /mcp endpoint, not just the origin) or spec-compliant clients
@@ -108,7 +152,8 @@ function setupOAuthEndpoints(app: express.Express, config: McpServerConfig): voi
   app.get("/.well-known/oauth-protected-resource", protectedResourceHandler);
   app.get("/.well-known/oauth-protected-resource/mcp", protectedResourceHandler);
 
-  app.get("/.well-known/oauth-authorization-server", (_req, res) => {
+  app.get("/.well-known/oauth-authorization-server", (req, res) => {
+    reqLogger(req).debug("Authorization server metadata requested");
     res.json(provider.getAuthorizationServerMetadata(baseUrl));
   });
 
