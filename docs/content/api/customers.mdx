@@ -14,9 +14,6 @@ const customer = await afriex.customers.create({
   email: "john@example.com",
   phone: "+1234567890",
   countryCode: "US",
-  kyc: {
-    // Optional KYC fields
-  },
   meta: {
     // Optional metadata
   },
@@ -31,8 +28,9 @@ const customer = await afriex.customers.create({
 | `email`       | `string` | Yes      | Email address                     |
 | `phone`       | `string` | Yes      | Phone number with country code    |
 | `countryCode` | `string` | Yes      | ISO 3166-1 alpha-2 code, (e.g US) |
-| `kyc`         | `object` | -        | KYC verification data             |
 | `meta`        | `object` | -        | Additional metadata               |
+
+The response uses `name`, not `fullName` — the API responds with a `Customer` object whose full-name field is `name`.
 
 ## Get Customer
 
@@ -56,14 +54,38 @@ console.log(response.total); // Total count
 
 `email` and `phone` are optional exact-match filters for narrowing the list.
 
+## Update Customer
+
+Partially update a customer's profile. Send at least one of `fullName`, `email`, or `phone`; omitted fields are left unchanged.
+
+```typescript
+const customer = await afriex.customers.update("customer-id", {
+  fullName: "Jane Doe",
+});
+```
+
 ## Update KYC
+
+The KYC document map is sent directly as the request body — do not wrap it in a `kyc` field.
 
 ```typescript
 const customer = await afriex.customers.updateKyc("customer-id", {
-  kyc: {
-    documentType: "passport",
-    documentNumber: "AB123456",
-  },
+  PASSPORT: "AB123456",
+  DATE_OF_BIRTH: "1990-05-15",
+  COUNTRY: "NG",
+});
+```
+
+Valid keys: `REPRESENTATIVE_TYPE`, `DATE_OF_BIRTH`, `ADDRESS`, `BANK_STATEMENT`, `BUSINESS_CERTIFICATE`, `COUNTRY`, `ID_FRONT`, `ID_BACK`, `PHONE`, `SELFIE`, `PROOF_OF_ADDRESS`, `PROOF_OF_INCOME`, `BVN`, `DRIVER_LICENSE`, `PASSPORT`, `NATIONAL_ID`, `PAYMENT_METHOD`, `RESIDENCE_PERMIT`, `VEHICLE_REGISTRATION`, `VOTER_ID`, `OTHERS`.
+
+## Verify Customer
+
+Run an identity verification against a customer document. Today the only supported `docType` is `BVN` (Nigeria). Verification is rate limited per business.
+
+```typescript
+const customer = await afriex.customers.verify("customer-id", {
+  docType: "BVN",
+  docValue: "22222222222",
 });
 ```
 

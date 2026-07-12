@@ -1,5 +1,12 @@
 # @afriex/rates
 
+## 1.4.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @afriex/core@2.0.0
+
 ## 1.4.0
 
 ### Minor Changes

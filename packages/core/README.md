@@ -70,8 +70,29 @@ interface RetryConfig {
 - `ValidationError` - Validation error class
 - `AfriexError` - Base error class
 - `ApiError` - API error class
+- `ApiErrorResponse` - The Afriex API's error body shape: `{ code, error, details }`, where `error` is a human-readable string and `details` carries `errorMessage`/`friendlyMessage`/`data`
+- `AfriexErrorCode` - The real `code` values the API returns (e.g. `BUSINESS_CUSTOMER_NOT_FOUND`, `VALIDATION_ERROR`, `VIRTUAL_ACCOUNT_LIMIT_REACHED`)
 - `NetworkError` - Network error class
 - `RateLimitError` - Rate limit error class
+
+## Error Handling
+
+`ApiError` parses the API's actual error body, so `error.message` is the API's `details.friendlyMessage` (falling back to `details.errorMessage`, then the top-level `error` string):
+
+```typescript
+import { ApiError } from "@afriex/core";
+
+try {
+  await httpClient.post("/customer", body);
+} catch (error) {
+  if (error instanceof ApiError) {
+    console.log(error.statusCode); // e.g. 400
+    console.log(error.errorCode); // e.g. "INVALID_BUSINESS_CUSTOMER_REQUEST"
+    console.log(error.message); // e.g. "No customer phone provided"
+    console.log(error.details); // { errorMessage, friendlyMessage, data? }
+  }
+}
+```
 
 ## License
 

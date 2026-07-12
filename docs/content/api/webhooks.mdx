@@ -146,14 +146,21 @@ import { Callout } from "fumadocs-ui/components/callout";
   data: {
     transactionId: string,
     customerId: string,
+    sourceId?: string,
     destinationId: string,
-    status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | ...,
+    status: 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'CANCELLED' |
+            'REFUNDED' | 'RETRY' | 'UNKNOWN' | 'SCHEDULED' |
+            'CUSTOMER_ACTION_REQUIRED' | 'REJECTED' | 'IN_REVIEW' | 'DISPUTED' |
+            'DISPUTE_RESOLVED' | 'DISPUTE_WON' | 'DISPUTE_LOST' |
+            'DISPUTE_EVIDENCE_SUBMITTED',
     type: string,
+    channel?: string,
+    merchantReference?: string,
     sourceAmount: string,
     sourceCurrency: string,
     destinationAmount: string,
     destinationCurrency: string,
-    meta: { idempotencyKey, reference, narration?, invoice?, merchantId? },
+    meta: { idempotencyKey?, reference?, narration?, invoice? },
     createdAt: string,
     updatedAt: string
   }
@@ -180,6 +187,7 @@ import { Callout } from "fumadocs-ui/components/callout";
     accountName: string,
     accountNumber: string,
     countryCode: string,
+    status?: 'active' | 'pending' | 'deleted' | 'expired' | 'blocked',
     institution: { institutionId?, institutionName?, institutionCode? },
     recipient: { recipientName?, recipientEmail?, recipientPhone? }
   }
