@@ -2,6 +2,7 @@ import { HttpClient, ValidationBuilder, ValidationError } from "@afriex/core";
 import {
   Transaction,
   CreateTransactionRequest,
+  AuthorizeTransactionRequest,
   ListTransactionsParams,
   TransactionListResponse,
   DEFAULT_TRANSACTION_TYPE,
@@ -63,6 +64,31 @@ export class TransactionService {
     return this.httpClient.get<TransactionListResponse>("/transaction", {
       params: normalizedParams,
     });
+  }
+
+  /**
+   * Authorize a pending transaction that needs an extra step (e.g. OTP on a
+   * mobile-money deposit left in CUSTOMER_ACTION_REQUIRED).
+   * POST /transaction/{transactionId}/authorize
+   */
+  async authorize(
+    transactionId: string,
+    request: AuthorizeTransactionRequest
+  ): Promise<Transaction> {
+    if (!transactionId) {
+      throw new ValidationError("Transaction ID is required");
+    }
+
+    new ValidationBuilder()
+      .required("type", request.type)
+      .required("otp", request.otp)
+      .throwIfInvalid();
+
+    const response = await this.httpClient.post<{ data: Transaction }>(
+      `/transaction/${transactionId}/authorize`,
+      request
+    );
+    return response.data;
   }
 
   private validateCreateRequest(request: CreateTransactionRequest): void {

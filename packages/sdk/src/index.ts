@@ -59,7 +59,9 @@ export { WebhookVerifier, WebhookService } from "@afriex/webhooks";
 export type {
   Customer,
   CreateCustomerRequest,
+  UpdateCustomerRequest,
   UpdateCustomerKycRequest,
+  VerifyCustomerRequest,
   ListCustomersParams,
   CustomerListResponse,
 } from "@afriex/customers";
@@ -67,6 +69,7 @@ export type {
 export type {
   Transaction,
   CreateTransactionRequest,
+  AuthorizeTransactionRequest,
   ListTransactionsParams,
   TransactionListResponse,
   TransactionListType,
@@ -74,6 +77,9 @@ export type {
   TransactionType,
   TransactionStatus,
   TransactionMeta,
+  TransactionMetaResponse,
+  TransactionFailureCode,
+  TransactionFailureReason,
 } from "@afriex/transactions";
 
 export type {
@@ -82,7 +88,12 @@ export type {
   ListPaymentMethodsParams,
   PaymentMethodListResponse,
   PaymentChannel,
+  CreatablePaymentChannel,
+  PaymentMethodStatus,
+  CardBrand,
+  CardExpiration,
   Institution,
+  InstitutionListChannel,
   ResolveAccountParams,
   ResolveAccountResponse,
   GetInstitutionsParams,

@@ -152,6 +152,42 @@ describe("HttpClient", () => {
       await expect(httpClient.get("/test")).rejects.toThrow(ApiError);
     });
 
+    it("should extract code and friendly message from a real API error body", async () => {
+      const httpError = {
+        response: {
+          status: 400,
+          clone: () => ({
+            json: () =>
+              Promise.resolve({
+                code: "INVALID_BUSINESS_CUSTOMER_REQUEST",
+                error: "Invalid business customer request",
+                details: {
+                  errorMessage: "Invalid business customer request",
+                  friendlyMessage: "No customer phone provided",
+                },
+              }),
+          }),
+          headers: new Headers(),
+        },
+        request: { url: "/test" },
+        message: "Bad Request",
+      };
+
+      mockJson.mockRejectedValueOnce(httpError);
+      vi.mocked(isHTTPError).mockReturnValueOnce(true);
+
+      try {
+        await httpClient.get("/test");
+        expect.fail("expected httpClient.get to throw");
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        const apiError = error as ApiError;
+        expect(apiError.message).toBe("No customer phone provided");
+        expect(apiError.errorCode).toBe("INVALID_BUSINESS_CUSTOMER_REQUEST");
+        expect(apiError.statusCode).toBe(400);
+      }
+    });
+
     it("should throw RateLimitError on 429", async () => {
       const httpError = {
         response: {

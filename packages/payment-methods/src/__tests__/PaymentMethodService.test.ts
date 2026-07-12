@@ -99,6 +99,28 @@ describe("PaymentMethodService", () => {
       });
       expect(result).toEqual(mockResponse);
     });
+
+    it("should serialize array filters as comma-separated query params", async () => {
+      const mockResponse = { data: [], page: 0, total: 0 };
+
+      (mockHttpClient.get as Mock).mockResolvedValue(mockResponse);
+
+      await paymentMethodService.list({
+        channel: ["BANK_ACCOUNT", "MOBILE_MONEY"],
+        currencies: ["USD", "NGN"],
+        capabilities: "WITHDRAW",
+        status: ["active", "pending"],
+      });
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith("/payment-method", {
+        params: {
+          channel: "BANK_ACCOUNT,MOBILE_MONEY",
+          currencies: "USD,NGN",
+          capabilities: "WITHDRAW",
+          status: "active,pending",
+        },
+      });
+    });
   });
 
   describe("delete", () => {
@@ -144,6 +166,78 @@ describe("PaymentMethodService", () => {
         paymentMethodService.getInstitutions({
           channel: "" as any,
           countryCode: "NG",
+        })
+      ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  describe("resolveInstitutionCode", () => {
+    it("should resolve a US routing number", async () => {
+      const mockResponse = { bankName: "JPMORGAN CHASE BANK" };
+
+      (mockHttpClient.get as Mock).mockResolvedValue(mockResponse);
+
+      const result = await paymentMethodService.resolveInstitutionCode({
+        searchTerm: "021000021",
+        country: "US",
+        codeType: "routing_number",
+      });
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith(
+        "/payment-method/institution/codes",
+        {
+          params: {
+            searchTerm: "021000021",
+            country: "US",
+            codeType: "routing_number",
+          },
+        }
+      );
+      expect(result).toEqual(mockResponse);
+    });
+
+    it("should resolve a non-US SWIFT code", async () => {
+      const mockResponse = { bankName: "Deutsche Bank" };
+
+      (mockHttpClient.get as Mock).mockResolvedValue(mockResponse);
+
+      const result = await paymentMethodService.resolveInstitutionCode({
+        searchTerm: "DEUTDEDB",
+        country: "DE",
+        codeType: "swift_code",
+      });
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith(
+        "/payment-method/institution/codes",
+        {
+          params: {
+            searchTerm: "DEUTDEDB",
+            country: "DE",
+            codeType: "swift_code",
+          },
+        }
+      );
+      expect(result).toEqual(mockResponse);
+    });
+
+    it("should return null when the code is not found", async () => {
+      (mockHttpClient.get as Mock).mockResolvedValue(null);
+
+      const result = await paymentMethodService.resolveInstitutionCode({
+        searchTerm: "000000000",
+        country: "US",
+        codeType: "routing_number",
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it("should throw ValidationError when required params are missing", async () => {
+      await expect(
+        paymentMethodService.resolveInstitutionCode({
+          searchTerm: "",
+          country: "US",
+          codeType: "routing_number",
         })
       ).rejects.toThrow(ValidationError);
     });

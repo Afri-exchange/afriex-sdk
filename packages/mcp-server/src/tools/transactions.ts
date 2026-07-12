@@ -45,17 +45,16 @@ export function registerTransactionTools(registry: ToolRegistry): void {
           .string()
           .optional()
           .describe("Payment method ID of the source — required for DEPOSIT"),
-        channel: z
-          .string()
+        shouldPreferSourceAmount: z
+          .boolean()
           .optional()
-          .describe("Payment channel: BANK_ACCOUNT, MOBILE_MONEY, SWIFT, UPI, INTERAC, WE_CHAT, ALIPAY, PAYBILL_TILL, CARD, CRYPTO"),
+          .describe("Opt in to deriving destinationAmount from sourceAmount even when both amounts are sent. Defaults to false (destination-wins)."),
         meta: z
           .object({
             idempotencyKey: z.string().min(1).describe("Unique key to prevent duplicate processing (use a UUID)"),
             reference: z.string().min(1).describe("Your internal reference for this transaction (e.g. order ID)"),
             narration: z.string().optional().describe("Human-readable reason or description"),
             invoice: z.string().optional().describe("Base64-encoded invoice document"),
-            merchantId: z.string().optional().describe("Your merchant/business identifier for reconciliation"),
           })
           .describe("Transaction metadata with idempotencyKey and reference"),
       },
@@ -118,7 +117,7 @@ export function registerTransactionTools(registry: ToolRegistry): void {
         status: z
           .union([z.string(), z.array(z.string())])
           .optional()
-          .describe("Filter by status(es). Values: PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED, SUCCESS, REFUNDED, REJECTED, CUSTOMER_ACTION_REQUIRED, IN_REVIEW, DISPUTED, DISPUTE_RESOLVED"),
+          .describe("Filter by status(es). Values: PENDING, PROCESSING, SUCCESS, FAILED, CANCELLED, REFUNDED, RETRY, UNKNOWN, SCHEDULED, CUSTOMER_ACTION_REQUIRED, REJECTED, IN_REVIEW, DISPUTED, DISPUTE_RESOLVED, DISPUTE_WON, DISPUTE_LOST, DISPUTE_EVIDENCE_SUBMITTED"),
         type: z
           .union([z.string(), z.array(z.string())])
           .optional()
@@ -147,6 +146,33 @@ export function registerTransactionTools(registry: ToolRegistry): void {
         return {
           isError: true,
           content: [{ type: "text", text: `Error listing transactions: ${error}` }],
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    "afriex_authorize_transaction",
+    {
+      description: "Authorize a pending transaction that was created in a CUSTOMER_ACTION_REQUIRED state and needs an extra authorization step (for example, an OTP on a mobile-money deposit). Today the only supported type is OTP.",
+      inputSchema: {
+        transactionId: z.string().min(1).describe("The transaction's unique identifier"),
+        type: z.literal("OTP").describe("The authorization method"),
+        otp: z.string().min(1).describe("The one-time password supplied by the customer"),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    async ({ transactionId, type, otp }, extra) => {
+      try {
+        const sdk = registry.getSdk(extra);
+        const transaction = await sdk.transactions.authorize(transactionId, { type, otp });
+        return {
+          content: [{ type: "text", text: JSON.stringify(transaction, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Error authorizing transaction: ${error}` }],
         };
       }
     },
