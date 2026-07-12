@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolRegistry } from "./index.js";
+import { balanceOutputSchema, topUpOutputSchema, toStructured } from "../schemas/output.js";
 
 export function registerBalanceTools(registry: ToolRegistry): void {
   const { server } = registry;
@@ -7,23 +8,26 @@ export function registerBalanceTools(registry: ToolRegistry): void {
   server.registerTool(
     "afriex_get_balance",
     {
-      description: "Get wallet balances for one or more currencies. Returns a map of currency codes to their current available balances. Example currencies: USD, NGN, KES, GHS, UGX, XOF, EGP, GBP, EUR, CAD.",
+      description: "Get wallet balances for one or more currencies. Returns a map of currency codes to their current available balances. Omit `currencies` to get balances for every supported currency. Example currencies: USD, NGN, KES, GHS, UGX, XOF, EGP, GBP, EUR, CAD.",
       inputSchema: {
         currencies: z
           .union([
             z.string().describe("Comma-separated currency codes, e.g. 'USD,NGN,GBP'"),
             z.array(z.string()).describe("Array of currency codes, e.g. ['USD', 'NGN', 'GBP']"),
           ])
-          .describe("Currency codes to fetch balances for"),
+          .optional()
+          .describe("Currency codes to fetch balances for. Omit to fetch balances for every supported currency."),
       },
+      outputSchema: balanceOutputSchema.shape,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ currencies }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
-        const balances = await sdk.balance.getBalance({ currencies });
+        const balances = await sdk.balance.getBalance(currencies ? { currencies } : undefined);
         return {
           content: [{ type: "text", text: JSON.stringify(balances, null, 2) }],
+          structuredContent: { balances },
         };
       } catch (error) {
         return {
@@ -46,6 +50,7 @@ export function registerBalanceTools(registry: ToolRegistry): void {
           .toUpperCase()
           .describe("Uppercase 3-letter ISO currency code, e.g. USD, NGN, GBP"),
       },
+      outputSchema: topUpOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ amount, currency }, extra) => {
@@ -54,6 +59,7 @@ export function registerBalanceTools(registry: ToolRegistry): void {
         const result = await sdk.balance.topUpSandbox({ amount, currency });
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          structuredContent: toStructured(result),
         };
       } catch (error) {
         return {

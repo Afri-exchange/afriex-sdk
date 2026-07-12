@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolRegistry } from "./index.js";
+import { checkoutSessionOutputSchema, toStructured } from "../schemas/output.js";
 
 export function registerCheckoutTools(registry: ToolRegistry): void {
   const { server } = registry;
@@ -41,14 +42,15 @@ export function registerCheckoutTools(registry: ToolRegistry): void {
           })
           .describe("Customer information for the checkout"),
         channels: z
-          .array(z.enum(["VIRTUAL_BANK_ACCOUNT", "MOBILE_MONEY"]))
+          .array(z.enum(["VIRTUAL_BANK_ACCOUNT", "MOBILE_MONEY", "CARD"]))
           .optional()
-          .describe("Allowed payment channels. Defaults to all available channels."),
+          .describe("Allowed payment channels. Defaults to [VIRTUAL_BANK_ACCOUNT] if omitted."),
         metadata: z
           .record(z.string(), z.string())
           .optional()
           .describe("Optional metadata key-value pairs (values must be strings)"),
       },
+      outputSchema: checkoutSessionOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ amount, currency, merchantReference, redirectUrl, customer, channels, metadata }, extra) => {
@@ -65,6 +67,7 @@ export function registerCheckoutTools(registry: ToolRegistry): void {
         });
         return {
           content: [{ type: "text", text: JSON.stringify(session, null, 2) }],
+          structuredContent: toStructured(session),
         };
       } catch (error) {
         return {

@@ -17,7 +17,7 @@ npx @afriex/mcp-server --http --port=3001
 
 ## Tools
 
-The server exposes 29 tools covering every Afriex API endpoint:
+The server exposes 30 tools covering every Afriex API endpoint. Every tool declares both an `inputSchema` and an `outputSchema` (MCP structured content) — see [Structured Output](#structured-output) below.
 
 | Tool | Description |
 |------|-------------|
@@ -32,9 +32,10 @@ The server exposes 29 tools covering every Afriex API endpoint:
 | `afriex_delete_customer` | Delete a customer |
 | `afriex_create_payment_method` | Create a bank account or mobile money payment method |
 | `afriex_get_payment_method` | Get payment method by ID |
-| `afriex_list_payment_methods` | List payment methods |
+| `afriex_list_payment_methods` | List payment methods, filterable by channel/currency/status |
 | `afriex_delete_payment_method` | Delete a payment method |
 | `afriex_get_institutions` | List banks/mobile money providers for a country |
+| `afriex_resolve_institution_code` | Resolve a SWIFT code or US routing number to a bank name |
 | `afriex_resolve_account` | Resolve account holder details |
 | `afriex_get_crypto_wallet` | Get/create crypto wallet (USDT/USDC) |
 | `afriex_list_virtual_accounts` | List virtual accounts |
@@ -50,6 +51,10 @@ The server exposes 29 tools covering every Afriex API endpoint:
 | `afriex_verify_webhook_signature` | Verify a webhook signature |
 | `afriex_verify_and_parse_webhook` | Verify and parse a webhook payload |
 | `afriex_trigger_test_webhook` | Trigger a test webhook (sandbox only) |
+
+## Structured Output
+
+Every tool result includes `structuredContent` alongside the human-readable `content` text block, validated against a per-tool `outputSchema` (Zod, defined in `src/schemas/output.ts`). This lets MCP clients that support structured tool output consume responses as typed JSON instead of parsing text. Schemas mirror the corresponding `@afriex/*` SDK response types (`Customer`, `Transaction`, `PaymentMethod`, etc.) and use `.passthrough()` so additional fields the API returns don't fail validation. Tools with no natural JSON response (e.g. `afriex_delete_customer`) synthesize a small `{ deleted: true, id }` result; tools that return a bare array or record (e.g. `afriex_get_institutions`, `afriex_get_balance`) wrap it in a named object (`{ institutions }`, `{ balances }`) since MCP structured content must be a JSON object.
 
 ## Configuration
 

@@ -1,5 +1,21 @@
 # @afriex/mcp-server
 
+## 1.2.0
+
+### Minor Changes
+
+- Add structured output (MCP `outputSchema`/`structuredContent`) to every tool, and align tool input/output schemas with the current `@afriex/sdk` v3 contract.
+
+  - Every tool now declares an `outputSchema` and returns `structuredContent` alongside its text `content`, built from a new `src/schemas/output.ts` (reconstructed to match the SDK's current response shapes, e.g. `Customer.name` instead of `fullName`, the expanded `Transaction`/`PaymentMethod` fields, etc.)
+  - Added `afriex_resolve_institution_code`, wrapping `paymentMethods.resolveInstitutionCode()` — previously unexposed
+  - `afriex_create_payment_method` now accepts `VIRTUAL_BANK_ACCOUNT` and `ACH_BANK_ACCOUNT` channels
+  - `afriex_get_institutions` now accepts the full channel set (`SWIFT`, `UPI`, `INTERAC`, `WE_CHAT` in addition to `BANK_ACCOUNT`/`MOBILE_MONEY`)
+  - `afriex_list_payment_methods` gained `channel`, `currencies`, `capabilities`, and `status` filters
+  - `afriex_get_pool_account` gained the optional `customerId` param
+  - `afriex_list_virtual_accounts`/`afriex_create_virtual_account` gained the optional `reference` param
+  - `afriex_get_balance`'s `currencies` is now optional, matching `BalanceService.getBalance()` — omit it to fetch every supported currency
+  - `afriex_create_checkout_session`'s `channels` now accepts `CARD`
+
 ## 1.1.0
 
 ### Minor Changes

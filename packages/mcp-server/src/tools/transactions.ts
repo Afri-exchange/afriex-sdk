@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolRegistry } from "./index.js";
+import { transactionSchema, transactionListOutputSchema, toStructured } from "../schemas/output.js";
 
 export function registerTransactionTools(registry: ToolRegistry): void {
   const { server } = registry;
@@ -58,6 +59,7 @@ export function registerTransactionTools(registry: ToolRegistry): void {
           })
           .describe("Transaction metadata with idempotencyKey and reference"),
       },
+      outputSchema: transactionSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async (params, extra) => {
@@ -70,6 +72,7 @@ export function registerTransactionTools(registry: ToolRegistry): void {
         } as Parameters<typeof sdk.transactions.create>[0]);
         return {
           content: [{ type: "text", text: JSON.stringify(transaction, null, 2) }],
+          structuredContent: toStructured(transaction),
         };
       } catch (error) {
         return {
@@ -87,6 +90,7 @@ export function registerTransactionTools(registry: ToolRegistry): void {
       inputSchema: {
         transactionId: z.string().min(1).describe("The transaction's unique identifier"),
       },
+      outputSchema: transactionSchema.shape,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ transactionId }, extra) => {
@@ -95,6 +99,7 @@ export function registerTransactionTools(registry: ToolRegistry): void {
         const transaction = await sdk.transactions.get(transactionId);
         return {
           content: [{ type: "text", text: JSON.stringify(transaction, null, 2) }],
+          structuredContent: toStructured(transaction),
         };
       } catch (error) {
         return {
@@ -133,6 +138,7 @@ export function registerTransactionTools(registry: ToolRegistry): void {
         fromDate: z.string().optional().describe("Start date filter (ISO 8601 format)"),
         toDate: z.string().optional().describe("End date filter (ISO 8601 format)"),
       },
+      outputSchema: transactionListOutputSchema.shape,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async (params, extra) => {
@@ -141,6 +147,7 @@ export function registerTransactionTools(registry: ToolRegistry): void {
         const transactions = await sdk.transactions.list(params as Parameters<typeof sdk.transactions.list>[0]);
         return {
           content: [{ type: "text", text: JSON.stringify(transactions, null, 2) }],
+          structuredContent: toStructured(transactions),
         };
       } catch (error) {
         return {
@@ -160,6 +167,7 @@ export function registerTransactionTools(registry: ToolRegistry): void {
         type: z.literal("OTP").describe("The authorization method"),
         otp: z.string().min(1).describe("The one-time password supplied by the customer"),
       },
+      outputSchema: transactionSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ transactionId, type, otp }, extra) => {
@@ -168,6 +176,7 @@ export function registerTransactionTools(registry: ToolRegistry): void {
         const transaction = await sdk.transactions.authorize(transactionId, { type, otp });
         return {
           content: [{ type: "text", text: JSON.stringify(transaction, null, 2) }],
+          structuredContent: toStructured(transaction),
         };
       } catch (error) {
         return {

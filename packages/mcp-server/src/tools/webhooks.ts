@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolRegistry } from "./index.js";
+import { webhookVerifyOutputSchema, webhookParsedOutputSchema, triggerWebhookOutputSchema, toStructured } from "../schemas/output.js";
 
 export function registerWebhookTools(registry: ToolRegistry): void {
   const { server } = registry;
@@ -15,21 +16,19 @@ export function registerWebhookTools(registry: ToolRegistry): void {
           .min(1)
           .describe("The signature from the x-webhook-signature header of the webhook request"),
       },
+      outputSchema: webhookVerifyOutputSchema.shape,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
     async ({ payload, signature }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
         const isValid = sdk.webhooks.verify(payload, signature);
+        const message = isValid
+          ? "Webhook signature is VALID. The webhook was genuinely sent by Afriex."
+          : "Webhook signature is INVALID. The webhook may have been tampered with or the webhookPublicKey may not be configured.";
         return {
-          content: [
-            {
-              type: "text",
-              text: isValid
-                ? "Webhook signature is VALID. The webhook was genuinely sent by Afriex."
-                : "Webhook signature is INVALID. The webhook may have been tampered with or the webhookPublicKey may not be configured.",
-            },
-          ],
+          content: [{ type: "text", text: message }],
+          structuredContent: { valid: isValid, message },
         };
       } catch (error) {
         return {
@@ -51,6 +50,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
           .min(1)
           .describe("The signature from the x-webhook-signature header of the webhook request"),
       },
+      outputSchema: webhookParsedOutputSchema.shape,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
     async ({ payload, signature }, extra) => {
@@ -59,6 +59,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
         const parsed = sdk.webhooks.verifyAndParse(payload, signature);
         return {
           content: [{ type: "text", text: JSON.stringify(parsed, null, 2) }],
+          structuredContent: toStructured(parsed),
         };
       } catch (error) {
         return {
@@ -92,6 +93,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
           .min(1)
           .describe("The resource ID (customerId, paymentMethodId, transactionId, or checkoutSessionId) to use in the test payload"),
       },
+      outputSchema: triggerWebhookOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ event, resourceId }, extra) => {
@@ -100,6 +102,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
         const result = await sdk.webhooks.triggerTestWebhook({ event, resourceId });
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          structuredContent: toStructured(result),
         };
       } catch (error) {
         return {

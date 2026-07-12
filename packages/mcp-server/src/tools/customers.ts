@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolRegistry } from "./index.js";
+import { customerSchema, customerListOutputSchema, deletedOutputSchema, toStructured } from "../schemas/output.js";
 
 export function registerCustomerTools(registry: ToolRegistry): void {
   const { server } = registry;
@@ -17,15 +18,18 @@ export function registerCustomerTools(registry: ToolRegistry): void {
           .length(2)
           .toUpperCase()
           .describe("Two-letter ISO country code, e.g. NG, GH, KE, US, GB"),
+        meta: z.record(z.string(), z.unknown()).optional().describe("Optional metadata to attach to the customer"),
       },
+      outputSchema: customerSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    async ({ fullName, email, phone, countryCode }, extra) => {
+    async ({ fullName, email, phone, countryCode, meta }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
-        const customer = await sdk.customers.create({ fullName, email, phone, countryCode });
+        const customer = await sdk.customers.create({ fullName, email, phone, countryCode, meta });
         return {
           content: [{ type: "text", text: JSON.stringify(customer, null, 2) }],
+          structuredContent: toStructured(customer),
         };
       } catch (error) {
         return {
@@ -43,6 +47,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       inputSchema: {
         customerId: z.string().min(1).describe("The customer's unique identifier"),
       },
+      outputSchema: customerSchema.shape,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ customerId }, extra) => {
@@ -51,6 +56,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         const customer = await sdk.customers.get(customerId);
         return {
           content: [{ type: "text", text: JSON.stringify(customer, null, 2) }],
+          structuredContent: toStructured(customer),
         };
       } catch (error) {
         return {
@@ -71,6 +77,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         email: z.string().email().optional().describe("Filter by email address"),
         phone: z.string().optional().describe("Filter by phone number"),
       },
+      outputSchema: customerListOutputSchema.shape,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ page, limit, email, phone }, extra) => {
@@ -79,6 +86,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         const customers = await sdk.customers.list({ page, limit, email, phone });
         return {
           content: [{ type: "text", text: JSON.stringify(customers, null, 2) }],
+          structuredContent: toStructured(customers),
         };
       } catch (error) {
         return {
@@ -124,6 +132,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
           )
           .describe("KYC document type/value pairs, e.g. { BVN: '22222222222', DATE_OF_BIRTH: '1990-05-15', COUNTRY: 'NG' }"),
       },
+      outputSchema: customerSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     async ({ customerId, kyc }, extra) => {
@@ -132,6 +141,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         const customer = await sdk.customers.updateKyc(customerId, kyc);
         return {
           content: [{ type: "text", text: JSON.stringify(customer, null, 2) }],
+          structuredContent: toStructured(customer),
         };
       } catch (error) {
         return {
@@ -152,6 +162,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         email: z.string().email().optional().describe("The customer's new email address"),
         phone: z.string().min(1).optional().describe("The customer's new phone number"),
       },
+      outputSchema: customerSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     async ({ customerId, fullName, email, phone }, extra) => {
@@ -160,6 +171,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         const customer = await sdk.customers.update(customerId, { fullName, email, phone });
         return {
           content: [{ type: "text", text: JSON.stringify(customer, null, 2) }],
+          structuredContent: toStructured(customer),
         };
       } catch (error) {
         return {
@@ -179,6 +191,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         docType: z.literal("BVN").describe("The type of document to verify"),
         docValue: z.string().min(1).describe("The document number to verify, e.g. the BVN"),
       },
+      outputSchema: customerSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ customerId, docType, docValue }, extra) => {
@@ -187,6 +200,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         const customer = await sdk.customers.verify(customerId, { docType, docValue });
         return {
           content: [{ type: "text", text: JSON.stringify(customer, null, 2) }],
+          structuredContent: toStructured(customer),
         };
       } catch (error) {
         return {
@@ -204,6 +218,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       inputSchema: {
         customerId: z.string().min(1).describe("The customer's unique identifier"),
       },
+      outputSchema: deletedOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ customerId }, extra) => {
@@ -212,6 +227,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         await sdk.customers.delete(customerId);
         return {
           content: [{ type: "text", text: `Customer ${customerId} deleted successfully.` }],
+          structuredContent: { deleted: true, id: customerId },
         };
       } catch (error) {
         return {
