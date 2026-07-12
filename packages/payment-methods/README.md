@@ -38,10 +38,13 @@ const method = await paymentMethods.create({
 // Get a payment method by ID
 const fetchedMethod = await paymentMethods.get("payment-method-id");
 
-// List payment methods with pagination
+// List payment methods with pagination and filters
 const { data, page, total } = await paymentMethods.list({
   page: 1,
   limit: 10,
+  channel: ["BANK_ACCOUNT", "MOBILE_MONEY"],
+  currencies: ["USD", "NGN"],
+  status: ["active", "pending"],
 });
 
 // Delete a payment method
@@ -87,12 +90,20 @@ const poolAccount = await paymentMethods.listPoolAccounts({
 
 ## Payment Channels
 
+**Creatable via `create()`:**
+
 - `BANK_ACCOUNT` - Bank account
-- `SWIFT` - SWIFT transfer
 - `MOBILE_MONEY` - Mobile money wallet
-- `UPI` - UPI transfer (India)
+- `VIRTUAL_BANK_ACCOUNT` - Virtual bank account
+- `ACH_BANK_ACCOUNT` - US ACH bank account
 - `INTERAC` - Interac transfer (Canada)
+- `UPI` - UPI transfer (India)
+- `SWIFT` - SWIFT transfer
 - `WE_CHAT` - WeChat Pay
+- `ALIPAY` - Alipay
+- `PAYBILL_TILL` - M-Pesa Paybill/Till (Kenya)
+
+**Response-only** (returned by `get()`/`list()`, never accepted on create): `CARD`, `CRYPTO`, `POOL_ACCOUNT`, `RFP`, `VIRTUAL_CARD`
 
 ## API Reference
 
@@ -110,9 +121,9 @@ Retrieve a payment method by ID.
 
 ### `list(params?: ListPaymentMethodsParams): Promise<PaymentMethodListResponse>`
 
-List payment methods with optional pagination.
+List payment methods with optional pagination and filters.
 
-**Parameters:** `page`, `limit`
+**Parameters:** `page`, `limit`, `channel`, `currencies`, `capabilities` (defaults to `WITHDRAW`), `status` (defaults to `active,pending`)
 
 **Returns:** `{ data: PaymentMethod[], page: number, total: number }`
 
@@ -128,9 +139,11 @@ Get supported financial institutions.
 
 ### `resolveInstitutionCode(params: InstitutionCodesParams): Promise<InstitutionCodesResponse|null>`
 
-Resolve a bank code (SWIFT or US routing number) to the corresponding bank or institution
+Resolve a bank code (SWIFT or US routing number) to the corresponding bank or institution.
 
 **Required:** `codeType`, `searchTerm`, and `country`
+
+`country` defaults to `US` and accepts any ISO country code for `swift_code` lookups; `routing_number` is only supported when `country` is `US`.
 
 ### `resolveAccount(params: ResolveAccountParams): Promise<ResolveAccountResponse>`
 

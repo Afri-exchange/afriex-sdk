@@ -77,14 +77,16 @@ Send a test webhook to your endpoint in sandbox:
 ```typescript
 const result = await afriex.webhooks.triggerTestWebhook({
   event: "TRANSACTION.UPDATED",
-  resourceId: "transaction-id",
+  entityId: "transaction-id",
 });
 
 // Check your webhook endpoint for the test event
 console.log(result); // { success: true, message: "..." }
 ```
 
-For `CHECKOUT_SESSION.CREATED`, use the checkout session UUID as `resourceId`.
+For `CHECKOUT_SESSION.CREATED`, use the checkout session UUID as `entityId`.
+
+`resourceId` is accepted as a **deprecated** alias for `entityId` — it still works (mapped to `entityId` before the request is sent, since that's the field name the API accepts), but logs a deprecation warning and will be removed in a future version. Use `entityId`.
 
 **Supported Events:**
 
@@ -146,14 +148,21 @@ import { Callout } from "fumadocs-ui/components/callout";
   data: {
     transactionId: string,
     customerId: string,
+    sourceId?: string,
     destinationId: string,
-    status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | ...,
+    status: 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'CANCELLED' |
+            'REFUNDED' | 'RETRY' | 'UNKNOWN' | 'SCHEDULED' |
+            'CUSTOMER_ACTION_REQUIRED' | 'REJECTED' | 'IN_REVIEW' | 'DISPUTED' |
+            'DISPUTE_RESOLVED' | 'DISPUTE_WON' | 'DISPUTE_LOST' |
+            'DISPUTE_EVIDENCE_SUBMITTED',
     type: string,
+    channel?: string,
+    merchantReference?: string,
     sourceAmount: string,
     sourceCurrency: string,
     destinationAmount: string,
     destinationCurrency: string,
-    meta: { idempotencyKey, reference, narration?, invoice?, merchantId? },
+    meta: { idempotencyKey?, reference?, narration?, invoice? },
     createdAt: string,
     updatedAt: string
   }
@@ -180,6 +189,7 @@ import { Callout } from "fumadocs-ui/components/callout";
     accountName: string,
     accountNumber: string,
     countryCode: string,
+    status?: 'active' | 'pending' | 'deleted' | 'expired' | 'blocked',
     institution: { institutionId?, institutionName?, institutionCode? },
     recipient: { recipientName?, recipientEmail?, recipientPhone? }
   }

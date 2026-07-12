@@ -2,15 +2,65 @@
  * Payment Method types matching Afriex Business API
  */
 
+/**
+ * All channels a `PaymentMethod` may report. Broader than
+ * `CreatablePaymentChannel` — some values (CARD, CRYPTO, POOL_ACCOUNT, RFP,
+ * VIRTUAL_CARD) are only ever returned, never accepted on create.
+ */
 export type PaymentChannel =
   | "BANK_ACCOUNT"
-  | "SWIFT"
   | "MOBILE_MONEY"
-  | "UPI"
+  | "SWIFT"
   | "INTERAC"
+  | "UPI"
+  | "WE_CHAT"
+  | "ALIPAY"
+  | "CARD"
+  | "CRYPTO"
+  | "VIRTUAL_BANK_ACCOUNT"
+  | "POOL_ACCOUNT"
+  | "ACH_BANK_ACCOUNT"
+  | "PAYBILL_TILL"
+  | "RFP"
+  | "VIRTUAL_CARD";
+
+/** Channels accepted by POST /payment-method. */
+export type CreatablePaymentChannel =
+  | "BANK_ACCOUNT"
+  | "MOBILE_MONEY"
+  | "VIRTUAL_BANK_ACCOUNT"
+  | "ACH_BANK_ACCOUNT"
+  | "INTERAC"
+  | "UPI"
+  | "SWIFT"
   | "WE_CHAT"
   | "ALIPAY"
   | "PAYBILL_TILL";
+
+/** Lifecycle status of a payment method. */
+export type PaymentMethodStatus =
+  | "active"
+  | "pending"
+  | "deleted"
+  | "expired"
+  | "blocked";
+
+/** Card brand. CARD channel only. */
+export type CardBrand =
+  | "Visa"
+  | "MasterCard"
+  | "Discover"
+  | "American Express"
+  | "JCB"
+  | "Diners Club"
+  | "Eftpos Australia"
+  | "UnionPay"
+  | "Unknown";
+
+export interface CardExpiration {
+  month: number;
+  year: number;
+}
 
 export interface PaymentMethodInstitution {
   institutionId?: string;
@@ -34,18 +84,42 @@ export interface PaymentMethodTransaction {
 export interface PaymentMethod {
   paymentMethodId: string;
   customerId: string;
+  /** Identifier to reconcile incoming deposits against. */
+  reference?: string;
   institution?: PaymentMethodInstitution;
   transaction?: PaymentMethodTransaction;
   recipient?: PaymentMethodRecipient;
   channel: PaymentChannel;
   countryCode: string;
-  accountName: string;
-  accountNumber: string;
+  /** ISO 4217 currency. Prefer this over inferring currency from countryCode. */
+  currency?: string;
+  /** Operations this payment method is enabled for, e.g. DEPOSIT, WITHDRAW. */
+  capabilities?: string[];
+  status?: PaymentMethodStatus;
+  /** Present for account-shaped channels (BANK_ACCOUNT, MOBILE_MONEY, SWIFT, etc.). */
+  accountName?: string;
+  accountNumber?: string;
+  /** Bank routing number, present for channels that carry one (e.g. ACH). */
+  routingNumber?: string;
+  /** Last 4 digits of the card. CARD channel only. */
+  last4?: string;
+  /** Card brand. CARD channel only. */
+  brand?: CardBrand;
+  /** Card expiration. CARD channel only. */
+  expiration?: CardExpiration;
+  /** Name on the card. CARD channel only. */
+  cardName?: string;
+  /** Minutes until a dynamic virtual account expires, when applicable. */
+  expiresInMinutes?: number;
+  /** Requested amount for a dynamic virtual account, when applicable. */
+  amount?: number;
+  /** Additional channel-specific properties. */
+  extra?: Record<string, unknown>;
   meta?: Record<string, unknown>;
 }
 
 export interface CreatePaymentMethodRequest {
-  channel: PaymentChannel;
+  channel: CreatablePaymentChannel;
   /**
    *The capability of this payment method. `DEPOSIT` means funds can be pulled from this method (e.g. charge/collect from the customer). `WITHDRAW` means funds can be sent to this method (e.g. pay out to the customer). If omitted, defaults to `WITHDRAW`.
    */
@@ -62,6 +136,14 @@ export interface CreatePaymentMethodRequest {
 export interface ListPaymentMethodsParams {
   page?: number;
   limit?: number;
+  /** Filter by one or more payment channels. */
+  channel?: PaymentChannel | PaymentChannel[];
+  /** Filter by one or more 3-letter ISO 4217 currency codes. */
+  currencies?: string | string[];
+  /** Filter by capability. Only WITHDRAW is currently supported. Defaults to WITHDRAW. */
+  capabilities?: string | string[];
+  /** Filter by one or more statuses. Defaults to active,pending. */
+  status?: PaymentMethodStatus | PaymentMethodStatus[];
 }
 
 export interface PaymentMethodListResponse {
@@ -87,8 +169,17 @@ export interface InstitutionCodesResponse {
   bankName: string;
 }
 
+/** Channels accepted by GET /payment-method/institution. */
+export type InstitutionListChannel =
+  | "BANK_ACCOUNT"
+  | "SWIFT"
+  | "MOBILE_MONEY"
+  | "UPI"
+  | "INTERAC"
+  | "WE_CHAT";
+
 export interface GetInstitutionsParams {
-  channel: PaymentChannel;
+  channel: InstitutionListChannel;
   countryCode: string;
 }
 
@@ -100,7 +191,11 @@ export interface ResolveAccountParams {
 }
 export interface InstitutionCodesParams {
   searchTerm: string;
-  country: "US";
+  /**
+   * ISO country code of the institution. Defaults to US. `routing_number`
+   * lookups are only supported for US; all other countries use `swift_code`.
+   */
+  country: string;
   codeType: "swift_code" | "routing_number";
 }
 export interface CryptoWallet {

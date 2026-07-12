@@ -1,0 +1,23 @@
+# From packages/mcp-server:
+#   cp .env.example .env   # fill in the real values
+#   docker compose up --build
+#
+# Put a reverse proxy with TLS (nginx, Caddy, your platform's LB) in front of
+# this for a real deployment — OAuth discovery and redirect URIs assume https.
+
+services:
+  afriex-mcp:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: afriex-mcp-server:latest
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    volumes:
+      - oauth-data:/data
+
+volumes:
+  oauth-data:

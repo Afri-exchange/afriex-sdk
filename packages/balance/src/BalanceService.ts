@@ -18,14 +18,13 @@ export class BalanceService {
    * Get wallet balances for specified currencies
    * GET /org/balance
    *
-   * @param params.currencies - Comma-separated list or array of currency codes
+   * @param params.currencies - Comma-separated list or array of currency codes.
+   *   Omit (or pass no params) to fetch balances for all supported currencies.
    * @returns Map of currency codes to balance amounts
    */
-  async getBalance(params: GetBalanceParams): Promise<Record<string, number>> {
-    if (!params.currencies) {
-      throw new ValidationError("Currencies are required");
-    }
-
+  async getBalance(
+    params: GetBalanceParams = {}
+  ): Promise<Record<string, number>> {
     const currencies = Array.isArray(params.currencies)
       ? params.currencies.join(",")
       : params.currencies;
@@ -33,7 +32,7 @@ export class BalanceService {
     const response = await this.httpClient.get<BalanceResponse>(
       "/org/balance",
       {
-        params: { currencies },
+        params: currencies ? { currencies } : undefined,
       }
     );
 

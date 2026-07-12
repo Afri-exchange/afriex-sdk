@@ -49,10 +49,33 @@ describe("BalanceService", () => {
       expect(result).toEqual(mockBalances);
     });
 
-    it("should throw ValidationError when currencies is missing", async () => {
-      await expect(
-        balanceService.getBalance({ currencies: "" })
-      ).rejects.toThrow(ValidationError);
+    it("should fetch all currencies when currencies param is omitted", async () => {
+      const mockBalances = { USD: 1000, NGN: 500000, GBP: 0 };
+
+      (mockHttpClient.get as Mock).mockResolvedValue({
+        data: mockBalances,
+      });
+
+      const result = await balanceService.getBalance();
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith("/org/balance", {
+        params: undefined,
+      });
+      expect(result).toEqual(mockBalances);
+    });
+
+    it("should fetch all currencies when currencies is an empty string", async () => {
+      const mockBalances = { USD: 1000 };
+
+      (mockHttpClient.get as Mock).mockResolvedValue({
+        data: mockBalances,
+      });
+
+      await balanceService.getBalance({ currencies: "" });
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith("/org/balance", {
+        params: undefined,
+      });
     });
   });
 
