@@ -34,7 +34,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "ky": "^2.0.0"
+    "ky": "^2.0.2"
   },
   "repository": {
     "type": "git",
