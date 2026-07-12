@@ -50,6 +50,8 @@ export interface PaymentMethodWebhookData {
   accountName: string;
   accountNumber: string;
   countryCode: string;
+  /** Lifecycle status of the payment method. */
+  status?: string;
   meta?: Record<string, unknown>;
 }
 
@@ -66,31 +68,41 @@ export type TransactionEventType =
 export type TransactionWebhookStatus =
   | "PENDING"
   | "PROCESSING"
-  | "COMPLETED"
+  | "SUCCESS"
   | "FAILED"
   | "CANCELLED"
-  | "SUCCESS"
   | "REFUNDED"
   | "RETRY"
   | "UNKNOWN"
+  | "SCHEDULED"
+  | "CUSTOMER_ACTION_REQUIRED"
   | "REJECTED"
-  | "IN_REVIEW";
+  | "IN_REVIEW"
+  | "DISPUTED"
+  | "DISPUTE_RESOLVED"
+  | "DISPUTE_WON"
+  | "DISPUTE_LOST"
+  | "DISPUTE_EVIDENCE_SUBMITTED";
 
 export interface TransactionWebhookData {
   status: TransactionWebhookStatus;
   type: string;
+  channel?: string;
   sourceAmount: string;
   sourceCurrency: string;
   destinationAmount: string;
   destinationCurrency: string;
+  sourceId?: string;
   destinationId: string;
   customerId: string;
   transactionId: string;
+  /** Mirrors meta.reference from the create request. */
+  merchantReference?: string;
   meta: {
     narration?: string;
     invoice?: string;
     idempotencyKey?: string;
-    merchantId?: string;
+    reference?: string;
   };
   createdAt: string;
   updatedAt: string;

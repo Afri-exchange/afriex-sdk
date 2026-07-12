@@ -22,7 +22,7 @@ const client = new AfriexClient({
 
 const balance = new BalanceService(client.getHttpClient());
 
-// Get balances for specific currencies (required)
+// Get balances for specific currencies
 const balances = await balance.getBalance({
   currencies: ["USD", "NGN"],
 });
@@ -32,6 +32,9 @@ const balances = await balance.getBalance({
 const balances = await balance.getBalance({
   currencies: "USD,NGN,GHS",
 });
+
+// Omit currencies to get balances for every supported currency
+const allBalances = await balance.getBalance();
 
 // Get balance for a single currency
 const usdBalance = await balance.getBalanceForCurrency("USD");
@@ -48,7 +51,7 @@ Get balances for specified currencies.
 
 **Parameters:**
 
-- `currencies` (required): Array of currency codes or comma-separated string
+- `currencies` (optional): Array of currency codes or comma-separated string. Omit to fetch balances for every supported currency.
 
 **Returns:** `Record<string, number>` - Currency code to balance mapping
 

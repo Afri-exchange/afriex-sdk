@@ -8,16 +8,15 @@ export type TransactionType = "WITHDRAW" | "DEPOSIT" | "SWAP";
 export const DEFAULT_TRANSACTION_TYPE: TransactionType = "WITHDRAW";
 
 export const TransactionStatus = {
-  CANCELLED: "CANCELLED",
-  COMPLETED: "COMPLETED",
-  SUCCESS: "SUCCESS",
-  FAILED: "FAILED",
   PENDING: "PENDING",
   PROCESSING: "PROCESSING",
-  SCHEDULED: "SCHEDULED",
+  SUCCESS: "SUCCESS",
+  FAILED: "FAILED",
+  CANCELLED: "CANCELLED",
   REFUNDED: "REFUNDED",
   RETRY: "RETRY",
   UNKNOWN: "UNKNOWN",
+  SCHEDULED: "SCHEDULED",
   CUSTOMER_ACTION_REQUIRED: "CUSTOMER_ACTION_REQUIRED",
   REJECTED: "REJECTED",
   IN_REVIEW: "IN_REVIEW",
@@ -73,23 +72,70 @@ export interface TransactionMeta {
    * 	Your internal reference for the transaction (e.g. order ID)
    */
   reference: string;
+}
+
+/**
+ * Stable `AFX_*` failure code. Safe to switch on; the set grows over time
+ * but existing values do not change meaning.
+ */
+export type TransactionFailureCode =
+  | "AFX_REQUEST_FAILED"
+  | "AFX_SYSTEM_ERROR"
+  | "AFX_SERVICE_UNAVAILABLE"
+  | "AFX_INVALID_CURRENCY"
+  | "AFX_INVALID_AMOUNT"
+  | "AFX_INVALID_RECIPIENT"
+  | "AFX_RECIPIENT_NOT_FOUND"
+  | "AFX_BENEFICIARY_RESTRICTED"
+  | "AFX_INVALID_SENDER"
+  | "AFX_INVALID_REQUEST"
+  | "AFX_VELOCITY_LIMIT_EXCEEDED"
+  | "AFX_AMOUNT_LIMIT_EXCEEDED"
+  | "AFX_PAYMENT_FAILED"
+  | "AFX_COMPLIANCE_REJECTED"
+  | "AFX_PROPOSAL_EXPIRED";
+
+/**
+ * Present only when `status` is `FAILED` or `REJECTED`. Carries a stable
+ * Afriex-side code and a customer-safe message.
+ */
+export interface TransactionFailureReason {
+  code: TransactionFailureCode;
+  message: string;
+  retryable: boolean;
+}
+
+/**
+ * Transaction metadata as echoed back on a `Transaction`. Extends the
+ * create-time `TransactionMeta` with server-set state flags.
+ */
+export interface TransactionMetaResponse extends Partial<TransactionMeta> {
   /**
-   * 	Your merchant or business identifier, used for reconciliation
+   * Returned on deposits that may need an extra authorization step. When `true`,
+   * call `TransactionService.authorize()` to complete the deposit.
    */
-  merchantId?: string;
+  otpRequired?: boolean;
+  failureReason?: TransactionFailureReason;
+  [key: string]: unknown;
 }
 
 export interface Transaction {
   transactionId: string;
   customerId: string;
+  sourceId?: string;
   destinationId: string;
   sourceAmount: string;
   sourceCurrency: string;
   destinationAmount: string;
   destinationCurrency: string;
   type: TransactionType;
+  channel?: TransactionChannel;
   status: TransactionStatus;
-  meta?: TransactionMeta;
+  /** Mirrors meta.reference from the create request. */
+  merchantReference?: string;
+  /** Realized source-to-destination rate: `1 sourceCurrency = rate destinationCurrency`. */
+  rate?: string;
+  meta?: TransactionMetaResponse;
   createdAt: string;
   updatedAt: string;
 }
@@ -106,6 +152,12 @@ interface CreateTransactionBase {
   meta: TransactionMeta;
   destinationId?: string;
   sourceId?: string;
+  /**
+   * Opt in to deriving destinationAmount from sourceAmount even when both amounts
+   * are sent. Defaults to false (destination-wins semantics). Set true to have
+   * sourceAmount drive the payout via the forward rate.
+   */
+  shouldPreferSourceAmount?: boolean;
 }
 
 interface CreateCustomerTransactionBase extends CreateTransactionBase {
@@ -152,6 +204,16 @@ export type CreateTransactionRequest =
   | CreateWithdrawTransaction
   | CreateDepositTransaction
   | CreateSwapTransaction;
+
+/**
+ * Request body for POST /transaction/{transactionId}/authorize.
+ * Today the only supported variant is `OTP`.
+ */
+export interface AuthorizeTransactionRequest {
+  type: "OTP";
+  /** The one-time password supplied by the customer. */
+  otp: string;
+}
 
 export interface ListTransactionsParams {
   page?: number;

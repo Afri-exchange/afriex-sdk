@@ -22,16 +22,22 @@ const paymentMethod = await afriex.paymentMethods.create({
 });
 ```
 
-**Supported Channels:**
+**Creatable Channels:**
 
-| Channel        | Description                        |
-| :------------- | :--------------------------------- |
-| `BANK_ACCOUNT` | Bank transfer                      |
-| `MOBILE_MONEY` | Mobile money (M-Pesa, MTN, etc.)   |
-| `SWIFT`        | International SWIFT transfer       |
-| `UPI`          | Unified Payments Interface (India) |
-| `INTERAC`      | Interac (Canada)                   |
-| `WE_CHAT`      | WeChat Pay (China)                 |
+| Channel                | Description                        |
+| :---------------------- | :--------------------------------- |
+| `BANK_ACCOUNT`          | Bank transfer                      |
+| `MOBILE_MONEY`          | Mobile money (M-Pesa, MTN, etc.)   |
+| `VIRTUAL_BANK_ACCOUNT`  | Virtual bank account               |
+| `ACH_BANK_ACCOUNT`      | US ACH bank account                |
+| `INTERAC`               | Interac (Canada)                   |
+| `UPI`                   | Unified Payments Interface (India) |
+| `SWIFT`                 | International SWIFT transfer       |
+| `WE_CHAT`               | WeChat Pay (China)                 |
+| `ALIPAY`                | Alipay (China)                     |
+| `PAYBILL_TILL`          | M-Pesa Paybill/Till (Kenya)        |
+
+`CARD`, `CRYPTO`, `POOL_ACCOUNT`, `RFP`, and `VIRTUAL_CARD` are response-only channels — they're returned by `get()`/`list()` but can't be passed to `create()`.
 
 ## Get Payment Method
 
@@ -45,8 +51,22 @@ const paymentMethod = await afriex.paymentMethods.get("payment-method-id");
 const response = await afriex.paymentMethods.list({
   page: 1,
   limit: 20,
+  channel: ["BANK_ACCOUNT", "MOBILE_MONEY"],
+  currencies: ["USD", "NGN"],
+  status: ["active", "pending"],
 });
 ```
+
+**Parameters:**
+
+| Field          | Type                    | Description                                    |
+| :------------- | :---------------------- | :---------------------------------------------- |
+| `page`         | `number`                | Page number, starting from 0                    |
+| `limit`        | `number`                | Items per page (max 100)                        |
+| `channel`      | `string \| string[]`    | Filter by one or more payment channels           |
+| `currencies`   | `string \| string[]`    | Filter by one or more 3-letter currency codes    |
+| `capabilities` | `string \| string[]`    | Filter by capability. Only `WITHDRAW` is currently supported; defaults to `WITHDRAW` |
+| `status`       | `string \| string[]`    | Filter by status. Defaults to `active,pending`   |
 
 ## Delete Payment Method
 
@@ -67,6 +87,22 @@ const institutions = await afriex.paymentMethods.getInstitutions({
 // Returns: Institution[]
 // { institutionId, institutionName, institutionCode }
 ```
+
+## Resolve Institution Code
+
+Resolve a bank code (SWIFT code or US routing number) to the corresponding institution name:
+
+```typescript
+const result = await afriex.paymentMethods.resolveInstitutionCode({
+  searchTerm: "021000021",
+  country: "US",
+  codeType: "routing_number",
+});
+
+// Returns: { bankName: 'JPMORGAN CHASE BANK' } or null if not found
+```
+
+`country` defaults to `US` and accepts any ISO country code for `swift_code` lookups; `routing_number` is only supported when `country` is `US`.
 
 ## Resolve Account
 

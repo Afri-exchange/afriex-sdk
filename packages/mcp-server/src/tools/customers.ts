@@ -96,15 +96,40 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       inputSchema: {
         customerId: z.string().min(1).describe("The customer's unique identifier"),
         kyc: z
-          .record(z.string(), z.string())
-          .describe("KYC data as key-value pairs. Common fields: idType, idNumber, dateOfBirth, address, country, idFrontImage, idBackImage, selfieImage"),
+          .record(
+            z.enum([
+              "REPRESENTATIVE_TYPE",
+              "DATE_OF_BIRTH",
+              "ADDRESS",
+              "BANK_STATEMENT",
+              "BUSINESS_CERTIFICATE",
+              "COUNTRY",
+              "ID_FRONT",
+              "ID_BACK",
+              "PHONE",
+              "SELFIE",
+              "PROOF_OF_ADDRESS",
+              "PROOF_OF_INCOME",
+              "BVN",
+              "DRIVER_LICENSE",
+              "PASSPORT",
+              "NATIONAL_ID",
+              "PAYMENT_METHOD",
+              "RESIDENCE_PERMIT",
+              "VEHICLE_REGISTRATION",
+              "VOTER_ID",
+              "OTHERS",
+            ]),
+            z.string()
+          )
+          .describe("KYC document type/value pairs, e.g. { BVN: '22222222222', DATE_OF_BIRTH: '1990-05-15', COUNTRY: 'NG' }"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     async ({ customerId, kyc }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
-        const customer = await sdk.customers.updateKyc(customerId, { kyc });
+        const customer = await sdk.customers.updateKyc(customerId, kyc);
         return {
           content: [{ type: "text", text: JSON.stringify(customer, null, 2) }],
         };
@@ -112,6 +137,61 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         return {
           isError: true,
           content: [{ type: "text", text: `Error updating KYC: ${error}` }],
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    "afriex_update_customer",
+    {
+      description: "Partially update a customer's profile. Send at least one of fullName, email, or phone; omitted fields are left unchanged.",
+      inputSchema: {
+        customerId: z.string().min(1).describe("The customer's unique identifier"),
+        fullName: z.string().min(1).optional().describe("The customer's new full name"),
+        email: z.string().email().optional().describe("The customer's new email address"),
+        phone: z.string().min(1).optional().describe("The customer's new phone number"),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    },
+    async ({ customerId, fullName, email, phone }, extra) => {
+      try {
+        const sdk = registry.getSdk(extra);
+        const customer = await sdk.customers.update(customerId, { fullName, email, phone });
+        return {
+          content: [{ type: "text", text: JSON.stringify(customer, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Error updating customer: ${error}` }],
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    "afriex_verify_customer",
+    {
+      description: "Run an identity verification against a customer document. Today the only supported docType is BVN (Nigeria). Verification is rate limited per business.",
+      inputSchema: {
+        customerId: z.string().min(1).describe("The customer's unique identifier"),
+        docType: z.literal("BVN").describe("The type of document to verify"),
+        docValue: z.string().min(1).describe("The document number to verify, e.g. the BVN"),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    async ({ customerId, docType, docValue }, extra) => {
+      try {
+        const sdk = registry.getSdk(extra);
+        const customer = await sdk.customers.verify(customerId, { docType, docValue });
+        return {
+          content: [{ type: "text", text: JSON.stringify(customer, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Error verifying customer: ${error}` }],
         };
       }
     },

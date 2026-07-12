@@ -322,4 +322,48 @@ describe("TransactionService", () => {
       });
     });
   });
+
+  describe("authorize", () => {
+    it("should authorize a transaction with an OTP", async () => {
+      const mockTransaction = {
+        transactionId: "txn-123",
+        status: "PROCESSING",
+        type: "DEPOSIT",
+        sourceAmount: "10",
+        sourceCurrency: "USD",
+        destinationAmount: "14101.041",
+        destinationCurrency: "NGN",
+      };
+
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: mockTransaction,
+      });
+
+      const result = await transactionService.authorize("txn-123", {
+        type: "OTP",
+        otp: "123456",
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        "/transaction/txn-123/authorize",
+        { type: "OTP", otp: "123456" }
+      );
+      expect(result).toEqual(mockTransaction);
+    });
+
+    it("should throw ValidationError when transactionId is missing", async () => {
+      await expect(
+        transactionService.authorize("", { type: "OTP", otp: "123456" })
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("should throw ValidationError when otp is missing", async () => {
+      await expect(
+        transactionService.authorize("txn-123", {
+          type: "OTP",
+          otp: "",
+        })
+      ).rejects.toThrow(ValidationError);
+    });
+  });
 });

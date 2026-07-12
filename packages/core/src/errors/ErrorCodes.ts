@@ -1,62 +1,60 @@
+/**
+ * `code` values returned by the Afriex Business API's `ErrorResponse.code` field.
+ * Kept in sync with the values documented across the OpenAPI spec's error examples.
+ */
 export const AfriexErrorCode = {
-  // Authentication errors
-  INVALID_API_KEY: "INVALID_API_KEY",
-  UNAUTHORIZED: "UNAUTHORIZED",
+  // Authentication
+  AUTHENTICATION_ERROR: "AUTHENTICATION_ERROR",
   FORBIDDEN: "FORBIDDEN",
 
-  // Validation errors
-  INVALID_REQUEST: "INVALID_REQUEST",
-  MISSING_REQUIRED_FIELD: "MISSING_REQUIRED_FIELD",
-  INVALID_FIELD_FORMAT: "INVALID_FIELD_FORMAT",
+  // Validation
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  INVALID_USER_DATA: "INVALID_USER_DATA",
+  INVALID_BUSINESS_CUSTOMER_REQUEST: "INVALID_BUSINESS_CUSTOMER_REQUEST",
+  INVALID_BUSINESS_TRANSACTION_REQUEST: "INVALID_BUSINESS_TRANSACTION_REQUEST",
+  INVALID_BUSINESS_POOL_ACCOUNT_REQUEST: "INVALID_BUSINESS_POOL_ACCOUNT_REQUEST",
+  INVALID_KYC_DOCUMENT_TYPE: "INVALID_KYC_DOCUMENT_TYPE",
 
-  // Business logic errors
-  INSUFFICIENT_BALANCE: "INSUFFICIENT_BALANCE",
-  TRANSFER_LIMIT_EXCEEDED: "TRANSFER_LIMIT_EXCEEDED",
-  INVALID_RECIPIENT: "INVALID_RECIPIENT",
-  UNSUPPORTED_CURRENCY: "UNSUPPORTED_CURRENCY",
-  UNSUPPORTED_COUNTRY: "UNSUPPORTED_COUNTRY",
+  // Not found
+  BUSINESS_CUSTOMER_NOT_FOUND: "BUSINESS_CUSTOMER_NOT_FOUND",
+  BUSINESS_TRANSACTION_NOT_FOUND: "BUSINESS_TRANSACTION_NOT_FOUND",
+  BUSINESS_PAYMENT_METHOD_NOT_FOUND: "BUSINESS_PAYMENT_METHOD_NOT_FOUND",
+  BUSINESS_NOT_FOUND: "BUSINESS_NOT_FOUND",
+  USER_NOT_FOUND: "USER_NOT_FOUND",
+  PAYMENT_METHOD_NOT_FOUND: "PAYMENT_METHOD_NOT_FOUND",
+  TRANSACTION_PROCESSOR_NOT_FOUND: "TRANSACTION_PROCESSOR_NOT_FOUND",
 
-  // Transaction errors
-  TRANSACTION_FAILED: "TRANSACTION_FAILED",
-  TRANSACTION_PENDING: "TRANSACTION_PENDING",
-  TRANSACTION_DECLINED: "TRANSACTION_DECLINED",
-
-  // Network errors
-  NETWORK_ERROR: "NETWORK_ERROR",
-  TIMEOUT: "TIMEOUT",
+  // Business logic / limits
+  VIRTUAL_ACCOUNT_LIMIT_REACHED: "VIRTUAL_ACCOUNT_LIMIT_REACHED",
+  RATE_LIMIT_EXCEEDED: "RATE_LIMIT_EXCEEDED",
 
   // Server errors
   INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
-  SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE",
 
-  // Rate limiting
-  RATE_LIMIT_EXCEEDED: "RATE_LIMIT_EXCEEDED",
-
-  // Unknown
+  // Unknown (client-side fallback; not returned by the API)
   UNKNOWN_ERROR: "UNKNOWN_ERROR",
 } as const;
 export type AfriexErrorCode =
   (typeof AfriexErrorCode)[keyof typeof AfriexErrorCode];
 
 export const ERROR_CODE_MESSAGES: Record<AfriexErrorCode, string> = {
-  [AfriexErrorCode.INVALID_API_KEY]: "Invalid API key provided",
-  [AfriexErrorCode.UNAUTHORIZED]: "Authentication required",
-  [AfriexErrorCode.FORBIDDEN]: "Access forbidden",
-  [AfriexErrorCode.INVALID_REQUEST]: "Invalid request",
-  [AfriexErrorCode.MISSING_REQUIRED_FIELD]: "Missing required field",
-  [AfriexErrorCode.INVALID_FIELD_FORMAT]: "Invalid field format",
-  [AfriexErrorCode.INSUFFICIENT_BALANCE]: "Insufficient balance",
-  [AfriexErrorCode.TRANSFER_LIMIT_EXCEEDED]: "Transfer limit exceeded",
-  [AfriexErrorCode.INVALID_RECIPIENT]: "Invalid recipient",
-  [AfriexErrorCode.UNSUPPORTED_CURRENCY]: "Unsupported currency",
-  [AfriexErrorCode.UNSUPPORTED_COUNTRY]: "Unsupported country",
-  [AfriexErrorCode.TRANSACTION_FAILED]: "Transaction failed",
-  [AfriexErrorCode.TRANSACTION_PENDING]: "Transaction pending",
-  [AfriexErrorCode.TRANSACTION_DECLINED]: "Transaction declined",
-  [AfriexErrorCode.NETWORK_ERROR]: "Network error",
-  [AfriexErrorCode.TIMEOUT]: "Request timeout",
-  [AfriexErrorCode.INTERNAL_SERVER_ERROR]: "Internal server error",
-  [AfriexErrorCode.SERVICE_UNAVAILABLE]: "Service unavailable",
-  [AfriexErrorCode.RATE_LIMIT_EXCEEDED]: "Rate limit exceeded",
+  [AfriexErrorCode.AUTHENTICATION_ERROR]: "Authentication failed or API key is missing/invalid",
+  [AfriexErrorCode.FORBIDDEN]: "The API key lacks permission for this request, or the endpoint is unavailable in this environment",
+  [AfriexErrorCode.VALIDATION_ERROR]: "Request failed schema validation",
+  [AfriexErrorCode.INVALID_USER_DATA]: "Invalid user data",
+  [AfriexErrorCode.INVALID_BUSINESS_CUSTOMER_REQUEST]: "Invalid business customer request",
+  [AfriexErrorCode.INVALID_BUSINESS_TRANSACTION_REQUEST]: "Invalid business transaction request",
+  [AfriexErrorCode.INVALID_BUSINESS_POOL_ACCOUNT_REQUEST]: "Invalid business pool account request",
+  [AfriexErrorCode.INVALID_KYC_DOCUMENT_TYPE]: "Invalid KYC document type or value",
+  [AfriexErrorCode.BUSINESS_CUSTOMER_NOT_FOUND]: "Business customer not found",
+  [AfriexErrorCode.BUSINESS_TRANSACTION_NOT_FOUND]: "Business transaction not found",
+  [AfriexErrorCode.BUSINESS_PAYMENT_METHOD_NOT_FOUND]: "Business payment method not found",
+  [AfriexErrorCode.BUSINESS_NOT_FOUND]: "Business not found",
+  [AfriexErrorCode.USER_NOT_FOUND]: "User not found",
+  [AfriexErrorCode.PAYMENT_METHOD_NOT_FOUND]: "Payment method not found",
+  [AfriexErrorCode.TRANSACTION_PROCESSOR_NOT_FOUND]: "No transaction processor available for this request",
+  [AfriexErrorCode.VIRTUAL_ACCOUNT_LIMIT_REACHED]: "Virtual account limit reached for this customer and currency",
+  [AfriexErrorCode.RATE_LIMIT_EXCEEDED]: "Too many requests, please try again later",
+  [AfriexErrorCode.INTERNAL_SERVER_ERROR]: "It's not you, it's us, please reach out to support",
   [AfriexErrorCode.UNKNOWN_ERROR]: "Unknown error",
 };

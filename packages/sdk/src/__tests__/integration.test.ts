@@ -37,8 +37,34 @@ describe.skipIf(SKIP_INTEGRATION_TESTS)("Afriex SDK Integration Tests", () => {
     });
   });
 
+  describe("Staging Environment Configuration", () => {
+    it("should point the SDK at the sandbox base URL when using a staging key", () => {
+      expect(sdk.getConfig().environment).toBe(Environment.STAGING);
+      expect(sdk.getConfig().baseUrl).toContain("sandbox.api.afriex.com");
+      expect(sdk.getConfig().apiKey).toBe(API_KEY);
+    });
+
+    it("should authenticate against the sandbox API with the staging key", async () => {
+      // Any authenticated call succeeding proves the staging key + sandbox
+      // base URL combination is wired correctly end-to-end.
+      const balances = await sdk.balance.getBalance();
+
+      expect(balances).toBeDefined();
+      expect(typeof balances).toBe("object");
+    }, 10000);
+
+    it("should reject an invalid API key against the sandbox host", async () => {
+      const badSdk = new AfriexSDK({
+        apiKey: "invalid-staging-key",
+        environment: Environment.STAGING,
+      });
+
+      await expect(badSdk.balance.getBalance()).rejects.toThrow();
+    }, 10000);
+  });
+
   describe("Balance Service", () => {
-    it("should get wallet balances", async () => {
+    it("should get wallet balances for specific currencies", async () => {
       const balances = await sdk.balance.getBalance({
         currencies: ["USD", "NGN"],
       });
@@ -46,6 +72,13 @@ describe.skipIf(SKIP_INTEGRATION_TESTS)("Afriex SDK Integration Tests", () => {
       expect(balances).toBeDefined();
       expect(typeof balances.USD).toBe("number");
       expect(typeof balances.NGN).toBe("number");
+    }, 10000);
+
+    it("should get wallet balances for all currencies when none are specified", async () => {
+      const balances = await sdk.balance.getBalance();
+
+      expect(balances).toBeDefined();
+      expect(Object.keys(balances).length).toBeGreaterThan(0);
     }, 10000);
 
     it("should top up sandbox balance", async () => {
@@ -104,7 +137,7 @@ describe.skipIf(SKIP_INTEGRATION_TESTS)("Afriex SDK Integration Tests", () => {
 
       expect(customer).toBeDefined();
       expect(customer.customerId).toBeDefined();
-      expect(customer.fullName).toBe(`Test User ${timestamp}`);
+      expect(customer.name).toBe(`Test User ${timestamp}`);
       expect(customer.email).toBe(`test${timestamp}@example.com`);
 
       // Save for later tests
@@ -134,15 +167,36 @@ describe.skipIf(SKIP_INTEGRATION_TESTS)("Afriex SDK Integration Tests", () => {
       expect(createdCustomerId).toBeDefined();
 
       const customer = await sdk.customers.updateKyc(createdCustomerId, {
-        kyc: {
-          idType: "passport",
-          idNumber: "TEST123456",
-        },
+        PASSPORT: "TEST123456",
+        DATE_OF_BIRTH: "1990-05-15",
+        COUNTRY: "US",
       });
 
       expect(customer).toBeDefined();
       expect(customer.kyc).toBeDefined();
-      expect(customer.kyc?.idType).toBe("passport");
+    }, 10000);
+
+    it("should update a customer's profile", async () => {
+      expect(createdCustomerId).toBeDefined();
+
+      const customer = await sdk.customers.update(createdCustomerId, {
+        fullName: "Updated Test User",
+      });
+
+      expect(customer).toBeDefined();
+      expect(customer.name).toBe("Updated Test User");
+    }, 10000);
+
+    it("should verify a customer's BVN", async () => {
+      expect(createdCustomerId).toBeDefined();
+
+      const customer = await sdk.customers.verify(createdCustomerId, {
+        docType: "BVN",
+        docValue: "22222222222",
+      });
+
+      expect(customer).toBeDefined();
+      expect(customer.customerId).toBe(createdCustomerId);
     }, 10000);
   });
 
@@ -202,6 +256,32 @@ describe.skipIf(SKIP_INTEGRATION_TESTS)("Afriex SDK Integration Tests", () => {
       expect(response.data).toBeDefined();
       expect(Array.isArray(response.data)).toBe(true);
     }, 10000);
+
+    it("should list payment methods filtered by channel and status", async () => {
+      const response = await sdk.paymentMethods.list({
+        page: 0,
+        limit: 10,
+        channel: ["BANK_ACCOUNT"],
+        status: ["active", "pending"],
+      });
+
+      expect(response).toBeDefined();
+      expect(Array.isArray(response.data)).toBe(true);
+    }, 10000);
+
+    it("should resolve a US routing number to a bank name", async () => {
+      const result = await sdk.paymentMethods.resolveInstitutionCode({
+        searchTerm: "021000021",
+        country: "US",
+        codeType: "routing_number",
+      });
+
+      // May resolve to null if the sandbox lookup table doesn't have this
+      // routing number; either way the call must succeed without throwing.
+      expect(result === null || typeof result?.bankName === "string").toBe(
+        true
+      );
+    }, 10000);
   });
 
   describe("Transaction Service", () => {
@@ -237,6 +317,18 @@ describe.skipIf(SKIP_INTEGRATION_TESTS)("Afriex SDK Integration Tests", () => {
       expect(response).toBeDefined();
       expect(response.data).toBeDefined();
       expect(Array.isArray(response.data)).toBe(true);
+    }, 10000);
+
+    it("should reject authorization of a non-existent transaction", async () => {
+      // There's no reliable way to drive a sandbox transaction into
+      // CUSTOMER_ACTION_REQUIRED on demand, so this exercises the
+      // authorize() wiring against a transaction id that can't exist.
+      await expect(
+        sdk.transactions.authorize("000000000000000000000000", {
+          type: "OTP",
+          otp: "123456",
+        })
+      ).rejects.toThrow();
     }, 10000);
   });
 

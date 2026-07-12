@@ -88,11 +88,15 @@ app.post(
 - `TRANSACTION.CREATED`
 - `TRANSACTION.UPDATED`
 
+The payload's `data` includes `merchantReference` (mirrors `meta.reference`) and `meta.reference`; `status` covers the full set of transaction statuses (`PENDING`, `PROCESSING`, `SUCCESS`, `FAILED`, `CANCELLED`, `REFUNDED`, `RETRY`, `UNKNOWN`, `SCHEDULED`, `CUSTOMER_ACTION_REQUIRED`, `REJECTED`, `IN_REVIEW`, `DISPUTED`, `DISPUTE_RESOLVED`, `DISPUTE_WON`, `DISPUTE_LOST`, `DISPUTE_EVIDENCE_SUBMITTED`).
+
 ### Payment Method Events
 
 - `PAYMENT_METHOD.CREATED`
 - `PAYMENT_METHOD.UPDATED`
 - `PAYMENT_METHOD.DELETED`
+
+The payload's `data` includes the payment method's lifecycle `status` (`active`, `pending`, `deleted`, `expired`, `blocked`).
 
 ### Checkout Session Events
 

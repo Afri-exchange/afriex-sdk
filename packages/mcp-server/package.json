@@ -1,6 +1,6 @@
 {
   "name": "@afriex/mcp-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "MCP server for the Afriex Business API — let AI assistants send and receive cross-border payments",
   "author": "Afriex",

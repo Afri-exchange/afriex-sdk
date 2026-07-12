@@ -22,7 +22,6 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["packages/**/src/**/__tests__/**/*.test.ts"],
-    // Exclude integration tests by default (run with test:integration script)
-    exclude: ["**/node_modules/**", "**/dist/**", "**/integration.test.ts"],
+    exclude: ["**/node_modules/**", "**/dist/**"],
   },
 });

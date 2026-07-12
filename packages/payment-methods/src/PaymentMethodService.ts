@@ -62,8 +62,18 @@ export class PaymentMethodService {
   async list(
     params?: ListPaymentMethodsParams
   ): Promise<PaymentMethodListResponse> {
+    const normalizedParams = params
+      ? {
+          ...params,
+          channel: this.joinQueryValues(params.channel),
+          currencies: this.joinQueryValues(params.currencies),
+          capabilities: this.joinQueryValues(params.capabilities),
+          status: this.joinQueryValues(params.status),
+        }
+      : undefined;
+
     return this.httpClient.get<PaymentMethodListResponse>("/payment-method", {
-      params,
+      params: normalizedParams,
     });
   }
 
@@ -221,6 +231,16 @@ export class PaymentMethodService {
       { params }
     );
     return response.data;
+  }
+
+  private joinQueryValues(
+    value?: string | string[]
+  ): string | undefined {
+    if (Array.isArray(value)) {
+      return value.join(",");
+    }
+
+    return value;
   }
 
   private validateCreateRequest(request: CreatePaymentMethodRequest): void {

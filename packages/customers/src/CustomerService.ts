@@ -2,7 +2,9 @@ import { HttpClient, ValidationBuilder, ValidationError } from "@afriex/core";
 import {
   Customer,
   CreateCustomerRequest,
+  UpdateCustomerRequest,
   UpdateCustomerKycRequest,
+  VerifyCustomerRequest,
   ListCustomersParams,
   CustomerListResponse,
 } from "./types.js";
@@ -66,8 +68,41 @@ export class CustomerService {
   }
 
   /**
+   * Partially update a customer's profile
+   * PATCH /customer/{customerId}
+   * Send at least one of fullName, email, or phone; omitted fields are left unchanged.
+   */
+  async update(
+    customerId: string,
+    request: UpdateCustomerRequest
+  ): Promise<Customer> {
+    if (!customerId) {
+      throw new ValidationError("Customer ID is required");
+    }
+
+    new ValidationBuilder()
+      .requireOneOf(
+        [
+          ["fullName", request.fullName],
+          ["email", request.email],
+          ["phone", request.phone],
+        ],
+        "At least one of fullName, email, or phone is required"
+      )
+      .throwIfInvalid();
+
+    const response = await this.httpClient.patch<{ data: Customer }>(
+      `/customer/${customerId}`,
+      request
+    );
+    return response.data;
+  }
+
+  /**
    * Update customer KYC information
    * PATCH /customer/{customerId}/kyc
+   *
+   * The document map is sent directly as the request body (not wrapped in a `kyc` field).
    */
   async updateKyc(
     customerId: string,
@@ -77,12 +112,36 @@ export class CustomerService {
       throw new ValidationError("Customer ID is required");
     }
 
-    if (!request.kyc || Object.keys(request.kyc).length === 0) {
+    if (!request || Object.keys(request).length === 0) {
       throw new ValidationError("KYC data is required");
     }
 
     const response = await this.httpClient.patch<{ data: Customer }>(
       `/customer/${customerId}/kyc`,
+      request
+    );
+    return response.data;
+  }
+
+  /**
+   * Verify a customer document (e.g. Nigerian BVN)
+   * POST /customer/{customerId}/verify
+   */
+  async verify(
+    customerId: string,
+    request: VerifyCustomerRequest
+  ): Promise<Customer> {
+    if (!customerId) {
+      throw new ValidationError("Customer ID is required");
+    }
+
+    new ValidationBuilder()
+      .required("docType", request.docType)
+      .required("docValue", request.docValue)
+      .throwIfInvalid();
+
+    const response = await this.httpClient.post<{ data: Customer }>(
+      `/customer/${customerId}/verify`,
       request
     );
     return response.data;

@@ -17,16 +17,18 @@ npx @afriex/mcp-server --http --port=3001
 
 ## Tools
 
-The server exposes 20+ tools covering every Afriex API endpoint:
+The server exposes 29 tools covering every Afriex API endpoint:
 
 | Tool | Description |
 |------|-------------|
-| `afriex_get_balance` | Get wallet balances for one or more currencies |
+| `afriex_get_balance` | Get wallet balances for one or more currencies (omit to get all) |
 | `afriex_top_up_sandbox` | Credit wallet with test funds (sandbox only) |
 | `afriex_create_customer` | Create a new customer |
 | `afriex_get_customer` | Get customer by ID |
 | `afriex_list_customers` | List customers with pagination |
+| `afriex_update_customer` | Partially update a customer's profile (name/email/phone) |
 | `afriex_update_customer_kyc` | Update customer KYC information |
+| `afriex_verify_customer` | Verify a customer document (BVN) |
 | `afriex_delete_customer` | Delete a customer |
 | `afriex_create_payment_method` | Create a bank account or mobile money payment method |
 | `afriex_get_payment_method` | Get payment method by ID |
@@ -41,6 +43,7 @@ The server exposes 20+ tools covering every Afriex API endpoint:
 | `afriex_create_transaction` | Send, receive, or swap funds |
 | `afriex_get_transaction` | Get transaction details |
 | `afriex_list_transactions` | List transactions with filters |
+| `afriex_authorize_transaction` | Authorize a pending transaction with an OTP |
 | `afriex_get_rates` | Get real-time exchange rates |
 | `afriex_convert_currency` | Convert an amount between currencies |
 | `afriex_create_checkout_session` | Create a hosted checkout page |
