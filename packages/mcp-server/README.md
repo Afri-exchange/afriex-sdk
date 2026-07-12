@@ -74,7 +74,7 @@ The server exposes 20+ tools covering every Afriex API endpoint:
 | `OAUTH_ISSUER_URL` | workos, auth0 | Issuer URL. Defaults to `OAUTH_AUDIENCE` for `custom` |
 | `OAUTH_JWKS_URL` | workos, auth0 | JWKS URL, if not derivable from the issuer |
 | `OAUTH_ENCRYPTION_KEY` | custom | **Required.** 32-byte hex key that encrypts Afriex API keys at rest. Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
-| `OAUTH_DB_PATH` | custom | SQLite file path (default `./afriex-mcp-oauth.db`) — stores registered clients, auth codes, refresh tokens, and the signing key |
+| `OAUTH_DB_PATH` | custom | SQLite file path (default `./a.db`) — stores registered clients, auth codes, refresh tokens, and the signing key |
 | `OAUTH_ACCESS_TOKEN_TTL` | custom | Access token lifetime in seconds (default `3600`) |
 | `OAUTH_REFRESH_TOKEN_TTL` | custom | Refresh token lifetime in seconds (default 30 days) |
 | `OAUTH_AUTH0_DOMAIN` | auth0 | Your Auth0 tenant domain, e.g. `your-tenant.us.auth0.com` |
