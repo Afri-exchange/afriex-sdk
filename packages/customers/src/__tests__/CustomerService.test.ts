@@ -23,7 +23,7 @@ describe("CustomerService", () => {
     it("should create a customer successfully", async () => {
       const mockCustomer = {
         customerId: "cust-123",
-        fullName: "John Doe",
+        name: "John Doe",
         email: "john@example.com",
         phone: "+1234567890",
         countryCode: "US",
@@ -76,7 +76,7 @@ describe("CustomerService", () => {
     it("should get a customer by ID", async () => {
       const mockCustomer = {
         customerId: "cust-123",
-        fullName: "John Doe",
+        name: "John Doe",
       };
 
       (mockHttpClient.get as Mock).mockResolvedValue({
@@ -151,7 +151,7 @@ describe("CustomerService", () => {
   });
 
   describe("updateKyc", () => {
-    it("should update customer KYC", async () => {
+    it("should update customer KYC by sending the document map directly (not wrapped in a kyc field)", async () => {
       const mockCustomer = { customerId: "cust-123", kyc: { verified: true } };
 
       (mockHttpClient.patch as Mock).mockResolvedValue({
@@ -159,20 +159,96 @@ describe("CustomerService", () => {
       });
 
       const result = await customerService.updateKyc("cust-123", {
-        kyc: { documentType: "passport" },
+        PASSPORT: "A12345678",
+        DATE_OF_BIRTH: "1990-05-15",
       });
 
       expect(mockHttpClient.patch).toHaveBeenCalledWith(
         "/customer/cust-123/kyc",
-        { kyc: { documentType: "passport" } }
+        { PASSPORT: "A12345678", DATE_OF_BIRTH: "1990-05-15" }
       );
       expect(result).toEqual(mockCustomer);
     });
 
-    it("should throw ValidationError when KYC data is empty", async () => {
+    it("should throw ValidationError when customerId is missing", async () => {
       await expect(
-        customerService.updateKyc("cust-123", {
-          kyc: {},
+        customerService.updateKyc("", { BVN: "22222222222" })
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("should throw ValidationError when KYC data is empty", async () => {
+      await expect(customerService.updateKyc("cust-123", {})).rejects.toThrow(
+        ValidationError
+      );
+    });
+  });
+
+  describe("update", () => {
+    it("should update a customer's profile", async () => {
+      const mockCustomer = {
+        customerId: "cust-123",
+        name: "Jane Doe",
+        email: "jane.doe@example.com",
+      };
+
+      (mockHttpClient.patch as Mock).mockResolvedValue({
+        data: mockCustomer,
+      });
+
+      const result = await customerService.update("cust-123", {
+        fullName: "Jane Doe",
+      });
+
+      expect(mockHttpClient.patch).toHaveBeenCalledWith("/customer/cust-123", {
+        fullName: "Jane Doe",
+      });
+      expect(result).toEqual(mockCustomer);
+    });
+
+    it("should throw ValidationError when customerId is missing", async () => {
+      await expect(
+        customerService.update("", { fullName: "Jane Doe" })
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("should throw ValidationError when no fields are provided", async () => {
+      await expect(customerService.update("cust-123", {})).rejects.toThrow(
+        ValidationError
+      );
+    });
+  });
+
+  describe("verify", () => {
+    it("should verify a customer's BVN", async () => {
+      const mockCustomer = { customerId: "cust-123", name: "Jane Smith" };
+
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: mockCustomer,
+      });
+
+      const result = await customerService.verify("cust-123", {
+        docType: "BVN",
+        docValue: "22222222222",
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        "/customer/cust-123/verify",
+        { docType: "BVN", docValue: "22222222222" }
+      );
+      expect(result).toEqual(mockCustomer);
+    });
+
+    it("should throw ValidationError when customerId is missing", async () => {
+      await expect(
+        customerService.verify("", { docType: "BVN", docValue: "22222222222" })
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("should throw ValidationError when docValue is missing", async () => {
+      await expect(
+        customerService.verify("cust-123", {
+          docType: "BVN",
+          docValue: "",
         })
       ).rejects.toThrow(ValidationError);
     });

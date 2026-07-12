@@ -58,7 +58,8 @@ export class WebhookService {
    * Manually triggers a test webhook for development/testing.
    * Only available in sandbox/staging environment.
    *
-   * @param request - The webhook event type and resource ID
+   * @param request - The webhook event type and entity ID (`resourceId` is
+   *   accepted as a deprecated fallback for `entityId`)
    * @returns Success confirmation
    */
   async triggerTestWebhook(
@@ -70,12 +71,26 @@ export class WebhookService {
 
     new ValidationBuilder()
       .required("event", request.event)
-      .required("resourceId", request.resourceId)
+      .requireOneOf(
+        [
+          ["entityId", request.entityId],
+          ["resourceId", request.resourceId],
+        ],
+        "Either entityId or resourceId is required"
+      )
       .throwIfInvalid();
 
-    return this.httpClient.post<TriggerWebhookResponse>(
-      "/webhooks/trigger",
-      request
-    );
+    let entityId = request.entityId;
+    if (!entityId && request.resourceId) {
+      console.warn(
+        "[@afriex/webhooks] `resourceId` is deprecated on triggerTestWebhook() and will be removed in a future version. Use `entityId` instead."
+      );
+      entityId = request.resourceId;
+    }
+
+    return this.httpClient.post<TriggerWebhookResponse>("/webhooks/trigger", {
+      event: request.event,
+      entityId,
+    });
   }
 }

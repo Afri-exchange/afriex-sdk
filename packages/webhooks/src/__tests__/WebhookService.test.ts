@@ -62,12 +62,7 @@ describe("WebhookService", () => {
   });
 
   describe("triggerTestWebhook", () => {
-    it("should trigger a test webhook successfully", async () => {
-      const request = {
-        event: "CUSTOMER.CREATED" as const,
-        resourceId: "cust_123",
-      };
-
+    it("should trigger a test webhook using entityId", async () => {
       const mockResponse = {
         success: true,
         message: "Webhook triggered successfully",
@@ -75,19 +70,61 @@ describe("WebhookService", () => {
 
       (mockHttpClient.post as Mock).mockResolvedValue(mockResponse);
 
-      const result = await webhookService.triggerTestWebhook(request);
+      const result = await webhookService.triggerTestWebhook({
+        event: "CUSTOMER.CREATED",
+        entityId: "cust_123",
+      });
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith(
-        "/webhooks/trigger",
-        request
-      );
+      expect(mockHttpClient.post).toHaveBeenCalledWith("/webhooks/trigger", {
+        event: "CUSTOMER.CREATED",
+        entityId: "cust_123",
+      });
       expect(result).toEqual(mockResponse);
+    });
+
+    it("should send the deprecated resourceId on the wire as entityId, with a deprecation warning", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      (mockHttpClient.post as Mock).mockResolvedValue({ success: true });
+
+      await webhookService.triggerTestWebhook({
+        event: "CUSTOMER.CREATED",
+        resourceId: "cust_123",
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith("/webhooks/trigger", {
+        event: "CUSTOMER.CREATED",
+        entityId: "cust_123",
+      });
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("`resourceId` is deprecated")
+      );
+
+      warnSpy.mockRestore();
+    });
+
+    it("should prefer entityId over resourceId when both are provided, without warning", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      (mockHttpClient.post as Mock).mockResolvedValue({ success: true });
+
+      await webhookService.triggerTestWebhook({
+        event: "CUSTOMER.CREATED",
+        entityId: "cust_new",
+        resourceId: "cust_old",
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith("/webhooks/trigger", {
+        event: "CUSTOMER.CREATED",
+        entityId: "cust_new",
+      });
+      expect(warnSpy).not.toHaveBeenCalled();
+
+      warnSpy.mockRestore();
     });
 
     it("should throw validation error when event is missing", async () => {
       const invalidRequest = {
         event: "",
-        resourceId: "cust_123",
+        entityId: "cust_123",
       };
 
       await expect(
@@ -95,14 +132,11 @@ describe("WebhookService", () => {
       ).rejects.toThrow("Validation failed");
     });
 
-    it("should throw validation error when resourceId is missing", async () => {
-      const invalidRequest = {
-        event: "CUSTOMER.CREATED" as const,
-        resourceId: "",
-      };
-
+    it("should throw validation error when neither entityId nor resourceId is provided", async () => {
       await expect(
-        webhookService.triggerTestWebhook(invalidRequest)
+        webhookService.triggerTestWebhook({
+          event: "CUSTOMER.CREATED",
+        })
       ).rejects.toThrow("Validation failed");
     });
 
@@ -112,7 +146,7 @@ describe("WebhookService", () => {
       await expect(
         service.triggerTestWebhook({
           event: "CUSTOMER.CREATED",
-          resourceId: "cust_123",
+          entityId: "cust_123",
         })
       ).rejects.toThrow("HTTP client is required to trigger test webhooks");
     });
@@ -131,12 +165,12 @@ describe("WebhookService", () => {
 
         await webhookService.triggerTestWebhook({
           event,
-          resourceId: "cust_123",
+          entityId: "cust_123",
         });
 
         expect(mockHttpClient.post).toHaveBeenCalledWith("/webhooks/trigger", {
           event,
-          resourceId: "cust_123",
+          entityId: "cust_123",
         });
       }
     });
@@ -155,12 +189,12 @@ describe("WebhookService", () => {
 
         await webhookService.triggerTestWebhook({
           event,
-          resourceId: "pm_123",
+          entityId: "pm_123",
         });
 
         expect(mockHttpClient.post).toHaveBeenCalledWith("/webhooks/trigger", {
           event,
-          resourceId: "pm_123",
+          entityId: "pm_123",
         });
       }
     });
@@ -175,12 +209,12 @@ describe("WebhookService", () => {
 
         await webhookService.triggerTestWebhook({
           event,
-          resourceId: "txn_123",
+          entityId: "txn_123",
         });
 
         expect(mockHttpClient.post).toHaveBeenCalledWith("/webhooks/trigger", {
           event,
-          resourceId: "txn_123",
+          entityId: "txn_123",
         });
       }
     });
@@ -192,12 +226,12 @@ describe("WebhookService", () => {
 
       await webhookService.triggerTestWebhook({
         event: "CHECKOUT_SESSION.CREATED",
-        resourceId: "123e4567-e89b-12d3-a456-426614174000",
+        entityId: "123e4567-e89b-12d3-a456-426614174000",
       });
 
       expect(mockHttpClient.post).toHaveBeenCalledWith("/webhooks/trigger", {
         event: "CHECKOUT_SESSION.CREATED",
-        resourceId: "123e4567-e89b-12d3-a456-426614174000",
+        entityId: "123e4567-e89b-12d3-a456-426614174000",
       });
     });
   });

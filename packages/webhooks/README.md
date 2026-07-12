@@ -88,11 +88,15 @@ app.post(
 - `TRANSACTION.CREATED`
 - `TRANSACTION.UPDATED`
 
+The payload's `data` includes `merchantReference` (mirrors `meta.reference`) and `meta.reference`; `status` covers the full set of transaction statuses (`PENDING`, `PROCESSING`, `SUCCESS`, `FAILED`, `CANCELLED`, `REFUNDED`, `RETRY`, `UNKNOWN`, `SCHEDULED`, `CUSTOMER_ACTION_REQUIRED`, `REJECTED`, `IN_REVIEW`, `DISPUTED`, `DISPUTE_RESOLVED`, `DISPUTE_WON`, `DISPUTE_LOST`, `DISPUTE_EVIDENCE_SUBMITTED`).
+
 ### Payment Method Events
 
 - `PAYMENT_METHOD.CREATED`
 - `PAYMENT_METHOD.UPDATED`
 - `PAYMENT_METHOD.DELETED`
+
+The payload's `data` includes the payment method's lifecycle `status` (`active`, `pending`, `deleted`, `expired`, `blocked`).
 
 ### Checkout Session Events
 
@@ -118,6 +122,23 @@ Verify signature and parse the webhook event.
 **Throws:** `Error` if signature is invalid
 
 **Returns:** Parsed `WebhookPayload` object with `event` and `data` properties
+
+### `triggerTestWebhook(request: TriggerWebhookRequest): Promise<TriggerWebhookResponse>` _(Sandbox only)_
+
+Fires a real signed webhook to the business's configured callback URL using a real entity as the payload. Only available in the sandbox/staging environment.
+
+```typescript
+const result = await afriex.webhooks.triggerTestWebhook({
+  event: "TRANSACTION.UPDATED",
+  entityId: "transaction-id",
+});
+```
+
+**Parameters:**
+
+- `event` (required): One of the [webhook event types](#webhook-event-types)
+- `entityId` (required unless `resourceId` is supplied): The 24-character hex id of the relevant customer, payment method, or transaction — or a UUID v4 for `CHECKOUT_SESSION.CREATED`
+- `resourceId` — **deprecated** alias for `entityId`. Still works (mapped to `entityId` before the request is sent) but logs a deprecation warning; use `entityId` instead.
 
 ## Constants
 

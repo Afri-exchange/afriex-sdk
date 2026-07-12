@@ -24,6 +24,12 @@ const balances = await afriex.balance.getBalance({
 });
 ```
 
+`currencies` is optional — omit it (or call `getBalance()` with no arguments) to get balances for every supported currency:
+
+```typescript
+const allBalances = await afriex.balance.getBalance();
+```
+
 ## Get Single Currency Balance
 
 ```typescript

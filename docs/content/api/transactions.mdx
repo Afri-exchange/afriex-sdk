@@ -81,7 +81,7 @@ const transaction = await afriex.transactions.create({
 | `meta.reference`      | `string`    | Yes                              | Your internal reference                                                    |
 | `meta.narration`      | `string`    | -                                | Transaction description                                                    |
 | `meta.invoice`        | `string`    | -                                | Base64-encoded invoice document                                            |
-| `meta.merchantId`     | `string`    | -                                | Your merchant identifier                                                   |
+| `shouldPreferSourceAmount` | `boolean` | -                            | Derive `destinationAmount` from `sourceAmount` via the forward rate even when both are sent. Defaults to `false` (destination-wins) |
 
 ## Get Transaction
 
@@ -117,20 +117,31 @@ console.log(response.data); // Transaction[]
 | `fromDate`      | `string`             | ISO 8601 lower bound for creation time             |
 | `toDate`        | `string`             | ISO 8601 upper bound for creation time             |
 
+## Authorize Transaction
+
+Complete a transaction left in `CUSTOMER_ACTION_REQUIRED` that needs an extra authorization step — for example, an OTP on a mobile-money deposit (`meta.otpRequired: true`). Today the only supported variant is `OTP`.
+
+```typescript
+const transaction = await afriex.transactions.authorize("transaction-id", {
+  type: "OTP",
+  otp: "123456",
+});
+```
+
 ## Status Values
 
 | Status                       | Description                    |
 | :--------------------------- | :----------------------------- |
 | `PENDING`                    | Created, awaiting processing   |
 | `PROCESSING`                 | Currently processing           |
-| `COMPLETED`                  | Completed successfully         |
 | `SUCCESS`                    | Successful                     |
 | `FAILED`                     | Failed                         |
 | `CANCELLED`                  | Cancelled                      |
 | `REFUNDED`                   | Refunded                       |
 | `RETRY`                      | Retrying                       |
+| `UNKNOWN`                    | Status unknown                 |
 | `SCHEDULED`                  | Scheduled for later execution  |
-| `CUSTOMER_ACTION_REQUIRED`   | Waiting on customer action     |
+| `CUSTOMER_ACTION_REQUIRED`   | Waiting on customer action — see [Authorize Transaction](#authorize-transaction) |
 | `REJECTED`                   | Rejected                       |
 | `IN_REVIEW`                  | Under review                   |
 | `DISPUTED`                   | Dispute opened                 |
@@ -138,4 +149,7 @@ console.log(response.data); // Transaction[]
 | `DISPUTE_WON`                | Dispute resolved in your favor |
 | `DISPUTE_LOST`               | Dispute resolved against you   |
 | `DISPUTE_EVIDENCE_SUBMITTED` | Evidence submitted for dispute |
-| `UNKNOWN`                    | Status unknown                 |
+
+## Failure Reasons
+
+When `status` is `FAILED` or `REJECTED`, `meta.failureReason` carries a stable Afriex-side `code` (`AFX_*`, e.g. `AFX_VELOCITY_LIMIT_EXCEEDED`), a customer-safe `message`, and a `retryable` boolean — switch on `code`, not `message`.

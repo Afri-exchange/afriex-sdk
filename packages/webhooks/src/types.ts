@@ -50,6 +50,8 @@ export interface PaymentMethodWebhookData {
   accountName: string;
   accountNumber: string;
   countryCode: string;
+  /** Lifecycle status of the payment method. */
+  status?: string;
   meta?: Record<string, unknown>;
 }
 
@@ -66,31 +68,41 @@ export type TransactionEventType =
 export type TransactionWebhookStatus =
   | "PENDING"
   | "PROCESSING"
-  | "COMPLETED"
+  | "SUCCESS"
   | "FAILED"
   | "CANCELLED"
-  | "SUCCESS"
   | "REFUNDED"
   | "RETRY"
   | "UNKNOWN"
+  | "SCHEDULED"
+  | "CUSTOMER_ACTION_REQUIRED"
   | "REJECTED"
-  | "IN_REVIEW";
+  | "IN_REVIEW"
+  | "DISPUTED"
+  | "DISPUTE_RESOLVED"
+  | "DISPUTE_WON"
+  | "DISPUTE_LOST"
+  | "DISPUTE_EVIDENCE_SUBMITTED";
 
 export interface TransactionWebhookData {
   status: TransactionWebhookStatus;
   type: string;
+  channel?: string;
   sourceAmount: string;
   sourceCurrency: string;
   destinationAmount: string;
   destinationCurrency: string;
+  sourceId?: string;
   destinationId: string;
   customerId: string;
   transactionId: string;
+  /** Mirrors meta.reference from the create request. */
+  merchantReference?: string;
   meta: {
     narration?: string;
     invoice?: string;
     idempotencyKey?: string;
-    merchantId?: string;
+    reference?: string;
   };
   createdAt: string;
   updatedAt: string;
@@ -136,9 +148,19 @@ export interface TriggerWebhookRequest {
    */
   event: WebhookEventType;
   /**
-   * The resource ID (customerId, paymentMethodId, or transactionId)
+   * The identifier of the entity to send in the webhook payload. Must be a
+   * UUID v4 for `CHECKOUT_SESSION.CREATED`; otherwise the 24-character
+   * hexadecimal id of the relevant customer, payment method, or transaction.
+   * Either `entityId` or the deprecated `resourceId` is required.
    */
-  resourceId: string;
+  entityId?: string;
+  /**
+   * @deprecated Use `entityId` instead. Kept as a fallback for backward
+   * compatibility — `triggerTestWebhook` still sends it as
+   * `entityId`.
+   * A deprecation warning is logged when this is used without `entityId`.
+   */
+  resourceId?: string;
 }
 
 export interface TriggerWebhookResponse {

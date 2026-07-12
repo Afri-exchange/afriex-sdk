@@ -7,7 +7,8 @@ export interface BalanceResponse {
 }
 
 export interface GetBalanceParams {
-  currencies: string | string[];
+  /** Currencies to fetch balances for. If omitted, all supported currencies are returned. */
+  currencies?: string | string[];
 }
 
 export interface TopUpParams {

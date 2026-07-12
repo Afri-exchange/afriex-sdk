@@ -1,0 +1,16 @@
+**/node_modules
+**/dist
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+.git
+.github
+.vscode
+.changeset
+docs
+sample
+*.md
+**/*.log
+**/afriex-mcp-oauth.db*
+.env
+.env.*
