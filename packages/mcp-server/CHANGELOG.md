@@ -4,6 +4,20 @@
 
 ### Minor Changes
 
+- Fix `webhooks.triggerTestWebhook()` sending the wrong field name on the wire. `POST /webhooks/trigger` requires `entityId`, but the SDK was sending `resourceId`, which the API doesn't recognize — every call failed validation.
+
+  - `TriggerWebhookRequest.entityId` is now the primary field
+  - `resourceId` is kept as a **deprecated** fallback: still accepted, still works (mapped to `entityId` before the request is sent), but logs a console warning and will be removed in a future version
+  - `afriex_trigger_test_webhook` (mcp-server) gained the `entityId` input, with `resourceId` kept as the same deprecated fallback
+
+### Patch Changes
+
+- Updated dependencies
+  - @afriex/sdk@3.0.1
+
+
+### Minor Changes
+
 - Add structured output (MCP `outputSchema`/`structuredContent`) to every tool, and align tool input/output schemas with the current `@afriex/sdk` v3 contract.
 
   - Every tool now declares an `outputSchema` and returns `structuredContent` alongside its text `content`, built from a new `src/schemas/output.ts` (reconstructed to match the SDK's current response shapes, e.g. `Customer.name` instead of `fullName`, the expanded `Transaction`/`PaymentMethod` fields, etc.)

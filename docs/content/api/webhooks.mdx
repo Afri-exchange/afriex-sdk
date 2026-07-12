@@ -77,14 +77,16 @@ Send a test webhook to your endpoint in sandbox:
 ```typescript
 const result = await afriex.webhooks.triggerTestWebhook({
   event: "TRANSACTION.UPDATED",
-  resourceId: "transaction-id",
+  entityId: "transaction-id",
 });
 
 // Check your webhook endpoint for the test event
 console.log(result); // { success: true, message: "..." }
 ```
 
-For `CHECKOUT_SESSION.CREATED`, use the checkout session UUID as `resourceId`.
+For `CHECKOUT_SESSION.CREATED`, use the checkout session UUID as `entityId`.
+
+`resourceId` is accepted as a **deprecated** alias for `entityId` — it still works (mapped to `entityId` before the request is sent, since that's the field name the API accepts), but logs a deprecation warning and will be removed in a future version. Use `entityId`.
 
 **Supported Events:**
 

@@ -4,6 +4,15 @@
 
 ### Minor Changes
 
+- Fix `webhooks.triggerTestWebhook()` sending the wrong field name on the wire. `POST /webhooks/trigger` requires `entityId`, but the SDK was sending `resourceId`, which the API doesn't recognize — every call failed validation.
+
+  - `TriggerWebhookRequest.entityId` is now the primary field
+  - `resourceId` is kept as a **deprecated** fallback: still accepted, still works (mapped to `entityId` before the request is sent), but logs a console warning and will be removed in a future version
+  - `afriex_trigger_test_webhook` (mcp-server) gained the `entityId` input, with `resourceId` kept as the same deprecated fallback
+
+
+### Minor Changes
+
 - Fix drift between the SDK and the current Afriex Business API, and add the endpoints that were missing entirely.
 
   **New endpoints:**

@@ -73,7 +73,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
   server.registerTool(
     "afriex_trigger_test_webhook",
     {
-      description: "[SANDBOX ONLY] Manually trigger a test webhook event for development and testing. Fires a real signed webhook to the business's configured callback URL. Only works in staging/sandbox environment.",
+      description: "[SANDBOX ONLY] Manually trigger a test webhook event for development and testing. Fires a real signed webhook to the business's configured callback URL. Only works in staging/sandbox environment. Requires entityId (resourceId is a deprecated alias).",
       inputSchema: {
         event: z
           .enum([
@@ -88,18 +88,24 @@ export function registerWebhookTools(registry: ToolRegistry): void {
             "CHECKOUT_SESSION.CREATED",
           ])
           .describe("The webhook event type to trigger"),
+        entityId: z
+          .string()
+          .min(1)
+          .optional()
+          .describe("The entity ID (customerId, paymentMethodId, transactionId, or checkout session UUID) to use in the test payload. Required unless the deprecated resourceId is supplied instead."),
         resourceId: z
           .string()
           .min(1)
-          .describe("The resource ID (customerId, paymentMethodId, transactionId, or checkoutSessionId) to use in the test payload"),
+          .optional()
+          .describe("Deprecated — use entityId instead. Kept as a fallback; still routed to the API as entityId."),
       },
       outputSchema: triggerWebhookOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    async ({ event, resourceId }, extra) => {
+    async ({ event, entityId, resourceId }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
-        const result = await sdk.webhooks.triggerTestWebhook({ event, resourceId });
+        const result = await sdk.webhooks.triggerTestWebhook({ event, entityId, resourceId });
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           structuredContent: toStructured(result),

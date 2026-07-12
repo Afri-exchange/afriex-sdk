@@ -123,6 +123,23 @@ Verify signature and parse the webhook event.
 
 **Returns:** Parsed `WebhookPayload` object with `event` and `data` properties
 
+### `triggerTestWebhook(request: TriggerWebhookRequest): Promise<TriggerWebhookResponse>` _(Sandbox only)_
+
+Fires a real signed webhook to the business's configured callback URL using a real entity as the payload. Only available in the sandbox/staging environment.
+
+```typescript
+const result = await afriex.webhooks.triggerTestWebhook({
+  event: "TRANSACTION.UPDATED",
+  entityId: "transaction-id",
+});
+```
+
+**Parameters:**
+
+- `event` (required): One of the [webhook event types](#webhook-event-types)
+- `entityId` (required unless `resourceId` is supplied): The 24-character hex id of the relevant customer, payment method, or transaction — or a UUID v4 for `CHECKOUT_SESSION.CREATED`
+- `resourceId` — **deprecated** alias for `entityId`. Still works (mapped to `entityId` before the request is sent) but logs a deprecation warning; use `entityId` instead.
+
 ## Constants
 
 - `WEBHOOK_SIGNATURE_HEADER` - The header name: `'x-webhook-signature'`

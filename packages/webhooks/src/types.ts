@@ -148,9 +148,19 @@ export interface TriggerWebhookRequest {
    */
   event: WebhookEventType;
   /**
-   * The resource ID (customerId, paymentMethodId, or transactionId)
+   * The identifier of the entity to send in the webhook payload. Must be a
+   * UUID v4 for `CHECKOUT_SESSION.CREATED`; otherwise the 24-character
+   * hexadecimal id of the relevant customer, payment method, or transaction.
+   * Either `entityId` or the deprecated `resourceId` is required.
    */
-  resourceId: string;
+  entityId?: string;
+  /**
+   * @deprecated Use `entityId` instead. Kept as a fallback for backward
+   * compatibility — `triggerTestWebhook` still sends it as
+   * `entityId`.
+   * A deprecation warning is logged when this is used without `entityId`.
+   */
+  resourceId?: string;
 }
 
 export interface TriggerWebhookResponse {
