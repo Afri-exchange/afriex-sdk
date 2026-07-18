@@ -123,7 +123,8 @@ export interface Transaction {
   transactionId: string;
   customerId: string;
   sourceId?: string;
-  destinationId: string;
+  /** Absent on SWAP transactions, which settle within the wallet and have no destination payment method. */
+  destinationId?: string;
   sourceAmount: string;
   sourceCurrency: string;
   destinationAmount: string;
