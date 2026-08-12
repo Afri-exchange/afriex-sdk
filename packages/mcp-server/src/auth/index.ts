@@ -85,7 +85,11 @@ function createBearerMiddleware(token: string): AuthMiddleware {
   };
 }
 
-type JwksGetter = ReturnType<typeof createLocalJWKSet>;
+// jose 6.2.8 split the local and remote resolvers into distinct types that
+// differ in `jwks()` (remote's may be undefined before the first fetch), so
+// neither is assignable to the other. We only ever pass this to jwtVerify as
+// the key-resolution function, so the union is all we need.
+type JwksGetter = ReturnType<typeof createLocalJWKSet> | ReturnType<typeof createRemoteJWKSet>;
 
 function createOAuthMiddleware(config: McpServerConfig): AuthMiddleware {
   const { oauth } = config;
