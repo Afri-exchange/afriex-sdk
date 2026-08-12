@@ -9,7 +9,8 @@ export const revalidate = false;
  *
  * Public URLs are `<page>.md` (see the rewrite in `next.config.mjs`), which
  * lands here as `/llms.mdx/<page>`. The site root is served as `/index.md`,
- * so a trailing `index` segment maps back to the empty slug.
+ * so a trailing `index` segment maps back to the empty slug. `proxy.ts`
+ * additionally rewrites `/` here as `/llms.mdx` with no slug at all.
  */
 export async function GET(
   _req: Request,
@@ -35,7 +36,9 @@ export async function GET(
 }
 
 export function generateStaticParams() {
-  return source
-    .generateParams()
-    .map(({ slug }) => ({ slug: slug.length > 0 ? slug : ["index"] }));
+  return source.generateParams().flatMap(({ slug }) =>
+    // The root page is reachable both ways: `/index.md` via the rewrite, and
+    // `/llms.mdx` via the `Accept` proxy.
+    slug.length > 0 ? [{ slug }] : [{ slug: ["index"] }, { slug: [] }],
+  );
 }
