@@ -1,6 +1,6 @@
 {
   "name": "@afriex/core",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Core functionality for Afriex SDK",
   "type": "module",
   "main": "./dist/index.js",
@@ -18,8 +18,9 @@
     "clean": "rimraf dist"
   },
   "devDependencies": {
+    "@tanstack/intent": "^0.3.6",
     "rimraf": "^6.1.3",
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2"
   },
   "peerDependencies": {
     "typescript": ">=5.0.0"
@@ -27,7 +28,8 @@
   "files": [
     "dist",
     "README.md",
-    "!dist/**/*.map"
+    "!dist/**/*.map",
+    "skills"
   ],
   "publishConfig": {
     "access": "public"
@@ -41,5 +43,8 @@
     "url": "https://github.com/Afri-exchange/afriex-sdk",
     "directory": "packages/core"
   },
-  "author": "Victory Lucky <luckyvictory54@gmail.com>"
+  "author": "Victory Lucky <luckyvictory54@gmail.com>",
+  "keywords": [
+    "tanstack-intent"
+  ]
 }

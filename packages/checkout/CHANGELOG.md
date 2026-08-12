@@ -1,5 +1,20 @@
 # @afriex/checkout
 
+## 2.0.2
+
+### Security Patch Changes
+
+- Rebuild against TypeScript 7 and refresh build tooling.
+
+  The build toolchain moves from TypeScript 5.9.3 to 7.0.2 and `@types/node` from 22.x
+  to 26.x. TypeScript 7 no longer auto-discovers hoisted `@types` packages through
+  pnpm's isolated `node_modules`, so the shared tsconfig now sets `"types": ["node"]`
+  explicitly. No public API changes — the `typescript >=5.0.0` peer range is unchanged
+  and consumers on TypeScript 5 are unaffected.
+
+- Updated dependencies
+  - @afriex/core@2.0.1
+
 ## 2.0.1
 
 ### Patch Changes

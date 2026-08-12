@@ -17,6 +17,6 @@ import type * as Config from '../source.config';
 const create = server<typeof Config, import("fumadocs-mdx/runtime/types").InternalTypeConfig & {
   DocData: {
   }
-}>({"doc":{"passthroughs":["extractedReferences"]}});
+}>();
 
 export const docs = await create.docs("docs", "content", {"meta.json": __fd_glob_0, "api/meta.json": __fd_glob_1, }, {"getting-started.mdx": __fd_glob_2, "index.mdx": __fd_glob_3, "api/balance.mdx": __fd_glob_4, "api/checkout.mdx": __fd_glob_5, "api/customers.mdx": __fd_glob_6, "api/index.mdx": __fd_glob_7, "api/payment-methods.mdx": __fd_glob_8, "api/rates.mdx": __fd_glob_9, "api/transactions.mdx": __fd_glob_10, "api/webhooks.mdx": __fd_glob_11, });
