@@ -12,7 +12,6 @@ export interface AfriexConfig {
   logLevel?: LogLevel;
   enableLogging?: boolean;
   retryConfig?: RetryConfig;
-  webhookSecret?: string;
 }
 
 export interface RetryConfig {
@@ -31,7 +30,6 @@ export class Config {
   public readonly logLevel: LogLevel;
   public readonly enableLogging: boolean;
   public readonly retryableStatusCodes: number[];
-  public readonly webhookSecret?: string;
 
   constructor(config: AfriexConfig) {
     this.validateConfig(config);
@@ -40,7 +38,6 @@ export class Config {
     this.environment = config.environment || Environment.PRODUCTION;
     this.logLevel = config.logLevel || LogLevel.ERROR;
     this.enableLogging = config.enableLogging ?? true;
-    this.webhookSecret = config.webhookSecret;
 
     const envConfig = DEFAULT_CONFIG[this.environment];
     const customConfig = config.customConfig || {};
