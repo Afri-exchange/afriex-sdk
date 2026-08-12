@@ -1,5 +1,22 @@
 # @afriex/mcp-server
 
+## 1.2.1
+
+### Security Patch Changes
+
+- Update `jose` to 6.2.8 and `@modelcontextprotocol/sdk` to 1.30.0.
+
+  jose 6.2.8 splits the local and remote JWKS resolvers into distinct types whose
+  `jwks()` signatures differ, so neither is assignable to the other. The internal
+  `JwksGetter` type is now a union of both — the resolver is only ever passed to
+  `jwtVerify` as a key-resolution function, so no behaviour changes.
+
+  `better-sqlite3` intentionally stays on 12.x: the 13.x line ships no prebuilt
+  binaries, which forces a node-gyp source build on every install.
+
+- Updated dependencies
+  - @afriex/sdk@3.0.1
+
 ## 1.2.0
 
 ### Minor Changes

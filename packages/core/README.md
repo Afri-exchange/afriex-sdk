@@ -39,7 +39,6 @@ const config = client.getConfig();
 | `logLevel`      | `LogLevel`                   | No       | Logging level (default: `ERROR`)         |
 | `enableLogging` | `boolean`                    | No       | Enable/disable logging (default: `true`) |
 | `retryConfig`   | `RetryConfig`                | No       | Custom retry configuration               |
-| `webhookSecret` | `string`                     | No       | Secret for webhook verification          |
 
 ### Environment Values
 

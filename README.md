@@ -107,9 +107,21 @@ For smaller bundle sizes, install packages individually:
 | `@afriex/rates`           | Exchange rates                |
 | `@afriex/webhooks`        | Webhook verification          |
 
+## AI agents
+
+Every `@afriex/*` package ships [TanStack Intent](https://tanstack.com/intent) skills
+under `skills/`, so coding agents get grounded guidance on this SDK instead of guessing
+at the API. If you use an AI agent, run:
+
+```bash
+npx @tanstack/intent@latest install
+```
+
+List what is available with `npx @tanstack/intent@latest list`.
+
 ## Documentation
 
-Full documentation availale at [https://docs.afriex.com](https://docs.afriex.com)
+Full documentation availale at [https://docs.afriex.com/sdk/introduction](https://afriex-sdk-docs.vercel.app)
 
 ## License
 

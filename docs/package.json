@@ -9,22 +9,28 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@base-ui/react": "^1.7.0",
+    "@fuma-translate/react": "^1.0.2",
+    "@fumadocs/base-ui": "^16.14.3",
     "@vercel/analytics": "^2.0.1",
-    "fumadocs-core": "^16.11.3",
-    "fumadocs-mdx": "^15.1.0",
-    "fumadocs-ui": "^16.11.3",
-    "next": "^16.2.10",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "class-variance-authority": "^0.7.1",
+    "cnfast": "^0.1.0",
+    "fumadocs-core": "^16.14.2",
+    "fumadocs-mdx": "^15.2.2",
+    "fumadocs-ui": "^16.14.2",
+    "lucide-react": "^1.31.0",
+    "next": "^16.3.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.2",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/mdx": "^2.0.14",
-    "@types/node": "^22.20.1",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "tailwindcss": "^4.3.2",
-    "typescript": "^5.9.3"
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2"
   },
   "packageManager": "pnpm@8.15.0",
   "repository": {

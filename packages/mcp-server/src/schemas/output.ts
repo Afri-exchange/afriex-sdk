@@ -190,7 +190,8 @@ export const transactionSchema = z
     transactionId: z.string(),
     customerId: z.string(),
     sourceId: z.string().optional(),
-    destinationId: z.string(),
+    /** Absent on SWAP transactions, which settle within the wallet and have no destination payment method. */
+    destinationId: z.string().optional(),
     sourceAmount: z.string(),
     sourceCurrency: z.string(),
     destinationAmount: z.string(),

@@ -93,7 +93,8 @@ export interface TransactionWebhookData {
   destinationAmount: string;
   destinationCurrency: string;
   sourceId?: string;
-  destinationId: string;
+  /** Absent on SWAP transactions, which settle within the wallet and have no destination payment method. */
+  destinationId?: string;
   customerId: string;
   transactionId: string;
   /** Mirrors meta.reference from the create request. */

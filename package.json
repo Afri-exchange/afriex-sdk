@@ -18,12 +18,18 @@
     "release": "turbo run build && changeset publish"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.31.0",
-    "@types/node": "^22.20.1",
+    "@changesets/cli": "^2.31.1",
+    "@tanstack/intent": "^0.3.6",
+    "@types/node": "^26.2.0",
     "ts-node": "^10.9.2",
-    "turbo": "^2.10.4",
-    "typescript": "5.9.3",
+    "turbo": "^2.10.9",
+    "typescript": "7.0.2",
     "vitest": "^4.1.10"
+  },
+  "intent": {
+    "skills": [
+      "workspace:@afriex/*"
+    ]
   },
   "engines": {
     "node": ">=22.13.0",
