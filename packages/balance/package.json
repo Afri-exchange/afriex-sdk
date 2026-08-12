@@ -1,6 +1,6 @@
 {
   "name": "@afriex/balance",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Balance service for Afriex SDK",
   "type": "module",
   "main": "./dist/index.js",

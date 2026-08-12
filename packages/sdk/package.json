@@ -1,6 +1,6 @@
 {
   "name": "@afriex/sdk",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Official TypeScript SDK for the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",

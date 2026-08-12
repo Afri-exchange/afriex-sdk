@@ -1,6 +1,6 @@
 {
   "name": "@afriex/checkout",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Checkout service for Afriex SDK",
   "type": "module",
   "main": "./dist/index.js",
