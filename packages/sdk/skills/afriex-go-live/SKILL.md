@@ -280,36 +280,6 @@ Fix: deduplicate on `transactionId` plus `status` in durable storage.
 
 ## Common Security Mistakes
 
-### CRITICAL Using webhookSecret for signature verification
-
-Wrong:
-
-```ts
-import { AfriexSDK } from "@afriex/sdk";
-
-const afriex = new AfriexSDK({
-  apiKey: process.env.AFRIEX_API_KEY!,
-  webhookSecret: process.env.AFRIEX_WEBHOOK_PUBLIC_KEY,
-});
-```
-
-Correct:
-
-```ts
-import { AfriexSDK } from "@afriex/sdk";
-
-const afriex = new AfriexSDK({
-  apiKey: process.env.AFRIEX_API_KEY!,
-  webhookPublicKey: process.env.AFRIEX_WEBHOOK_PUBLIC_KEY!,
-});
-```
-
-`webhookSecret` is stored on `Config` but never reaches `WebhookService`, so
-verification fails closed for legitimate events while the code reads as
-configured.
-
-Source: packages/sdk/src/index.ts (`new WebhookService(httpClient, config.webhookPublicKey)`)
-
 ### HIGH Returning ApiError.message to end users as an error code
 
 Wrong:

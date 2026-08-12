@@ -166,45 +166,6 @@ export async function safeGetTransaction(id: string) {
 
 ## Common Mistakes
 
-### CRITICAL Passing webhookSecret instead of webhookPublicKey
-
-Wrong:
-
-```ts
-import { AfriexSDK } from "@afriex/sdk";
-
-const afriex = new AfriexSDK({
-  apiKey: process.env.AFRIEX_API_KEY!,
-  webhookSecret: process.env.AFRIEX_WEBHOOK_PUBLIC_KEY,
-});
-
-export function handle(rawBody: string, signature: string): boolean {
-  return afriex.webhooks.verify(rawBody, signature);
-}
-```
-
-Correct:
-
-```ts
-import { AfriexSDK } from "@afriex/sdk";
-
-const afriex = new AfriexSDK({
-  apiKey: process.env.AFRIEX_API_KEY!,
-  webhookPublicKey: process.env.AFRIEX_WEBHOOK_PUBLIC_KEY!,
-});
-
-export function handle(rawBody: string, signature: string) {
-  return afriex.webhooks.verifyAndParse(rawBody, signature);
-}
-```
-
-`AfriexConfig.webhookSecret` is stored on `Config` but is never read by
-`WebhookService`; only `AfriexSDKConfig.webhookPublicKey` reaches the verifier,
-so signature checks silently return `false` for every delivery even though the
-key was supplied.
-
-Source: packages/sdk/src/index.ts (`new WebhookService(httpClient, config.webhookPublicKey)`)
-
 ### HIGH Calling afriex.webhookVerifier without configuring a public key
 
 Wrong:
