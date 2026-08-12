@@ -35,6 +35,7 @@
     "@afriex/webhooks": "workspace:*"
   },
   "devDependencies": {
+    "@tanstack/intent": "^0.3.6",
     "rimraf": "^6.1.3",
     "typescript": "^7.0.2"
   },
@@ -44,7 +45,8 @@
   "files": [
     "dist",
     "README.md",
-    "!dist/**/*.map"
+    "!dist/**/*.map",
+    "skills"
   ],
   "publishConfig": {
     "access": "public"
@@ -56,7 +58,8 @@
     "money-transfer",
     "payments",
     "fintech",
-    "typescript"
+    "typescript",
+    "tanstack-intent"
   ],
   "license": "MIT"
 }

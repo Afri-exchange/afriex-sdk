@@ -21,13 +21,15 @@
     "@afriex/core": "workspace:*"
   },
   "devDependencies": {
+    "@tanstack/intent": "^0.3.6",
     "rimraf": "^6.1.3",
     "typescript": "^7.0.2"
   },
   "files": [
     "dist",
     "README.md",
-    "!dist/**/*.map"
+    "!dist/**/*.map",
+    "skills"
   ],
   "publishConfig": {
     "access": "public"
@@ -38,5 +40,8 @@
     "url": "https://github.com/Afri-exchange/afriex-sdk",
     "directory": "packages/rates"
   },
-  "author": "Victory Lucky <luckyvictory54@gmail.com>"
+  "author": "Victory Lucky <luckyvictory54@gmail.com>",
+  "keywords": [
+    "tanstack-intent"
+  ]
 }
