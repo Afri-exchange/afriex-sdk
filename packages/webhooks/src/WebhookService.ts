@@ -60,7 +60,7 @@ export class WebhookService {
    *
    * @param request - The webhook event type and entity ID (`resourceId` is
    *   accepted as a deprecated fallback for `entityId`)
-   * @returns Success confirmation
+   * @returns An envelope whose `data` carries the queued event and its delivery URL
    */
   async triggerTestWebhook(
     request: TriggerWebhookRequest

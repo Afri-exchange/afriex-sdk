@@ -105,7 +105,8 @@ export function registerWebhookTools(registry: ToolRegistry): void {
     async ({ event, entityId, resourceId }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
-        const result = await sdk.webhooks.triggerTestWebhook({ event, entityId, resourceId });
+        const response = await sdk.webhooks.triggerTestWebhook({ event, entityId, resourceId });
+        const result = response.data;
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           structuredContent: toStructured(result),

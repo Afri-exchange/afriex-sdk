@@ -31,7 +31,7 @@ export const customerSchema = z
     email: z.string(),
     phone: z.string(),
     countryCode: z.string(),
-    kyc: z.record(z.string(), z.unknown()).optional(),
+    /** KYC documents live at meta.kyc.data; there is no top-level kyc field. */
     meta: z.record(z.string(), z.unknown()).optional(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
@@ -61,6 +61,7 @@ export const institutionSchema = z
     institutionName: z.string(),
     institutionCode: z.string(),
     institutionAddress: z.string().optional(),
+    institutionBranch: z.string().optional(),
   })
   .passthrough();
 
@@ -76,6 +77,8 @@ export const resolveAccountOutputSchema = z
     recipientPhone: z.string().optional(),
     recipientAddress: z.string().optional(),
     recipientName: z.string().optional(),
+    institutionName: z.string().optional(),
+    institutionCode: z.string().optional(),
   })
   .passthrough();
 
@@ -159,9 +162,8 @@ export const paymentMethodListOutputSchema = z
 
 export const cryptoWalletOutputSchema = z
   .object({
-    data: z.array(z.object({ address: z.string(), network: z.string() }).passthrough()),
-    total: z.number(),
-    page: z.number(),
+    id: z.string(),
+    addresses: z.array(z.object({ address: z.string(), network: z.string() }).passthrough()),
   })
   .passthrough();
 
@@ -203,6 +205,8 @@ export const transactionSchema = z
     merchantReference: z.string().optional(),
     /** Realized source-to-destination rate: 1 sourceCurrency = rate destinationCurrency. */
     rate: z.string().optional(),
+    /** Fee charged for the transaction, denominated in sourceCurrency. */
+    fee: z.string().optional(),
     meta: z
       .object({
         narration: z.string().optional(),
@@ -261,6 +265,7 @@ export const convertCurrencyOutputSchema = z
 export const checkoutSessionOutputSchema = z
   .object({
     checkoutUrl: z.string(),
+    channels: z.array(z.string()).optional(),
   })
   .passthrough();
 
@@ -282,7 +287,9 @@ export const webhookParsedOutputSchema = z
 
 export const triggerWebhookOutputSchema = z
   .object({
-    success: z.boolean(),
-    message: z.string().optional(),
+    queued: z.boolean(),
+    event: z.string(),
+    entityId: z.string(),
+    deliveryUrl: z.string().optional(),
   })
   .passthrough();

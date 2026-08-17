@@ -232,7 +232,8 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     async ({ channel, countryCode }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
-        const institutions = await sdk.paymentMethods.getInstitutions({ channel, countryCode });
+        const response = await sdk.paymentMethods.getInstitutions({ channel, countryCode });
+        const institutions = response.data;
         return {
           content: [{ type: "text", text: JSON.stringify(institutions, null, 2) }],
           structuredContent: { institutions },
@@ -271,7 +272,8 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     async ({ searchTerm, country, codeType }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
-        const result = await sdk.paymentMethods.resolveInstitutionCode({ searchTerm, country, codeType });
+        const response = await sdk.paymentMethods.resolveInstitutionCode({ searchTerm, country, codeType });
+        const result = response?.data ?? null;
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           structuredContent: { bankName: result?.bankName },
@@ -310,12 +312,13 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     async ({ channel, accountNumber, countryCode, institutionCode }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
-        const result = await sdk.paymentMethods.resolveAccount({
+        const response = await sdk.paymentMethods.resolveAccount({
           channel,
           accountNumber,
           countryCode,
           institutionCode,
         });
+        const result = response.data;
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           structuredContent: toStructured(result),
@@ -343,7 +346,8 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     async ({ asset, customerId }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
-        const wallet = await sdk.paymentMethods.getCryptoWallet({ asset, customerId });
+        const response = await sdk.paymentMethods.getCryptoWallet({ asset, customerId });
+        const wallet = response.data;
         return {
           content: [{ type: "text", text: JSON.stringify(wallet, null, 2) }],
           structuredContent: toStructured(wallet),

@@ -81,7 +81,9 @@ const result = await afriex.webhooks.triggerTestWebhook({
 });
 
 // Check your webhook endpoint for the test event
-console.log(result); // { success: true, message: "..." }
+console.log(result.data);
+// { queued: true, event: 'TRANSACTION.UPDATED', entityId: 'transaction-id',
+//   deliveryUrl: 'https://your-endpoint.example.com/webhooks' }
 ```
 
 For `CHECKOUT_SESSION.CREATED`, use the checkout session UUID as `entityId`.

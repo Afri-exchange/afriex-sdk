@@ -46,6 +46,9 @@ const rate = await afriex.rates.getRate("USD", "NGN");
 console.log("USD to NGN:", rate); // "1550.00"
 ```
 
+Throws if either symbol is unsupported, or if the pair has no published rate —
+it never returns a `"0"` rate that would silently zero out a conversion.
+
 ## Convert Amount
 
 ```typescript

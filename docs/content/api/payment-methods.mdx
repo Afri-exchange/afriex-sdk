@@ -79,14 +79,20 @@ await afriex.paymentMethods.delete("payment-method-id");
 List supported banks or mobile money providers:
 
 ```typescript
-const institutions = await afriex.paymentMethods.getInstitutions({
+const response = await afriex.paymentMethods.getInstitutions({
   channel: "BANK_ACCOUNT",
   countryCode: "NG",
 });
 
-// Returns: Institution[]
-// { institutionId, institutionName, institutionCode }
+for (const institution of response.data) {
+  console.log(institution.institutionName, institution.institutionCode);
+}
+
+// Returns: { data: Institution[], total, page }
+// Institution: { institutionName, institutionCode, institutionAddress?, institutionBranch? }
 ```
+
+Supported channels are `BANK_ACCOUNT`, `SWIFT` and `MOBILE_MONEY`.
 
 ## Resolve Institution Code
 
@@ -99,7 +105,9 @@ const result = await afriex.paymentMethods.resolveInstitutionCode({
   codeType: "routing_number",
 });
 
-// Returns: { bankName: 'JPMORGAN CHASE BANK' } or null if not found
+console.log(result?.data.bankName); // 'JPMORGAN CHASE BANK'
+
+// Returns: { data: { bankName } } — or null if the code does not resolve
 ```
 
 `country` defaults to `US` and accepts any ISO country code for `swift_code` lookups; `routing_number` is only supported when `country` is `US`.
@@ -109,14 +117,18 @@ const result = await afriex.paymentMethods.resolveInstitutionCode({
 Verify account details before creating a payment method:
 
 ```typescript
-const accountInfo = await afriex.paymentMethods.resolveAccount({
+const response = await afriex.paymentMethods.resolveAccount({
   channel: "BANK_ACCOUNT",
   accountNumber: "1234567890",
   institutionCode: "044",
   countryCode: "NG",
 });
 
-// Returns: { recipientName, recipientEmail, recipientPhone }
+console.log(response.data.recipientName);
+
+// Returns: { data: ResolvedAccount }
+// ResolvedAccount: { recipientName?, recipientEmail?, recipientPhone?,
+//                    recipientAddress?, institutionName?, institutionCode? }
 ```
 
 ## Get Crypto Wallet
@@ -129,7 +141,13 @@ const response = await afriex.paymentMethods.getCryptoWallet({
   customerId: "optional-customer-id",
 });
 
-// Returns: { data: [{ address, network }], total, page }
+for (const { network, address } of response.data.addresses) {
+  console.log(network, address);
+}
+
+// Returns: { data: { id, addresses: [{ address, network }] } }
+// One wallet, carrying an address per supported network
+// (ETHEREUM_MAINNET, POLYGON_MAINNET, SOLANA_MAINNET, TRON_MAINNET).
 ```
 
 import { Callout } from "fumadocs-ui/components/callout";

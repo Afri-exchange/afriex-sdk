@@ -134,14 +134,11 @@ describe("HttpClient", () => {
 
   describe("Error Handling", () => {
     it("should throw ApiError on HTTP error", async () => {
+      // ky 2.x consumes the response body up front and exposes the parsed
+      // payload on `error.data`; the body itself is no longer readable.
       const httpError = {
-        response: {
-          status: 400,
-          clone: () => ({
-            json: () => Promise.resolve({ message: "Bad Request" }),
-          }),
-          headers: new Headers(),
-        },
+        response: { status: 400, headers: new Headers() },
+        data: { message: "Bad Request" },
         request: { url: "/test" },
         message: "Bad Request",
       };
@@ -154,20 +151,14 @@ describe("HttpClient", () => {
 
     it("should extract code and friendly message from a real API error body", async () => {
       const httpError = {
-        response: {
-          status: 400,
-          clone: () => ({
-            json: () =>
-              Promise.resolve({
-                code: "INVALID_BUSINESS_CUSTOMER_REQUEST",
-                error: "Invalid business customer request",
-                details: {
-                  errorMessage: "Invalid business customer request",
-                  friendlyMessage: "No customer phone provided",
-                },
-              }),
-          }),
-          headers: new Headers(),
+        response: { status: 400, headers: new Headers() },
+        data: {
+          code: "INVALID_BUSINESS_CUSTOMER_REQUEST",
+          error: "Invalid business customer request",
+          details: {
+            errorMessage: "Invalid business customer request",
+            friendlyMessage: "No customer phone provided",
+          },
         },
         request: { url: "/test" },
         message: "Bad Request",
@@ -188,15 +179,38 @@ describe("HttpClient", () => {
       }
     });
 
+    it("should fall back to a generic ApiError when the body is not JSON", async () => {
+      // ky sets `data` to a plain string for non-JSON bodies, and leaves it
+      // undefined when parsing fails outright. Neither should be treated as an
+      // error payload.
+      for (const data of ["<html>Gateway Timeout</html>", undefined]) {
+        const httpError = {
+          response: { status: 504, headers: new Headers() },
+          data,
+          request: { url: "/test" },
+          message: "Gateway Timeout",
+        };
+
+        mockJson.mockRejectedValueOnce(httpError);
+        vi.mocked(isHTTPError).mockReturnValueOnce(true);
+
+        try {
+          await httpClient.get("/test");
+          expect.fail("expected httpClient.get to throw");
+        } catch (error) {
+          expect(error).toBeInstanceOf(ApiError);
+          const apiError = error as ApiError;
+          expect(apiError.statusCode).toBe(504);
+          expect(apiError.errorCode).toBeUndefined();
+          expect(apiError.message).toBe("An API error occurred");
+        }
+      }
+    });
+
     it("should throw RateLimitError on 429", async () => {
       const httpError = {
-        response: {
-          status: 429,
-          clone: () => ({
-            json: () => Promise.resolve({ message: "Too Many Requests" }),
-          }),
-          headers: new Headers({ "retry-after": "60" }),
-        },
+        response: { status: 429, headers: new Headers({ "retry-after": "60" }) },
+        data: { message: "Too Many Requests" },
         request: { url: "/test" },
         message: "Rate Limited",
       };

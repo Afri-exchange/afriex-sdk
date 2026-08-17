@@ -75,13 +75,16 @@ export class HttpClient {
   private async handleError(error: unknown): Promise<never> {
     if (isHTTPError(error)) {
       const status = error.response.status;
-      let data: ApiErrorResponse = {};
 
-      try {
-        data = (await error.response.clone().json()) as ApiErrorResponse;
-      } catch {
-        // Response body is not JSON; use empty object
-      }
+      // ky consumes the response body when it builds the HTTPError and exposes
+      // the parsed result on `error.data`. The body cannot be read a second
+      // time — `error.response.json()` and `.clone()` both throw "Body has
+      // already been consumed" — so the error payload must come from here.
+      // `data` is a string for non-JSON bodies and undefined when parsing failed.
+      const data: ApiErrorResponse =
+        typeof error.data === "object" && error.data !== null
+          ? (error.data as ApiErrorResponse)
+          : {};
 
       this.logger.error("API Error:", {
         status,

@@ -42,6 +42,8 @@ export interface TopUpTransaction {
   destinationAmount: string;
   destinationCurrency: string;
   type: TopUpTransactionType;
+  /** Channel the credit came through. Sandbox top-ups report `ADMIN`. */
+  channel?: string;
   status: TopUpTransactionStatus;
   meta: Record<string, unknown>;
   createdAt: string;

@@ -79,6 +79,12 @@ export class CheckoutService {
           request.customer.countryCode.trim().length !== 2,
         "customer.countryCode must be a 2-letter ISO country code"
       )
+      .required("channels", request.channels)
+      .condition(
+        "channels",
+        Array.isArray(request.channels) && request.channels.length === 0,
+        "channels must contain at least one payment channel"
+      )
       .condition(
         "channels",
         this.hasInvalidChannels(request.channels),

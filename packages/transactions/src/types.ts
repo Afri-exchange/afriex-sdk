@@ -136,6 +136,8 @@ export interface Transaction {
   merchantReference?: string;
   /** Realized source-to-destination rate: `1 sourceCurrency = rate destinationCurrency`. */
   rate?: string;
+  /** Fee charged for the transaction, denominated in `sourceCurrency`. */
+  fee?: string;
   meta?: TransactionMetaResponse;
   createdAt: string;
   updatedAt: string;

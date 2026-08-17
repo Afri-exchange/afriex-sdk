@@ -98,29 +98,44 @@ describe("CheckoutService", () => {
       ).rejects.toThrow("Validation failed");
     });
 
-    it("should allow optional metadata and channels to be omitted", async () => {
-      const invalidRequest = {
+    it("should allow optional metadata to be omitted", async () => {
+      const request = {
         ...validRequest,
-        channels: undefined,
         metadata: undefined,
       };
 
       const mockSession = {
         checkoutUrl: "https://checkout.afriex.com/pay/session_123",
+        channels: validRequest.channels,
       };
 
       (mockHttpClient.post as Mock).mockResolvedValue({
         data: mockSession,
       });
 
-      await expect(
-        checkoutService.createSession(invalidRequest)
-      ).resolves.toEqual(mockSession);
+      await expect(checkoutService.createSession(request)).resolves.toEqual(
+        mockSession
+      );
 
       expect(mockHttpClient.post).toHaveBeenCalledWith(
         "/checkout-session",
-        invalidRequest
+        request
       );
+    });
+
+    it("should throw validation error when channels are omitted or empty", async () => {
+      // The API rejects a request without channels, so the field is required
+      // and the client-side rule catches it before the round trip.
+      await expect(
+        checkoutService.createSession({
+          ...validRequest,
+          channels: undefined as never,
+        })
+      ).rejects.toThrow("Validation failed");
+
+      await expect(
+        checkoutService.createSession({ ...validRequest, channels: [] })
+      ).rejects.toThrow("Validation failed");
     });
 
     it("should throw validation error when channels contain an unsupported value", async () => {

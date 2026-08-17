@@ -2,6 +2,8 @@
 title: Customers
 ---
 
+import { Callout } from "fumadocs-ui/components/callout";
+
 # Customers API
 
 Manage customers with KYC support.
@@ -72,11 +74,21 @@ The KYC document map is sent directly as the request body — do not wrap it in 
 const customer = await afriex.customers.updateKyc("customer-id", {
   PASSPORT: "AB123456",
   DATE_OF_BIRTH: "1990-05-15",
-  COUNTRY: "NG",
 });
+
+// The saved documents come back under meta.kyc.data
+console.log(customer.meta?.kyc?.data);
+// { PASSPORT: 'AB123456', DATE_OF_BIRTH: '1990-05-15' }
 ```
 
-Valid keys: `REPRESENTATIVE_TYPE`, `DATE_OF_BIRTH`, `ADDRESS`, `BANK_STATEMENT`, `BUSINESS_CERTIFICATE`, `COUNTRY`, `ID_FRONT`, `ID_BACK`, `PHONE`, `SELFIE`, `PROOF_OF_ADDRESS`, `PROOF_OF_INCOME`, `BVN`, `DRIVER_LICENSE`, `PASSPORT`, `NATIONAL_ID`, `PAYMENT_METHOD`, `RESIDENCE_PERMIT`, `VEHICLE_REGISTRATION`, `VOTER_ID`, `OTHERS`.
+Valid keys (`KycDocumentType`): `REPRESENTATIVE_TYPE`, `DATE_OF_BIRTH`, `ADDRESS`, `BANK_STATEMENT`, `BUSINESS_CERTIFICATE`, `ID_FRONT`, `ID_BACK`, `SELFIE`, `PROOF_OF_ADDRESS`, `PROOF_OF_INCOME`, `DRIVER_LICENSE`, `PASSPORT`, `NATIONAL_ID`, `PAYMENT_METHOD`, `RESIDENCE_PERMIT`, `VEHICLE_REGISTRATION`, `VOTER_ID`, `OTHERS`.
+
+`COUNTRY`, `PHONE` and `BVN` are **not** accepted here — the API rejects them with `INVALID_KYC_DOCUMENT_TYPE`. Set the country with `countryCode` on create, the phone with `update()`, and verify a BVN with `verify()`.
+
+<Callout type="warn">
+  Each call **replaces** the stored document map rather than merging into it.
+  Send every document you want to keep on every call.
+</Callout>
 
 ## Verify Customer
 

@@ -17,12 +17,19 @@ export interface CreateCheckoutSessionRequest {
   merchantReference: string;
   redirectUrl: string;
   customer: CheckoutCustomer;
-  channels?: CheckoutChannel[];
+  /**
+   * Payment channels to offer on the session. Required, and must be non-empty —
+   * the API rejects a request that omits it. Only `VIRTUAL_BANK_ACCOUNT` and
+   * `MOBILE_MONEY` are currently accepted.
+   */
+  channels: CheckoutChannel[];
   metadata?: Record<string, string>;
 }
 
 export interface CheckoutSession {
   checkoutUrl: string;
+  /** The channels enabled on the session, echoed back from the request. */
+  channels?: CheckoutChannel[];
 }
 
 export interface CreateCheckoutSessionResponse {

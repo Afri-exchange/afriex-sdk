@@ -157,16 +157,41 @@ export interface Institution {
   institutionName: string;
   institutionCode: string;
   institutionAddress?: string;
+  /** Branch name. Returned for bank listings; an empty string when unknown. */
+  institutionBranch?: string;
 }
 
-export interface ResolveAccountResponse {
+/** Response envelope for GET /payment-method/institution. */
+export interface InstitutionListResponse {
+  data: Institution[];
+  total: number;
+  page: number;
+}
+
+/** Account details resolved from an account number. */
+export interface ResolvedAccount {
   recipientEmail?: string;
   recipientPhone?: string;
   recipientAddress?: string;
   recipientName?: string;
+  /** The institution the account resolved to. */
+  institutionName?: string;
+  institutionCode?: string;
 }
-export interface InstitutionCodesResponse {
+
+/** Response envelope for GET /payment-method/resolve. */
+export interface ResolveAccountResponse {
+  data: ResolvedAccount;
+}
+
+/** The institution a bank code resolves to. */
+export interface InstitutionCode {
   bankName: string;
+}
+
+/** Response envelope for GET /payment-method/institution/codes. */
+export interface InstitutionCodesResponse {
+  data: InstitutionCode;
 }
 
 /** Channels accepted by GET /payment-method/institution. */
@@ -198,15 +223,24 @@ export interface InstitutionCodesParams {
   country: string;
   codeType: "swift_code" | "routing_number";
 }
+/** A deposit address on one network. */
 export interface CryptoWallet {
   address: string;
   network: string;
 }
 
+/**
+ * A crypto wallet: a single wallet record carrying one address per supported
+ * network (e.g. ETHEREUM_MAINNET, POLYGON_MAINNET, SOLANA_MAINNET, TRON_MAINNET).
+ */
+export interface CryptoWalletData {
+  id: string;
+  addresses: CryptoWallet[];
+}
+
+/** Response envelope for GET /payment-method/crypto-wallet. */
 export interface CryptoWalletResponse {
-  data: CryptoWallet[];
-  total: number;
-  page: number;
+  data: CryptoWalletData;
 }
 
 export interface GetCryptoWalletParams {

@@ -133,7 +133,9 @@ describe("RateService", () => {
       expect(result).toBe("1550.00");
     });
 
-    it('should return "0" when rate not found', async () => {
+    it("should throw when the pair is absent from the response", async () => {
+      // Returning "0" here would have made an unavailable rate look like a
+      // real rate of zero, silently zeroing out any conversion built on it.
       const mockRatesData = {
         rates: {},
         updatedAt: 1707249600,
@@ -143,9 +145,19 @@ describe("RateService", () => {
         data: mockRatesData,
       });
 
-      const result = await rateService.getRate("XYZ", "ABC");
+      await expect(rateService.getRate("XYZ", "ABC")).rejects.toThrow(
+        "No exchange rate available for XYZ to ABC"
+      );
+    });
 
-      expect(result).toBe("0");
+    it("should not convert at a zero rate when the pair is absent", async () => {
+      (mockHttpClient.get as Mock).mockResolvedValue({
+        data: { rates: {}, updatedAt: 1707249600 },
+      });
+
+      await expect(rateService.convert(100, "XYZ", "ABC")).rejects.toThrow(
+        "No exchange rate available for XYZ to ABC"
+      );
     });
 
     it("should throw ValidationError when currencies are missing", async () => {

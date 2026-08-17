@@ -164,7 +164,19 @@ export interface TriggerWebhookRequest {
   resourceId?: string;
 }
 
+/** The outcome of queueing a test webhook. */
+export interface TriggerWebhookResult {
+  /** True once the test event has been accepted for delivery. */
+  queued: boolean;
+  /** The event type that was triggered. */
+  event: WebhookEventType;
+  /** The entity the test payload was built from. */
+  entityId: string;
+  /** The endpoint the test event will be delivered to. */
+  deliveryUrl?: string;
+}
+
+/** Response envelope for POST /webhooks/trigger. */
 export interface TriggerWebhookResponse {
-  success: boolean;
-  message?: string;
+  data: TriggerWebhookResult;
 }

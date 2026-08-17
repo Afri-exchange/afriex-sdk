@@ -169,11 +169,11 @@ describe.skipIf(SKIP_INTEGRATION_TESTS)("Afriex SDK Integration Tests", () => {
       const customer = await sdk.customers.updateKyc(createdCustomerId, {
         PASSPORT: "TEST123456",
         DATE_OF_BIRTH: "1990-05-15",
-        COUNTRY: "US",
       });
 
       expect(customer).toBeDefined();
-      expect(customer.kyc).toBeDefined();
+      // The saved documents come back at meta.kyc.data.
+      expect(customer.meta?.kyc?.data).toBeDefined();
     }, 10000);
 
     it("should update a customer's profile", async () => {
@@ -202,16 +202,16 @@ describe.skipIf(SKIP_INTEGRATION_TESTS)("Afriex SDK Integration Tests", () => {
 
   describe("Payment Method Service", () => {
     it("should get institutions for a country", async () => {
-      const institutions = await sdk.paymentMethods.getInstitutions({
+      const response = await sdk.paymentMethods.getInstitutions({
         channel: "BANK_ACCOUNT",
         countryCode: "NG",
       });
 
-      expect(institutions).toBeDefined();
-      expect(Array.isArray(institutions)).toBe(true);
-      expect(institutions.length).toBeGreaterThan(0);
-      expect(institutions[0].institutionId).toBeDefined();
-      expect(institutions[0].institutionName).toBeDefined();
+      expect(response).toBeDefined();
+      expect(Array.isArray(response.data)).toBe(true);
+      expect(response.data.length).toBeGreaterThan(0);
+      expect(response.data[0].institutionName).toBeDefined();
+      expect(response.data[0].institutionCode).toBeDefined();
     }, 10000);
 
     it("should create a payment method", async () => {
@@ -278,7 +278,7 @@ describe.skipIf(SKIP_INTEGRATION_TESTS)("Afriex SDK Integration Tests", () => {
 
       // May resolve to null if the sandbox lookup table doesn't have this
       // routing number; either way the call must succeed without throwing.
-      expect(result === null || typeof result?.bankName === "string").toBe(
+      expect(result === null || typeof result?.data.bankName === "string").toBe(
         true
       );
     }, 10000);

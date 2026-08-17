@@ -51,6 +51,10 @@ sample/
 **_Analysis.md
 **addendum.md
 **spec.md
+**CONTRACT_FINDINGS.md
+packages/sdk/src/__tests__/e2e.contract.test.ts
+packages/sdk/src/__tests__/helpers/shape.ts
+packages/sdk/src/__tests__/helpers/declared-shapes.ts
 presentation.md
 presentation-*.md
 presentation-*/

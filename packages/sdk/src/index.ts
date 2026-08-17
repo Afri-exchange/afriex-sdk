@@ -58,6 +58,9 @@ export { WebhookVerifier, WebhookService } from "@afriex/webhooks";
 // Re-export types from each package - using explicit exports to avoid conflicts
 export type {
   Customer,
+  CustomerKyc,
+  CustomerMeta,
+  KycDocumentType,
   CreateCustomerRequest,
   UpdateCustomerRequest,
   UpdateCustomerKycRequest,
@@ -93,10 +96,17 @@ export type {
   CardBrand,
   CardExpiration,
   Institution,
+  InstitutionListResponse,
   InstitutionListChannel,
+  InstitutionCode,
+  InstitutionCodesParams,
+  InstitutionCodesResponse,
   ResolveAccountParams,
+  ResolvedAccount,
   ResolveAccountResponse,
   GetInstitutionsParams,
+  CryptoWallet,
+  CryptoWalletData,
   CryptoWalletResponse,
   GetCryptoWalletParams,
   ListVirtualAccountsParams,
@@ -133,6 +143,8 @@ export type {
   CheckoutSessionEventType,
   CheckoutSessionWebhookData,
   TriggerWebhookRequest,
+  TriggerWebhookResult,
+  TriggerWebhookResponse,
   WebhookEventType,
 } from "@afriex/webhooks";
 

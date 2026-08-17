@@ -1,4 +1,4 @@
-import { HttpClient, ValidationError } from "@afriex/core";
+import { AfriexError, HttpClient, ValidationError } from "@afriex/core";
 import { RatesResponse, GetRatesParams } from "./types.js";
 
 export class RateService {
@@ -35,6 +35,8 @@ export class RateService {
    * @param baseCurrency - The base currency code (e.g., 'USD')
    * @param targetCurrency - The target currency code (e.g., 'NGN')
    * @returns The exchange rate as a string
+   * @throws {ApiError} if either currency is not a supported symbol
+   * @throws {AfriexError} if the pair is absent from the rates response
    */
   async getRate(baseCurrency: string, targetCurrency: string): Promise<string> {
     if (!baseCurrency || !targetCurrency) {
@@ -46,7 +48,19 @@ export class RateService {
       toSymbols: targetCurrency,
     });
 
-    return response.rates[baseCurrency]?.[targetCurrency] ?? "0";
+    const rate = response.rates[baseCurrency]?.[targetCurrency];
+
+    // Previously this fell back to "0", which silently turned an unavailable
+    // rate into a zero-valued conversion. Unsupported symbols are rejected by
+    // the API before we get here, so a missing pair means the rate genuinely
+    // isn't published — which callers must not mistake for a rate of zero.
+    if (rate === undefined) {
+      throw new AfriexError(
+        `No exchange rate available for ${baseCurrency} to ${targetCurrency}`
+      );
+    }
+
+    return rate;
   }
 
   /**

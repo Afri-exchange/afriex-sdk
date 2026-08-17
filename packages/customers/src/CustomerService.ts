@@ -102,7 +102,10 @@ export class CustomerService {
    * Update customer KYC information
    * PATCH /customer/{customerId}/kyc
    *
-   * The document map is sent directly as the request body (not wrapped in a `kyc` field).
+   * The document map is sent directly as the request body (not wrapped in a `kyc` field),
+   * and **replaces** any previously stored documents rather than merging into them.
+   *
+   * The saved documents come back on the customer at `meta.kyc.data`.
    */
   async updateKyc(
     customerId: string,

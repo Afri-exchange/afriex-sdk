@@ -43,6 +43,7 @@ export function registerCheckoutTools(registry: ToolRegistry): void {
           .describe("Customer information for the checkout"),
         channels: z
           .array(z.enum(["VIRTUAL_BANK_ACCOUNT", "MOBILE_MONEY", "CARD"]))
+          .nonempty()
           .optional()
           .describe("Allowed payment channels. Defaults to [VIRTUAL_BANK_ACCOUNT] if omitted."),
         metadata: z
@@ -62,7 +63,9 @@ export function registerCheckoutTools(registry: ToolRegistry): void {
           merchantReference,
           redirectUrl,
           customer,
-          channels,
+          // The API requires channels, so apply the default this tool documents
+          // rather than forwarding undefined and letting the request be rejected.
+          channels: channels ?? ["VIRTUAL_BANK_ACCOUNT"],
           metadata,
         });
         return {

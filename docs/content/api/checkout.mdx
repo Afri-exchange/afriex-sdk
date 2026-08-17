@@ -51,7 +51,7 @@ console.log(session.checkoutUrl); // https://checkout.afriex.com/pay/...
 | `customer.email`       | `string`   | Yes      | Customer's email address                                     |
 | `customer.phone`       | `string`   | Yes      | Phone number in E.164 format                                 |
 | `customer.countryCode` | `string`   | Yes      | ISO 3166-1 alpha-2 country code                              |
-| `channels`             | `string[]` | No       | Allowed payment channels. Defaults to `VIRTUAL_BANK_ACCOUNT` |
+| `channels`             | `string[]` | Yes      | Allowed payment channels; must be non-empty. `VIRTUAL_BANK_ACCOUNT` and `MOBILE_MONEY` are supported |
 | `metadata`             | `object`   | No       | Optional flat key/value metadata with string values          |
 
 ## Session Flow

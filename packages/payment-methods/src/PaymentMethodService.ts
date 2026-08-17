@@ -4,7 +4,7 @@ import {
   CreatePaymentMethodRequest,
   ListPaymentMethodsParams,
   PaymentMethodListResponse,
-  Institution,
+  InstitutionListResponse,
   ResolveAccountResponse,
   GetInstitutionsParams,
   ResolveAccountParams,
@@ -92,20 +92,30 @@ export class PaymentMethodService {
   /**
    * Get list of institutions (banks/mobile money providers) for a country
    * GET /payment-method/institution
+   *
+   * The institutions are on the `data` property of the returned envelope.
    */
-  async getInstitutions(params: GetInstitutionsParams): Promise<Institution[]> {
+  async getInstitutions(
+    params: GetInstitutionsParams
+  ): Promise<InstitutionListResponse> {
     if (!params.channel || !params.countryCode) {
       throw new ValidationError("Channel and country code are required");
     }
 
-    return this.httpClient.get<Institution[]>("/payment-method/institution", {
-      params,
-    });
+    return this.httpClient.get<InstitutionListResponse>(
+      "/payment-method/institution",
+      {
+        params,
+      }
+    );
   }
 
   /**
    * Resolves a bank code (SWIFT code or US routing number) to the corresponding bank or institution name.
    * GET /payment-method/institution/codes
+   *
+   * The bank name is at `.data.bankName`; the whole response is `null` when the
+   * code does not resolve.
    */
   async resolveInstitutionCode(
     params: InstitutionCodesParams
@@ -127,6 +137,8 @@ export class PaymentMethodService {
   /**
    * Resolve account details by account number
    * GET /payment-method/resolve
+   *
+   * The resolved account is on the `data` property of the returned envelope.
    */
   async resolveAccount(
     params: ResolveAccountParams
@@ -156,6 +168,9 @@ export class PaymentMethodService {
   /**
    * Get or create crypto wallet payment method
    * GET /payment-method/crypto-wallet
+   *
+   * Returns one wallet carrying an address per supported network, at
+   * `.data.addresses`.
    * Note: Only available in production
    */
   async getCryptoWallet(
