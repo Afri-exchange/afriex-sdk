@@ -1,5 +1,35 @@
 # @afriex/sdk
 
+## 4.0.0
+
+### Major Changes
+
+- **Breaking:** align the declared response types with what the API returns.
+
+  Every endpoint was exercised against the sandbox and its runtime response compared to
+  the type its method declares. The corrections that follow are breaking for consumers:
+  four payment-method calls now expose the API's `{ data }` envelope, `Customer.kyc` is
+  gone in favour of `meta.kyc.data`, `triggerTestWebhook()` returns a different shape,
+  checkout `channels` is required, and `getRate()` throws rather than returning `"0"`.
+  See the package changelogs below for the detail on each.
+
+- Re-export the types introduced by the response-shape corrections.
+
+  New: `InstitutionListResponse`, `InstitutionCode`, `InstitutionCodesParams`,
+  `InstitutionCodesResponse`, `ResolvedAccount`, `CryptoWallet`, `CryptoWalletData`,
+  `CustomerKyc`, `CustomerMeta`, `KycDocumentType`, `TriggerWebhookResult`,
+  `TriggerWebhookResponse`.
+
+- Updated dependencies
+  - @afriex/balance@1.5.0
+  - @afriex/checkout@3.0.0
+  - @afriex/core@2.1.0
+  - @afriex/customers@3.0.0
+  - @afriex/payment-methods@4.0.0
+  - @afriex/rates@2.0.0
+  - @afriex/transactions@2.1.0
+  - @afriex/webhooks@2.0.0
+
 ## 3.0.1
 
 ### Security Patch Changes

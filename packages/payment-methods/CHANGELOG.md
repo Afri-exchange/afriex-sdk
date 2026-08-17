@@ -1,5 +1,28 @@
 # @afriex/payment-methods
 
+## 4.0.0
+
+### Major Changes
+
+- Declare the `{ data }` envelopes these endpoints actually return.
+
+  **Breaking:** four methods declared a bare payload but returned the API's envelope.
+  `getInstitutions()` was the sharpest case — callers were told it was an array, so
+  `.length` was `undefined` and `.map()` threw. Read `.data` on each:
+
+  - `getInstitutions()` → `InstitutionListResponse` (`{ data: Institution[], total, page }`)
+  - `resolveInstitutionCode()` → `InstitutionCodesResponse | null` (`{ data: InstitutionCode }`)
+  - `resolveAccount()` → `ResolveAccountResponse` (`{ data: ResolvedAccount }`)
+  - `getCryptoWallet()` → `CryptoWalletResponse` (`{ data: CryptoWalletData }`)
+
+  Two were also wrong about the payload. `getCryptoWallet()` returns a single wallet,
+  `{ id, addresses }`, with one address per network — not an array with `total`/`page`.
+  `resolveAccount()` also returns `institutionName` and `institutionCode`, now on
+  `ResolvedAccount`.
+
+  `Institution` gains `institutionBranch`. New exported types: `InstitutionListResponse`,
+  `InstitutionCode`, `ResolvedAccount`, `CryptoWalletData`.
+
 ## 3.0.1
 
 ### Security Patch Changes

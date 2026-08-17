@@ -1,5 +1,23 @@
 # @afriex/customers
 
+## 3.0.0
+
+### Major Changes
+
+- Move KYC documents to their real location and narrow the document types.
+
+  **Breaking:** `Customer.kyc` is removed. It was never populated — the API returns
+  documents nested under `meta.kyc.data`. `Customer.meta` is now typed as
+  `CustomerMeta`, so documents are read with `customer.meta?.kyc?.data`.
+
+  `UpdateCustomerKycRequest` is now `Partial<Record<KycDocumentType, string>>`.
+  `COUNTRY`, `PHONE` and `BVN` are rejected by the API with
+  `INVALID_KYC_DOCUMENT_TYPE` despite having been documented as valid, and are
+  excluded from the new `KycDocumentType` union; the other 18 types are unchanged.
+
+  `updateKyc()` **replaces** the stored document map rather than merging into it —
+  now documented on the type and the method.
+
 ## 2.0.1
 
 ### Security Patch Changes

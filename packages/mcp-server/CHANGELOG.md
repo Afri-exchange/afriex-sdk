@@ -1,5 +1,32 @@
 # @afriex/mcp-server
 
+## 2.0.0
+
+### Major Changes
+
+- Track the SDK response-shape corrections.
+
+  **Breaking:** two tools change the shape of their `structuredContent`. Clients
+  reading them need updating:
+
+  - `afriex_get_crypto_wallet` returns `{ id, addresses }` — one wallet with an address
+    per network — in place of `{ data, total, page }`
+  - `afriex_trigger_test_webhook` returns `{ queued, event, entityId, deliveryUrl }` in
+    place of `{ success, message }`
+
+  The SDK now declares the API's `{ data }` envelopes, so the affected tools unwrap at
+  their own boundary and the remaining tool output schemas stay flat. Schemas also
+  updated for `institutionBranch`, `resolveAccount`'s institution fields,
+  `Transaction.fee`, `CheckoutSession.channels`, and the move of KYC documents to
+  `meta.kyc.data`.
+
+  `afriex_create_checkout_session` now actually applies the `[VIRTUAL_BANK_ACCOUNT]`
+  default its description has always promised; previously it forwarded `undefined` and
+  the API rejected the request.
+
+- Updated dependencies
+  - @afriex/sdk@4.0.0
+
 ## 1.2.1
 
 ### Security Patch Changes

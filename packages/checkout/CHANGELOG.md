@@ -1,5 +1,17 @@
 # @afriex/checkout
 
+## 3.0.0
+
+### Major Changes
+
+- **Breaking:** `channels` is required on `CreateCheckoutSessionRequest`.
+
+  The field was declared optional but the API rejects a request that omits it with
+  `channels is required`. It is now required and validated client-side as present and
+  non-empty, so an omission fails immediately instead of costing a round trip.
+
+  `CheckoutSession` gains `channels`, which the API echoes back on the created session.
+
 ## 2.0.2
 
 ### Security Patch Changes

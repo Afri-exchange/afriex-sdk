@@ -1,6 +1,6 @@
 {
   "name": "@afriex/rates",
-  "version": "1.4.2",
+  "version": "2.0.0",
   "description": "Rate service for Afriex SDK",
   "type": "module",
   "main": "./dist/index.js",

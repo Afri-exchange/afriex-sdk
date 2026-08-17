@@ -1,5 +1,14 @@
 # @afriex/transactions
 
+## 2.1.0
+
+### Minor Changes
+
+- Add the `fee` field to `Transaction`.
+
+  Every transaction response carries a `fee`, denominated in `sourceCurrency`, that
+  no type declared — so it could not be read without casting.
+
 ## 2.0.1
 
 ### Security Patch Changes

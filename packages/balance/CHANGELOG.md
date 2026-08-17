@@ -1,5 +1,13 @@
 # @afriex/balance
 
+## 1.5.0
+
+### Minor Changes
+
+- Add the `channel` field to `TopUpTransaction`.
+
+  Top-up responses report a `channel` (`ADMIN` in sandbox) that the type never declared.
+
 ## 1.4.1
 
 ### Security Patch Changes

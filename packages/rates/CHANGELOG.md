@@ -1,5 +1,16 @@
 # @afriex/rates
 
+## 2.0.0
+
+### Major Changes
+
+- **Breaking:** `getRate()` throws instead of returning a `"0"` rate.
+
+  The `?? "0"` fallback implied an unknown pair yields `"0"`. Unsupported symbols are
+  rejected by the API with a 400 before the fallback can fire, and every supported pair
+  resolves — so the only way to reach it was a genuinely unpublished rate, where `"0"`
+  would silently zero out any `convert()` built on it. It now throws `AfriexError`.
+
 ## 1.4.2
 
 ### Security Patch Changes

@@ -1,5 +1,21 @@
 # @afriex/core
 
+## 2.1.0
+
+### Minor Changes
+
+- Populate `ApiError` from the ky 2.x error payload.
+
+  `HttpClient` read error bodies with `error.response.clone().json()`, the ky 1.x
+  pattern. ky 2.x consumes the body up front to populate `error.data`, so the clone
+  threw `Body has already been consumed`, the failure was swallowed, and every
+  `ApiError` surfaced with `errorCode`, `details` and `response` empty and the
+  generic `"An API error occurred"` message instead of the API's `friendlyMessage`.
+
+  Errors now carry the real `code`, `details` and message, so callers can branch on
+  `errorCode` and show `friendlyMessage`. Non-JSON and unparseable bodies still fall
+  back to a bare `ApiError`.
+
 ## 2.0.1
 
 ### Security Patch Changes

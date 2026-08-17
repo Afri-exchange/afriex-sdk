@@ -1,5 +1,17 @@
 # @afriex/webhooks
 
+## 2.0.0
+
+### Major Changes
+
+- **Breaking:** `triggerTestWebhook()` returns the real response shape.
+
+  It declared `{ success, message? }`, which the API never sends. The response is an
+  envelope: `TriggerWebhookResponse` is `{ data: TriggerWebhookResult }`, where
+  `TriggerWebhookResult` is `{ queued, event, entityId, deliveryUrl? }`.
+
+  Read `result.data.queued` in place of `result.success`.
+
 ## 1.5.1
 
 ### Security Patch Changes
