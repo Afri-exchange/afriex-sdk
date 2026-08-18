@@ -11,7 +11,7 @@ description: >
 metadata:
   type: core
   library: '@afriex/balance'
-  library_version: '1.4.1'
+  library_version: '1.5.0'
 sources:
   - 'Afri-exchange/afriex-sdk:packages/balance/src/BalanceService.ts'
   - 'Afri-exchange/afriex-sdk:packages/balance/src/types.ts'

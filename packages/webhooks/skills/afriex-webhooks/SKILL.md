@@ -12,7 +12,7 @@ description: >
 metadata:
   type: core
   library: '@afriex/webhooks'
-  library_version: '1.5.1'
+  library_version: '2.0.0'
 sources:
   - 'Afri-exchange/afriex-sdk:packages/webhooks/src/WebhookService.ts'
   - 'Afri-exchange/afriex-sdk:packages/webhooks/src/WebhookVerifier.ts'

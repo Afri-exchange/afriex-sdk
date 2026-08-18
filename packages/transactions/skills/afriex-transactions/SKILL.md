@@ -12,7 +12,7 @@ description: >
 metadata:
   type: core
   library: '@afriex/transactions'
-  library_version: '2.0.1'
+  library_version: '2.1.0'
 sources:
   - 'Afri-exchange/afriex-sdk:packages/transactions/src/TransactionService.ts'
   - 'Afri-exchange/afriex-sdk:packages/transactions/src/types.ts'

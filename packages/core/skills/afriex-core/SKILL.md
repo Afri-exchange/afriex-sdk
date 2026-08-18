@@ -12,7 +12,7 @@ description: >
 metadata:
   type: core
   library: '@afriex/core'
-  library_version: '2.0.1'
+  library_version: '2.1.0'
 sources:
   - 'Afri-exchange/afriex-sdk:packages/core/src/client/AfriexClient.ts'
   - 'Afri-exchange/afriex-sdk:packages/core/src/client/HttpClient.ts'
