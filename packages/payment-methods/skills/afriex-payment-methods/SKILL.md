@@ -53,6 +53,9 @@ const paymentMethod = await afriex.paymentMethods.create({
   },
 });
 
+// `institutionId` is documented but rarely populated on a listing — match
+// directory entries to payment methods on `institutionCode`.
+
 console.log(paymentMethod.paymentMethodId, paymentMethod.capabilities);
 ```
 

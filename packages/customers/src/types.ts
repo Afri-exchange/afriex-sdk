@@ -56,10 +56,9 @@ export interface UpdateCustomerRequest {
 /**
  * Document types accepted by PATCH /customer/{customerId}/kyc.
  *
- * `COUNTRY`, `PHONE` and `BVN` are rejected with `INVALID_KYC_DOCUMENT_TYPE`
- * despite having appeared in earlier documentation. A customer's country is set
- * with `countryCode` on create, their phone with `update()`, and BVN is verified
- * through `verify()` rather than stored as a KYC document.
+ * The sandbox currently rejects `COUNTRY`, `PHONE` and `BVN` with
+ * `INVALID_KYC_DOCUMENT_TYPE`, but all three are documented as valid and appear
+ * in the documented response example, so they are kept in the union.
  */
 export type KycDocumentType =
   | "REPRESENTATIVE_TYPE"
@@ -67,11 +66,14 @@ export type KycDocumentType =
   | "ADDRESS"
   | "BANK_STATEMENT"
   | "BUSINESS_CERTIFICATE"
+  | "COUNTRY"
   | "ID_FRONT"
   | "ID_BACK"
+  | "PHONE"
   | "SELFIE"
   | "PROOF_OF_ADDRESS"
   | "PROOF_OF_INCOME"
+  | "BVN"
   | "DRIVER_LICENSE"
   | "PASSPORT"
   | "NATIONAL_ID"
@@ -85,8 +87,9 @@ export type KycDocumentType =
  * Flat map of KYC document types to their values, sent directly as the
  * PATCH /customer/{customerId}/kyc request body (not wrapped in a `kyc` field).
  *
- * The call **replaces** the stored document map rather than merging into it —
- * send every document you want retained on each call.
+ * The endpoint is documented as a partial update, but the sandbox was observed
+ * to replace the stored map outright. Until that is reconciled, send every
+ * document you want retained on each call — correct under either behaviour.
  */
 export type UpdateCustomerKycRequest = Partial<
   Record<KycDocumentType, string>

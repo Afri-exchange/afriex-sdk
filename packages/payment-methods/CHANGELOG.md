@@ -23,18 +23,25 @@
   `Institution` gains `institutionBranch`. New exported types: `InstitutionListResponse`,
   `InstitutionCode`, `ResolvedAccount`, `CryptoWalletData`.
 
-- **Breaking:** `Institution.institutionId` is removed.
+- **Breaking:** `Institution.institutionId` is now optional.
 
-  The field was declared required, but `GET /payment-method/institution` has never
-  returned it — 13,212 records across 19 channel/country combinations carry only
-  `institutionName`, `institutionCode`, `institutionAddress` and `institutionBranch`.
-  The directory has no institution-ID concept; institutions are keyed by
-  `institutionCode`. Reading `institution.institutionId` off a listing was always
-  `undefined`, so it is gone rather than made optional.
+  It was declared required, but the API reference documents it as optional — "the
+  unique identifier of the bank or mobile money provider if required" — and the
+  sandbox returns it for no channel or country (13,212 records across 19
+  channel/country combinations, zero occurrences). Reading it off a listing was
+  therefore always `undefined` while the type promised a `string`. Match directory
+  entries to payment methods on `institutionCode`.
 
-  `PaymentMethodInstitution.institutionId` is unaffected and still optional. That one is
-  real: it is a caller-supplied reference on `create()`, stored and echoed back verbatim.
-  Match directory entries to payment methods on `institutionCode` instead.
+  `Institution` also gains the two documented SWIFT fields it was missing,
+  `correspondentBankName` and `correspondentBankAccountNumber`, both mandatory for
+  USD (SWIFT) payout methods. `PaymentMethodInstitution` gains them as well.
+
+- **Breaking:** `InstitutionCodesResponse.data` is nullable, and
+  `resolveInstitutionCode()` no longer returns `null` itself.
+
+  An unresolved code answers `{ "data": null }` — the envelope is always present. The
+  method returned `InstitutionCodesResponse | null`, which pointed the null check at
+  the wrong level. Check `result.data`, not `result`.
 
 ## 3.0.1
 

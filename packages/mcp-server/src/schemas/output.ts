@@ -57,10 +57,15 @@ export const deletedOutputSchema = z
 
 export const institutionSchema = z
   .object({
+    /** Documented as optional; rarely populated. Match on institutionCode. */
+    institutionId: z.string().optional(),
     institutionName: z.string(),
     institutionCode: z.string(),
     institutionAddress: z.string().optional(),
     institutionBranch: z.string().optional(),
+    /** Mandatory for USD (SWIFT) payout payment methods. */
+    correspondentBankName: z.string().optional(),
+    correspondentBankAccountNumber: z.string().optional(),
   })
   .passthrough();
 
@@ -128,6 +133,8 @@ export const paymentMethodSchema = z
         institutionName: z.string().optional(),
         institutionCode: z.string().optional(),
         institutionAddress: z.string().optional(),
+        correspondentBankName: z.string().optional(),
+        correspondentBankAccountNumber: z.string().optional(),
       })
       .passthrough()
       .optional(),

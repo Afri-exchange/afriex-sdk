@@ -276,11 +276,11 @@ describe.skipIf(SKIP_INTEGRATION_TESTS)("Afriex SDK Integration Tests", () => {
         codeType: "routing_number",
       });
 
-      // May resolve to null if the sandbox lookup table doesn't have this
-      // routing number; either way the call must succeed without throwing.
-      expect(result === null || typeof result?.data.bankName === "string").toBe(
-        true
-      );
+      // `data` is null if the lookup table doesn't have this routing number;
+      // either way the call must succeed without throwing.
+      expect(
+        result.data === null || typeof result.data.bankName === "string"
+      ).toBe(true);
     }, 10000);
   });
 

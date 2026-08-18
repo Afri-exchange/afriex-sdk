@@ -10,13 +10,16 @@
   documents nested under `meta.kyc.data`. `Customer.meta` is now typed as
   `CustomerMeta`, so documents are read with `customer.meta?.kyc?.data`.
 
-  `UpdateCustomerKycRequest` is now `Partial<Record<KycDocumentType, string>>`.
-  `COUNTRY`, `PHONE` and `BVN` are rejected by the API with
-  `INVALID_KYC_DOCUMENT_TYPE` despite having been documented as valid, and are
-  excluded from the new `KycDocumentType` union; the other 18 types are unchanged.
+  `UpdateCustomerKycRequest` is now `Partial<Record<KycDocumentType, string>>` over the
+  21 document types the API reference lists, so unknown keys fail to compile.
 
-  `updateKyc()` **replaces** the stored document map rather than merging into it —
-  now documented on the type and the method.
+  Two behaviours worth knowing, both sandbox observations that the API reference does
+  not currently match. `COUNTRY`, `PHONE` and `BVN` are documented as valid and appear
+  in the documented response example, but the sandbox rejects all three with
+  `INVALID_KYC_DOCUMENT_TYPE`; they are kept in the union on the documentation's
+  authority. And the endpoint is documented as a partial update, but the sandbox
+  replaces the stored map outright — so send every document you want retained on each
+  call, which is correct under either behaviour.
 
 ## 2.0.1
 

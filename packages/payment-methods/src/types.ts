@@ -67,6 +67,10 @@ export interface PaymentMethodInstitution {
   institutionName?: string;
   institutionCode?: string;
   institutionAddress?: string;
+  /** Mandatory for USD (SWIFT) payout payment methods. */
+  correspondentBankName?: string;
+  /** Mandatory for USD (SWIFT) payout payment methods. */
+  correspondentBankAccountNumber?: string;
 }
 
 export interface PaymentMethodRecipient {
@@ -153,11 +157,21 @@ export interface PaymentMethodListResponse {
 }
 
 export interface Institution {
+  /**
+   * Unique identifier of the bank or mobile money provider, "if required".
+   * Documented as optional and rarely populated — sandbox returns it for no
+   * channel or country. Match institutions on `institutionCode`.
+   */
+  institutionId?: string;
   institutionName: string;
   institutionCode: string;
   institutionAddress?: string;
   /** Branch name. Returned for bank listings; an empty string when unknown. */
   institutionBranch?: string;
+  /** Mandatory for USD (SWIFT) payout payment methods. */
+  correspondentBankName?: string;
+  /** Mandatory for USD (SWIFT) payout payment methods. */
+  correspondentBankAccountNumber?: string;
 }
 
 /** Response envelope for GET /payment-method/institution. */
@@ -188,9 +202,12 @@ export interface InstitutionCode {
   bankName: string;
 }
 
-/** Response envelope for GET /payment-method/institution/codes. */
+/**
+ * Response envelope for GET /payment-method/institution/codes.
+ * `data` is `null` when the code does not resolve — the envelope is always present.
+ */
 export interface InstitutionCodesResponse {
-  data: InstitutionCode;
+  data: InstitutionCode | null;
 }
 
 /** Channels accepted by GET /payment-method/institution. */

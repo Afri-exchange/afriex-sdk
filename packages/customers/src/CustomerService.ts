@@ -102,8 +102,9 @@ export class CustomerService {
    * Update customer KYC information
    * PATCH /customer/{customerId}/kyc
    *
-   * The document map is sent directly as the request body (not wrapped in a `kyc` field),
-   * and **replaces** any previously stored documents rather than merging into them.
+   * The document map is sent directly as the request body (not wrapped in a `kyc` field).
+   * It is documented as a partial update, but the sandbox was observed to replace the
+   * stored documents, so send every document you want retained on each call.
    *
    * The saved documents come back on the customer at `meta.kyc.data`.
    */

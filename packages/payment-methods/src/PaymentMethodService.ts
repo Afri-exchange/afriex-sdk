@@ -114,19 +114,19 @@ export class PaymentMethodService {
    * Resolves a bank code (SWIFT code or US routing number) to the corresponding bank or institution name.
    * GET /payment-method/institution/codes
    *
-   * The bank name is at `.data.bankName`; the whole response is `null` when the
-   * code does not resolve.
+   * The bank name is at `.data.bankName`; `.data` is `null` when the code does
+   * not resolve.
    */
   async resolveInstitutionCode(
     params: InstitutionCodesParams
-  ): Promise<InstitutionCodesResponse | null> {
+  ): Promise<InstitutionCodesResponse> {
     if (!params.codeType || !params.country || !params.searchTerm) {
       throw new ValidationError(
         "Code type, country, and search term are required"
       );
     }
 
-    return this.httpClient.get<InstitutionCodesResponse | null>(
+    return this.httpClient.get<InstitutionCodesResponse>(
       "/payment-method/institution/codes",
       {
         params,

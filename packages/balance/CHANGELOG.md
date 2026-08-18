@@ -1,8 +1,17 @@
 # @afriex/balance
 
-## 1.5.0
+## 2.0.0
 
-### Minor Changes
+### Major Changes
+
+- **Breaking:** `TopUpTransaction.destinationId` is now optional.
+
+  It was declared as a required `string`. The API reference shows it present but empty
+  on a business top-up, and the sandbox omits the key altogether across every currency
+  tested (USD, NGN, GBP, GHS, KES, EUR, CAD). Optional is the only shape true of both.
+  A top-up credits the business wallet rather than a payment method, so there is nothing
+  for it to point at — `customerId` is empty for the same reason, and is now documented
+  as such.
 
 - Add the `channel` field to `TopUpTransaction`.
 

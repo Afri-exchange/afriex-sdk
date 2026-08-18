@@ -21,7 +21,7 @@
   `TriggerWebhookResponse`.
 
 - Updated dependencies
-  - @afriex/balance@1.5.0
+  - @afriex/balance@2.0.0
   - @afriex/checkout@3.0.0
   - @afriex/core@2.1.0
   - @afriex/customers@3.0.0

@@ -35,8 +35,13 @@ export type TopUpTransactionStatus =
 
 export interface TopUpTransaction {
   transactionId: string;
+  /** Empty string — a top-up credits the business wallet, not a customer. */
   customerId: string;
-  destinationId: string;
+  /**
+   * Documented as an empty string on a business top-up, but omitted entirely by
+   * the sandbox, so it is not safe to treat as always present.
+   */
+  destinationId?: string;
   sourceAmount: string;
   sourceCurrency: string;
   destinationAmount: string;
