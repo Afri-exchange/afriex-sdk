@@ -87,6 +87,9 @@ export type {
 
 export type {
   PaymentMethod,
+  PaymentMethodInstitution,
+  PaymentMethodRecipient,
+  PaymentMethodTransaction,
   CreatePaymentMethodRequest,
   ListPaymentMethodsParams,
   PaymentMethodListResponse,

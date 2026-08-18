@@ -20,6 +20,12 @@
   `CustomerKyc`, `CustomerMeta`, `KycDocumentType`, `TriggerWebhookResult`,
   `TriggerWebhookResponse`.
 
+  Also re-exports `PaymentMethodInstitution`, `PaymentMethodRecipient` and
+  `PaymentMethodTransaction`, which were reachable only from `@afriex/payment-methods`.
+  `PaymentMethodInstitution` is the one you have to construct to send the
+  `correspondentBankName` / `correspondentBankAccountNumber` pair required for USD
+  (SWIFT) payouts, so it could not stay unnamed from the main entry point.
+
 - Updated dependencies
   - @afriex/balance@2.0.0
   - @afriex/checkout@3.0.0
