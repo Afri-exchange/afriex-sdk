@@ -23,6 +23,19 @@
   `Institution` gains `institutionBranch`. New exported types: `InstitutionListResponse`,
   `InstitutionCode`, `ResolvedAccount`, `CryptoWalletData`.
 
+- **Breaking:** `Institution.institutionId` is removed.
+
+  The field was declared required, but `GET /payment-method/institution` has never
+  returned it — 13,212 records across 19 channel/country combinations carry only
+  `institutionName`, `institutionCode`, `institutionAddress` and `institutionBranch`.
+  The directory has no institution-ID concept; institutions are keyed by
+  `institutionCode`. Reading `institution.institutionId` off a listing was always
+  `undefined`, so it is gone rather than made optional.
+
+  `PaymentMethodInstitution.institutionId` is unaffected and still optional. That one is
+  real: it is a caller-supplied reference on `create()`, stored and echoed back verbatim.
+  Match directory entries to payment methods on `institutionCode` instead.
+
 ## 3.0.1
 
 ### Security Patch Changes

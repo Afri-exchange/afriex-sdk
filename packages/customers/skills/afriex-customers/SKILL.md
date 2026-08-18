@@ -85,7 +85,7 @@ const verified = await afriex.customers.verify("cus_123", {
   docValue: "22212345678",
 });
 
-console.log(verified.kyc);
+console.log(verified.meta?.kyc?.data);
 ```
 
 `BVN` is the only `docType` the endpoint accepts today.

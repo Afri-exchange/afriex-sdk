@@ -137,13 +137,18 @@ describe("PaymentMethodService", () => {
 
   describe("getInstitutions", () => {
     it("should get institutions for a country", async () => {
-      const mockInstitutions = [
-        {
-          institutionId: "bank-1",
-          institutionName: "Access Bank",
-          institutionCode: "044",
-        },
-      ];
+      const mockInstitutions = {
+        data: [
+          {
+            institutionName: "Access Bank",
+            institutionCode: "044",
+            institutionBranch: "",
+            institutionAddress: "",
+          },
+        ],
+        total: 1,
+        page: 0,
+      };
 
       (mockHttpClient.get as Mock).mockResolvedValue(mockInstitutions);
 

@@ -85,7 +85,7 @@ const customer = await afriex.customers.create({
   countryCode: "NG",
 });
 
-const institutions = await afriex.paymentMethods.getInstitutions({
+const { data: institutions } = await afriex.paymentMethods.getInstitutions({
   channel: "BANK_ACCOUNT",
   countryCode: "NG",
 });
@@ -97,7 +97,6 @@ const destination = await afriex.paymentMethods.create({
   accountNumber: "0123456789",
   countryCode: "NG",
   institution: {
-    institutionId: institutions[0].institutionId,
     institutionCode: institutions[0].institutionCode,
     institutionName: institutions[0].institutionName,
   },

@@ -180,7 +180,7 @@ instead of raising.
 
 Source: packages/rates/src/types.ts (`RatesResponse.rates`)
 
-### HIGH Trusting getRate to throw on an unavailable pair
+### HIGH Letting an unquotable pair reject an unguarded payout
 
 Wrong:
 
@@ -197,21 +197,31 @@ console.log("payout:", payout);
 Correct:
 
 ```ts
-import { AfriexSDK } from "@afriex/sdk";
+import { AfriexSDK, AfriexError } from "@afriex/sdk";
 
 const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
 
-const rate = await afriex.rates.getRate("USD", "ZAR");
-const parsed = parseFloat(rate);
-if (!Number.isFinite(parsed) || parsed <= 0) {
-  throw new Error("USD → ZAR is not quotable");
+try {
+  const rate = await afriex.rates.getRate("USD", "ZAR");
+  console.log("payout:", 100 * parseFloat(rate));
+} catch (error) {
+  if (error instanceof AfriexError) {
+    // Corridor is not quotable — offer another rail rather than a zero payout.
+    console.error("USD to ZAR is not quotable:", error.message);
+    return;
+  }
+  throw error;
 }
-console.log("payout:", 100 * parsed);
 ```
 
-`getRate` falls back to the string `"0"` when the pair is missing from the
-response, so an unsupported corridor produces a payout of 0 rather than an
-error.
+`getRate` throws rather than returning a rate you could multiply by: an
+unsupported symbol is rejected by the API with a `400`, and a pair missing from
+the response raises `AfriexError`. Neither reaches your arithmetic, so a payout
+path that never catches will reject instead of quoting.
+
+Earlier versions fell back to the string `"0"` here, which silently produced a
+payout of 0. If you still guard with `parseFloat(rate) <= 0`, that branch is now
+dead — handle the throw instead.
 
 Source: packages/rates/src/RateService.ts (`getRate`)
 

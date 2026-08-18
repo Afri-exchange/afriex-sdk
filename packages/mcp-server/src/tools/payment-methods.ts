@@ -65,7 +65,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .describe("Two-letter ISO country code, e.g. NG, GH, KE, US"),
         institution: z
           .object({
-            institutionId: z.string().optional().describe("Institution ID from afriex_get_institutions"),
+            institutionId: z.string().optional().describe("Your own reference for the institution; stored and echoed back. Not returned by afriex_get_institutions — match institutions by institutionCode"),
             institutionName: z.string().optional().describe("Bank or provider name"),
             institutionCode: z.string().optional().describe("Bank or provider code"),
             institutionAddress: z.string().optional().describe("Bank branch address"),

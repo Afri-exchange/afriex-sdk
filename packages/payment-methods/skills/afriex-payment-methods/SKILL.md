@@ -34,7 +34,7 @@ const afriex = new AfriexSDK({
   environment: Environment.STAGING,
 });
 
-const institutions = await afriex.paymentMethods.getInstitutions({
+const { data: institutions } = await afriex.paymentMethods.getInstitutions({
   channel: "BANK_ACCOUNT",
   countryCode: "NG",
 });
@@ -48,7 +48,6 @@ const paymentMethod = await afriex.paymentMethods.create({
   accountNumber: "0123456789",
   countryCode: "NG",
   institution: {
-    institutionId: gtb.institutionId,
     institutionCode: gtb.institutionCode,
     institutionName: gtb.institutionName,
   },
@@ -76,7 +75,7 @@ const resolved = await afriex.paymentMethods.resolveAccount({
   institutionCode: "058",
 });
 
-console.log(resolved.recipientName);
+console.log(resolved.data.recipientName);
 ```
 
 `institutionCode` is required when `channel` is `BANK_ACCOUNT`; `MOBILE_MONEY`
@@ -150,7 +149,7 @@ const bank = await afriex.paymentMethods.resolveInstitutionCode({
   searchTerm: "021000021",
 });
 
-console.log(bank?.bankName);
+console.log(bank?.data.bankName);
 ```
 
 `routing_number` lookups are US-only; every other country uses `swift_code`.

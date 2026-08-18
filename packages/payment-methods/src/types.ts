@@ -153,7 +153,6 @@ export interface PaymentMethodListResponse {
 }
 
 export interface Institution {
-  institutionId: string;
   institutionName: string;
   institutionCode: string;
   institutionAddress?: string;

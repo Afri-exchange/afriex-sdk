@@ -57,7 +57,6 @@ export const deletedOutputSchema = z
 
 export const institutionSchema = z
   .object({
-    institutionId: z.string(),
     institutionName: z.string(),
     institutionCode: z.string(),
     institutionAddress: z.string().optional(),

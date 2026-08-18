@@ -82,8 +82,9 @@ const session = await afriex.checkout.createSession({
 console.log(session.checkoutUrl);
 ```
 
-`createSession` accepts only `VIRTUAL_BANK_ACCOUNT` and `MOBILE_MONEY`. Omit
-`channels` entirely to let Afriex offer everything enabled for the account.
+`createSession` accepts only `VIRTUAL_BANK_ACCOUNT` and `MOBILE_MONEY`, and
+`channels` is required — the API rejects a session that omits it, so there is no
+"offer everything" default. Name the rails you want explicitly.
 
 ### Carry your own context on the session
 

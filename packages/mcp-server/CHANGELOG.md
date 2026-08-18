@@ -14,6 +14,12 @@
   - `afriex_trigger_test_webhook` returns `{ queued, event, entityId, deliveryUrl }` in
     place of `{ success, message }`
 
+  Fixes `afriex_list_institutions`, which failed its own output validation on every
+  call: `institutionSchema` required `institutionId`, a field the institution directory
+  never returns. The field is dropped from the schema, and the `institutionId` hint on
+  `afriex_create_payment_method` no longer claims it comes from the listing — it is a
+  reference you supply.
+
   The SDK now declares the API's `{ data }` envelopes, so the affected tools unwrap at
   their own boundary and the remaining tool output schemas stay flat. Schemas also
   updated for `institutionBranch`, `resolveAccount`'s institution fields,
