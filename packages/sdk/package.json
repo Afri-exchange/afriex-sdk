@@ -22,7 +22,7 @@
   "scripts": {
     "build": "tsc",
     "type-check": "tsc --noEmit",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
     "@afriex/core": "workspace:*",

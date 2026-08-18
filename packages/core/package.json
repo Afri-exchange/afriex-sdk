@@ -15,7 +15,7 @@
   "scripts": {
     "build": "tsc",
     "type-check": "tsc --noEmit",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist tsconfig.tsbuildinfo"
   },
   "devDependencies": {
     "@tanstack/intent": "^0.3.6",
