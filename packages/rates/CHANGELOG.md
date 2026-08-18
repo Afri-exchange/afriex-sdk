@@ -1,5 +1,18 @@
 # @afriex/rates
 
+## 2.0.1
+
+### Patch Changes
+
+- Fix an inverted pitfall in the shipped `afriex-rates` skill.
+
+  2.0.0 made `getRate()` throw instead of returning a `"0"` rate, but the skill guide
+  that ships with the package still described the old behaviour — its "HIGH" pitfall
+  warned against trusting `getRate` to throw and told readers to guard with
+  `parseFloat(rate) <= 0`. That advice became exactly backwards: the guard is now dead
+  code and the real hazard is an uncaught rejection in a payout path. Rewritten, with a
+  note for anyone still carrying the old guard.
+
 ## 2.0.0
 
 ### Major Changes

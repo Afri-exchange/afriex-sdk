@@ -11,7 +11,7 @@ description: >
 metadata:
   type: core
   library: '@afriex/checkout'
-  library_version: '3.0.0'
+  library_version: '3.0.1'
 sources:
   - 'Afri-exchange/afriex-sdk:packages/checkout/src/CheckoutService.ts'
   - 'Afri-exchange/afriex-sdk:packages/checkout/src/types.ts'

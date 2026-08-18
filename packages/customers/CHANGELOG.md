@@ -1,5 +1,24 @@
 # @afriex/customers
 
+## 3.1.0
+
+### Minor Changes
+
+- Restore the three KYC document types 3.0.0 wrongly excluded.
+
+  3.0.0 dropped `COUNTRY`, `PHONE` and `BVN` from `KycDocumentType` because the sandbox
+  rejects them with `INVALID_KYC_DOCUMENT_TYPE`. The API reference documents all three
+  as valid and shows `BVN` and `COUNTRY` in its own response example, so the sandbox is
+  the outlier and the union should not have been narrowed on its evidence.
+  `KycDocumentType` now carries all 21 documented types.
+
+- Correct the documented merge semantics of `updateKyc()`.
+
+  3.0.0 stated the call replaces the stored document map. The endpoint is documented as
+  a partial update; the sandbox was observed to replace. The guidance is now neutral on
+  which is right — send every document you want retained on each call, which is correct
+  under either behaviour.
+
 ## 3.0.0
 
 ### Major Changes
@@ -10,16 +29,13 @@
   documents nested under `meta.kyc.data`. `Customer.meta` is now typed as
   `CustomerMeta`, so documents are read with `customer.meta?.kyc?.data`.
 
-  `UpdateCustomerKycRequest` is now `Partial<Record<KycDocumentType, string>>` over the
-  21 document types the API reference lists, so unknown keys fail to compile.
+  `UpdateCustomerKycRequest` is now `Partial<Record<KycDocumentType, string>>`.
+  `COUNTRY`, `PHONE` and `BVN` are rejected by the API with
+  `INVALID_KYC_DOCUMENT_TYPE` despite having been documented as valid, and are
+  excluded from the new `KycDocumentType` union; the other 18 types are unchanged.
 
-  Two behaviours worth knowing, both sandbox observations that the API reference does
-  not currently match. `COUNTRY`, `PHONE` and `BVN` are documented as valid and appear
-  in the documented response example, but the sandbox rejects all three with
-  `INVALID_KYC_DOCUMENT_TYPE`; they are kept in the union on the documentation's
-  authority. And the endpoint is documented as a partial update, but the sandbox
-  replaces the stored map outright — so send every document you want retained on each
-  call, which is correct under either behaviour.
+  `updateKyc()` **replaces** the stored document map rather than merging into it —
+  now documented on the type and the method.
 
 ## 2.0.1
 

@@ -1,5 +1,33 @@
 # @afriex/payment-methods
 
+## 4.1.0
+
+### Minor Changes
+
+- `Institution.institutionId` is now optional.
+
+  4.0.0 declared it required. The API reference documents it as optional — "the unique
+  identifier of the bank or mobile money provider if required" — and the sandbox returns
+  it for no channel or country (13,212 records across 19 channel/country combinations,
+  zero occurrences). Reading it off a listing was always `undefined` while the type
+  promised a `string`. Match directory entries to payment methods on `institutionCode`.
+
+  Anything that read `institution.institutionId` as a `string` now needs a guard.
+
+- `InstitutionCodesResponse.data` is nullable, and `resolveInstitutionCode()` no
+  longer returns `null` itself.
+
+  An unresolved code answers `{ "data": null }` — the envelope is always present. 4.0.0
+  returned `InstitutionCodesResponse | null`, which pointed the null check one level too
+  high. Check `result.data`, not `result`.
+
+- Add the documented SWIFT correspondent fields.
+
+  `Institution` and `PaymentMethodInstitution` gain `correspondentBankName` and
+  `correspondentBankAccountNumber`, both marked mandatory for USD (SWIFT) payout methods
+  and absent from the types until now. Confirmed accepted: a SWIFT payment method
+  created with both returns 201 and echoes them back on `data.institution`.
+
 ## 4.0.0
 
 ### Major Changes
@@ -22,26 +50,6 @@
 
   `Institution` gains `institutionBranch`. New exported types: `InstitutionListResponse`,
   `InstitutionCode`, `ResolvedAccount`, `CryptoWalletData`.
-
-- **Breaking:** `Institution.institutionId` is now optional.
-
-  It was declared required, but the API reference documents it as optional — "the
-  unique identifier of the bank or mobile money provider if required" — and the
-  sandbox returns it for no channel or country (13,212 records across 19
-  channel/country combinations, zero occurrences). Reading it off a listing was
-  therefore always `undefined` while the type promised a `string`. Match directory
-  entries to payment methods on `institutionCode`.
-
-  `Institution` also gains the two documented SWIFT fields it was missing,
-  `correspondentBankName` and `correspondentBankAccountNumber`, both mandatory for
-  USD (SWIFT) payout methods. `PaymentMethodInstitution` gains them as well.
-
-- **Breaking:** `InstitutionCodesResponse.data` is nullable, and
-  `resolveInstitutionCode()` no longer returns `null` itself.
-
-  An unresolved code answers `{ "data": null }` — the envelope is always present. The
-  method returned `InstitutionCodesResponse | null`, which pointed the null check at
-  the wrong level. Check `result.data`, not `result`.
 
 ## 3.0.1
 

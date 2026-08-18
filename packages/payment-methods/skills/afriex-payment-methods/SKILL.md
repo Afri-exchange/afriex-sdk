@@ -12,7 +12,7 @@ description: >
 metadata:
   type: core
   library: '@afriex/payment-methods'
-  library_version: '4.0.0'
+  library_version: '4.1.0'
 sources:
   - 'Afri-exchange/afriex-sdk:packages/payment-methods/src/PaymentMethodService.ts'
   - 'Afri-exchange/afriex-sdk:packages/payment-methods/src/types.ts'

@@ -1,5 +1,16 @@
 # @afriex/checkout
 
+## 3.0.1
+
+### Patch Changes
+
+- Correct the shipped `afriex-checkout` skill on `channels`.
+
+  3.0.0 made `channels` required, but the skill guide that ships with the package still
+  told readers to "omit `channels` entirely to let Afriex offer everything enabled for
+  the account" — a request the API rejects. There is no such default; the rails must be
+  named explicitly.
+
 ## 3.0.0
 
 ### Major Changes

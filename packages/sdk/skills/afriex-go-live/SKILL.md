@@ -11,7 +11,7 @@ description: >
 metadata:
   type: security
   library: '@afriex/sdk'
-  library_version: '4.0.0'
+  library_version: '4.1.0'
 requires:
   - 'afriex-sdk'
 sources:

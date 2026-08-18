@@ -11,7 +11,7 @@ description: >
 metadata:
   type: core
   library: '@afriex/customers'
-  library_version: '3.0.0'
+  library_version: '3.1.0'
 sources:
   - 'Afri-exchange/afriex-sdk:packages/customers/src/CustomerService.ts'
   - 'Afri-exchange/afriex-sdk:packages/customers/src/types.ts'

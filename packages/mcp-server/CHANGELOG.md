@@ -31,7 +31,7 @@
   the API rejected the request.
 
 - Updated dependencies
-  - @afriex/sdk@4.0.0
+  - @afriex/sdk@4.1.0
 
 ## 1.2.1
 

@@ -10,7 +10,7 @@ description: >
 metadata:
   type: core
   library: '@afriex/rates'
-  library_version: '2.0.0'
+  library_version: '2.0.1'
 sources:
   - 'Afri-exchange/afriex-sdk:packages/rates/src/RateService.ts'
   - 'Afri-exchange/afriex-sdk:packages/rates/src/types.ts'

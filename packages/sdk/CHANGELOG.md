@@ -1,5 +1,30 @@
 # @afriex/sdk
 
+## 4.1.0
+
+### Minor Changes
+
+- Picks up the corrected `@afriex/payment-methods` types.
+
+  `Institution.institutionId` is optional and `InstitutionCodesResponse.data` is
+  nullable, both re-exported from here, so readers of either need a guard. See
+  @afriex/payment-methods@4.1.0.
+
+- Re-export the `PaymentMethod` sub-object types.
+
+  `PaymentMethodInstitution`, `PaymentMethodRecipient` and `PaymentMethodTransaction`
+  were reachable only from `@afriex/payment-methods`. `PaymentMethodInstitution` is the
+  type you construct to send the `correspondentBankName` /
+  `correspondentBankAccountNumber` pair required for USD (SWIFT) payouts, so it could
+  not stay unnameable from the main entry point.
+
+- Updated dependencies
+  - @afriex/balance@2.0.0
+  - @afriex/checkout@3.0.1
+  - @afriex/customers@3.1.0
+  - @afriex/payment-methods@4.1.0
+  - @afriex/rates@2.0.1
+
 ## 4.0.0
 
 ### Major Changes
@@ -20,14 +45,8 @@
   `CustomerKyc`, `CustomerMeta`, `KycDocumentType`, `TriggerWebhookResult`,
   `TriggerWebhookResponse`.
 
-  Also re-exports `PaymentMethodInstitution`, `PaymentMethodRecipient` and
-  `PaymentMethodTransaction`, which were reachable only from `@afriex/payment-methods`.
-  `PaymentMethodInstitution` is the one you have to construct to send the
-  `correspondentBankName` / `correspondentBankAccountNumber` pair required for USD
-  (SWIFT) payouts, so it could not stay unnamed from the main entry point.
-
 - Updated dependencies
-  - @afriex/balance@2.0.0
+  - @afriex/balance@1.5.0
   - @afriex/checkout@3.0.0
   - @afriex/core@2.1.0
   - @afriex/customers@3.0.0
