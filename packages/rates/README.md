@@ -35,8 +35,8 @@ const response = await rates.getRates({
   toSymbols: "NGN,KES",
 });
 
-// Get all available rates
-const allRates = await rates.getRates();
+// Get the rate from USD to every currency
+const usdRates = await rates.getRates();
 
 // Get a single rate
 const rate = await rates.getRate("USD", "NGN");
@@ -57,10 +57,10 @@ Get exchange rates.
 
 **Parameters:**
 
-- `fromSymbols` (optional): Base currency or array of currencies
-- `toSymbols` (optional): Target currency or array of currencies
+- `fromSymbols` (optional): Base currency or array of currencies. Defaults to `USD` only
+- `toSymbols` (optional): Target currency or array of currencies. Defaults to every target currency
 
-If either filter is omitted, the API returns all matching base or target currencies.
+So `getRates()` with no arguments returns the rates from `USD`, not every pair. To get other bases, name them in `fromSymbols`.
 
 **Returns:** `RatesResponse` with nested rate maps
 
@@ -68,7 +68,9 @@ If either filter is omitted, the API returns all matching base or target currenc
 
 Get a single exchange rate.
 
-**Returns:** Exchange rate as string (returns `'0'` if not found)
+**Returns:** Exchange rate as string
+
+**Throws:** `ApiError` if either currency is not a supported symbol, and `AfriexError` if the pair has no published rate. It never returns `'0'`.
 
 ### `convert(amount: number, baseCurrency: string, targetCurrency: string): Promise<number>`
 

@@ -23,20 +23,20 @@ console.log(response.rates);
 console.log(response.updatedAt); // Unix timestamp
 ```
 
-You can omit either filter to broaden the response, or omit both to fetch all available rate pairs:
+Both filters are optional. With neither, you get the rates from `USD` to every currency:
 
 ```typescript
-const allRates = await afriex.rates.getRates();
+const usdRates = await afriex.rates.getRates();
 ```
 
 **Parameters:**
 
-| Field         | Type                 | Description                                |
-| :------------ | :------------------- | :----------------------------------------- |
-| `fromSymbols` | `string \| string[]` | Base currencies (comma-separated or array) |
-| `toSymbols`   | `string \| string[]` | Target currencies                          |
+| Field         | Type                 | Default               | Description                                |
+| :------------ | :------------------- | :-------------------- | :----------------------------------------- |
+| `fromSymbols` | `string \| string[]` | `USD` only            | Base currencies (comma-separated or array) |
+| `toSymbols`   | `string \| string[]` | Every target currency | Target currencies                          |
 
-Both fields are optional. If omitted, the API returns all matching base or target currencies.
+To get the rates from other currencies, name them in `fromSymbols`.
 
 ## Get Single Rate
 

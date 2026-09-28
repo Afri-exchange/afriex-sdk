@@ -184,6 +184,55 @@ describe("CheckoutService", () => {
       ).rejects.toThrow("Validation failed");
     });
 
+    it("should accept metadata at the limits the API sets", async () => {
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: { checkoutUrl: "https://checkout.afriex.com/session" },
+      });
+      const metadata = Object.fromEntries(
+        Array.from({ length: 49 }, (_, index) => [`key${index}`, "value"])
+      );
+      metadata["k".repeat(128)] = "v".repeat(1024);
+
+      await expect(
+        checkoutService.createSession({ ...validRequest, metadata })
+      ).resolves.toBeDefined();
+    });
+
+    it.each([
+      [
+        "more than 50 entries",
+        Object.fromEntries(
+          Array.from({ length: 51 }, (_, index) => [`key${index}`, "value"])
+        ),
+        "metadata can hold at most 50 entries",
+      ],
+      [
+        "a key longer than 128 characters",
+        { ["k".repeat(129)]: "value" },
+        "metadata keys must be 1 to 128 characters long",
+      ],
+      [
+        "an empty key",
+        { "": "value" },
+        "metadata keys must be 1 to 128 characters long",
+      ],
+      [
+        "a value longer than 1024 characters",
+        { orderId: "v".repeat(1025) },
+        "metadata values can be at most 1024 characters long",
+      ],
+    ])(
+      "should throw validation error for metadata with %s",
+      async (_case, metadata, message) => {
+        await expect(
+          checkoutService.createSession({ ...validRequest, metadata })
+        ).rejects.toMatchObject({
+          fields: [{ field: "metadata", message }],
+        });
+        expect(mockHttpClient.post).not.toHaveBeenCalled();
+      }
+    );
+
     it("should throw validation error when customer country code is not ISO alpha-2", async () => {
       const invalidRequest = {
         ...validRequest,

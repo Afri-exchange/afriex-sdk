@@ -12,6 +12,10 @@ export class CheckoutService {
     "CARD",
   ]);
 
+  private static readonly maxMetadataEntries = 50;
+  private static readonly maxMetadataKeyLength = 128;
+  private static readonly maxMetadataValueLength = 1024;
+
   private httpClient: HttpClient;
 
   constructor(httpClient: HttpClient) {
@@ -99,8 +103,8 @@ export class CheckoutService {
       )
       .condition(
         "metadata",
-        this.hasInvalidMetadata(request.metadata),
-        "metadata values must be strings"
+        this.metadataProblem(request.metadata) !== undefined,
+        this.metadataProblem(request.metadata) ?? ""
       )
       .throwIfInvalid();
   }
@@ -123,11 +127,15 @@ export class CheckoutService {
     );
   }
 
-  private hasInvalidMetadata(
+  /**
+   * What is wrong with the metadata, or `undefined` when it is valid. The
+   * limits are the API's: it rejects metadata that goes over any of them.
+   */
+  private metadataProblem(
     metadata: CreateCheckoutSessionRequest["metadata"] | unknown
-  ): boolean {
+  ): string | undefined {
     if (metadata === undefined) {
-      return false;
+      return undefined;
     }
 
     if (
@@ -135,10 +143,38 @@ export class CheckoutService {
       typeof metadata !== "object" ||
       Array.isArray(metadata)
     ) {
-      return true;
+      return "metadata must be an object of string values";
     }
 
-    return Object.values(metadata).some((value) => typeof value !== "string");
+    const entries = Object.entries(metadata);
+
+    if (entries.some(([, value]) => typeof value !== "string")) {
+      return "metadata values must be strings";
+    }
+
+    if (entries.length > CheckoutService.maxMetadataEntries) {
+      return `metadata can hold at most ${CheckoutService.maxMetadataEntries} entries`;
+    }
+
+    if (
+      entries.some(
+        ([key]) =>
+          key.length === 0 || key.length > CheckoutService.maxMetadataKeyLength
+      )
+    ) {
+      return `metadata keys must be 1 to ${CheckoutService.maxMetadataKeyLength} characters long`;
+    }
+
+    if (
+      entries.some(
+        ([, value]) =>
+          (value as string).length > CheckoutService.maxMetadataValueLength
+      )
+    ) {
+      return `metadata values can be at most ${CheckoutService.maxMetadataValueLength} characters long`;
+    }
+
+    return undefined;
   }
 
   private isHttpsUrl(url: string): boolean {

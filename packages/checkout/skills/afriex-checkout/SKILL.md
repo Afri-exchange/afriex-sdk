@@ -126,37 +126,6 @@ const session = await afriex.checkout.createSession({
 console.log(session.checkoutUrl);
 ```
 
-### Convert a major-unit price to the amount the API expects
-
-```ts
-import { AfriexSDK, Environment } from "@afriex/sdk";
-
-const afriex = new AfriexSDK({
-  apiKey: process.env.AFRIEX_API_KEY!,
-  environment: Environment.STAGING,
-});
-
-function toMinorUnits(majorAmount: number): number {
-  return Math.round(majorAmount * 100);
-}
-
-const session = await afriex.checkout.createSession({
-  amount: toMinorUnits(4999.5),
-  currency: "NGN",
-  merchantReference: "order_9984",
-  redirectUrl: "https://shop.example.com/orders/9984/complete",
-  channels: ["VIRTUAL_BANK_ACCOUNT", "MOBILE_MONEY", "CARD"],
-  customer: {
-    name: "Ada Lovelace",
-    email: "ada@example.com",
-    phone: "+2348012345678",
-    countryCode: "NG",
-  },
-});
-
-console.log(session.checkoutUrl);
-```
-
 ## Common Mistakes
 
 ### CRITICAL Passing a major-unit price as amount
@@ -382,9 +351,11 @@ await afriex.checkout.createSession({
 
 `metadata` is `Record<string, string>` and every value is checked with
 `typeof value !== "string"`, so a numeric or boolean value — common when
-spreading an order object — fails validation for the whole session.
+spreading an order object — fails validation for the whole session. The API
+also caps metadata at 50 entries, keys at 128 characters and values at 1024,
+and the same check enforces those.
 
-Source: packages/checkout/src/CheckoutService.ts (`hasInvalidMetadata`)
+Source: packages/checkout/src/CheckoutService.ts (`metadataProblem`)
 
 ### MEDIUM Using an http redirectUrl in development
 

@@ -10,10 +10,10 @@ export class RateService {
 
   /**
    * Get exchange rates for multiple base currencies and target symbols
-   * GET /v2/public/rates
+   * GET /org/rates
    *
-   * @param params.fromSymbols - Comma-separated list or array of base currencies (e.g., 'NGN,USD,GBP')
-   * @param params.toSymbols - Comma-separated list or array of target currencies (e.g., 'NGN,USD,GBP,KES')
+   * @param params.fromSymbols - Comma-separated list or array of base currencies (e.g., 'NGN,USD,GBP'). Defaults to USD only.
+   * @param params.toSymbols - Comma-separated list or array of target currencies (e.g., 'NGN,USD,GBP,KES'). Defaults to every target currency.
    * @returns Rates response with nested rate maps
    */
   async getRates(params: GetRatesParams = {}): Promise<RatesResponse> {

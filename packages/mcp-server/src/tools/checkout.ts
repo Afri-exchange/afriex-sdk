@@ -50,7 +50,7 @@ export function registerCheckoutTools(registry: ToolRegistry): void {
         metadata: z
           .record(z.string(), z.string())
           .optional()
-          .describe("Optional metadata key-value pairs (values must be strings)"),
+          .describe("Optional metadata key-value pairs. Values must be strings. At most 50 entries; keys up to 128 characters, values up to 1024."),
       },
       outputSchema: checkoutSessionOutputSchema,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },

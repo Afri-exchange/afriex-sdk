@@ -91,7 +91,8 @@ for (const [currency, rate] of Object.entries(quote.rates.USD ?? {})) {
 ```
 
 One `getRates` call covers a whole table; calling `getRate` in a loop issues
-one request per pair.
+one request per pair. Without `fromSymbols` the only base is `USD`, so
+`getRates()` returns the rates from USD, not every pair.
 
 ## Common Mistakes
 

@@ -56,7 +56,7 @@ console.log(session.channels); // ["VIRTUAL_BANK_ACCOUNT", "CARD"]
 | `customer.phone`       | `string`   | Yes      | Phone number in E.164 format                                 |
 | `customer.countryCode` | `string`   | Yes      | ISO 3166-1 alpha-2 country code                              |
 | `channels`             | `string[]` | Yes      | Channels you are willing to offer; must be non-empty. Any of `VIRTUAL_BANK_ACCOUNT`, `MOBILE_MONEY`, `CARD`. Ones the currency does not support are dropped |
-| `metadata`             | `object`   | No       | Optional flat key/value metadata with string values          |
+| `metadata`             | `object`   | No       | Optional flat key/value metadata with string values. At most 50 entries; keys up to 128 characters, values up to 1024 |
 
 ## Session Flow
 

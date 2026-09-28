@@ -26,6 +26,10 @@ export interface CreateCheckoutSessionRequest {
    * through hosted checkout only.
    */
   channels: CheckoutChannel[];
+  /**
+   * Flat key/value data to attach to the session. At most 50 entries, with
+   * keys of 1 to 128 characters and values of at most 1024.
+   */
   metadata?: Record<string, string>;
 }
 

@@ -65,7 +65,7 @@ Creates a hosted checkout session where customers can complete payments.
 - `request.redirectUrl` - HTTPS URL to return the customer to after checkout
 - `request.customer` - Customer information (`name`, `email`, `phone`, `countryCode`)
 - `request.channels` - Required, non-empty. Any of `VIRTUAL_BANK_ACCOUNT`, `MOBILE_MONEY`, `CARD`. Channels the currency does not support are dropped
-- `request.metadata` - Optional flat key/value metadata where all values are strings
+- `request.metadata` - Optional flat key/value metadata where all values are strings. At most 50 entries, with keys of 1 to 128 characters and values of at most 1024
 
 **Returns:**
 

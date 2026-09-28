@@ -13,8 +13,14 @@ export interface RatesResponse {
 }
 
 export interface GetRatesParams {
-  /** Comma-separated list or array of base currency symbols */
+  /**
+   * Comma-separated list or array of target currency symbols. When omitted,
+   * every target currency is returned.
+   */
   toSymbols?: string | string[];
-  /** Comma-separated list or array of target currency symbols */
+  /**
+   * Comma-separated list or array of base currency symbols. When omitted,
+   * only `USD` is used as a base.
+   */
   fromSymbols?: string | string[];
 }
