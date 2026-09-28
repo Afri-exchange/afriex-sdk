@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolRegistry } from "./index.js";
+import { describeError } from "./errors.js";
 import { balanceOutputSchema, topUpOutputSchema, toStructured } from "../schemas/output.js";
 
 export function registerBalanceTools(registry: ToolRegistry): void {
@@ -18,7 +19,7 @@ export function registerBalanceTools(registry: ToolRegistry): void {
           .optional()
           .describe("Currency codes to fetch balances for. Omit to fetch balances for every supported currency."),
       },
-      outputSchema: balanceOutputSchema.shape,
+      outputSchema: balanceOutputSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ currencies }, extra) => {
@@ -32,7 +33,7 @@ export function registerBalanceTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error fetching balances: ${error}` }],
+          content: [{ type: "text", text: `Error fetching balances: ${describeError(error)}` }],
         };
       }
     },
@@ -50,7 +51,7 @@ export function registerBalanceTools(registry: ToolRegistry): void {
           .toUpperCase()
           .describe("Uppercase 3-letter ISO currency code, e.g. USD, NGN, GBP"),
       },
-      outputSchema: topUpOutputSchema.shape,
+      outputSchema: topUpOutputSchema,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ amount, currency }, extra) => {
@@ -64,7 +65,7 @@ export function registerBalanceTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error topping up sandbox: ${error}` }],
+          content: [{ type: "text", text: `Error topping up sandbox: ${describeError(error)}` }],
         };
       }
     },

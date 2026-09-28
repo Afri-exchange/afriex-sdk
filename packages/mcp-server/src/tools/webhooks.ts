@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolRegistry } from "./index.js";
+import { describeError } from "./errors.js";
 import { webhookVerifyOutputSchema, webhookParsedOutputSchema, triggerWebhookOutputSchema, toStructured } from "../schemas/output.js";
 
 export function registerWebhookTools(registry: ToolRegistry): void {
@@ -16,7 +17,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
           .min(1)
           .describe("The signature from the x-webhook-signature header of the webhook request"),
       },
-      outputSchema: webhookVerifyOutputSchema.shape,
+      outputSchema: webhookVerifyOutputSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
     async ({ payload, signature }, extra) => {
@@ -33,7 +34,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error verifying webhook: ${error}` }],
+          content: [{ type: "text", text: `Error verifying webhook: ${describeError(error)}` }],
         };
       }
     },
@@ -50,7 +51,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
           .min(1)
           .describe("The signature from the x-webhook-signature header of the webhook request"),
       },
-      outputSchema: webhookParsedOutputSchema.shape,
+      outputSchema: webhookParsedOutputSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
     async ({ payload, signature }, extra) => {
@@ -64,7 +65,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Webhook verification failed: ${error}` }],
+          content: [{ type: "text", text: `Webhook verification failed: ${describeError(error)}` }],
         };
       }
     },
@@ -99,7 +100,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
           .optional()
           .describe("Deprecated — use entityId instead. Kept as a fallback; still routed to the API as entityId."),
       },
-      outputSchema: triggerWebhookOutputSchema.shape,
+      outputSchema: triggerWebhookOutputSchema,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ event, entityId, resourceId }, extra) => {
@@ -114,7 +115,7 @@ export function registerWebhookTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error triggering test webhook: ${error}` }],
+          content: [{ type: "text", text: `Error triggering test webhook: ${describeError(error)}` }],
         };
       }
     },

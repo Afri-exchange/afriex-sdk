@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolRegistry } from "./index.js";
+import { describeError } from "./errors.js";
 import { customerSchema, customerListOutputSchema, deletedOutputSchema, toStructured } from "../schemas/output.js";
 
 export function registerCustomerTools(registry: ToolRegistry): void {
@@ -20,7 +21,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
           .describe("Two-letter ISO country code, e.g. NG, GH, KE, US, GB"),
         meta: z.record(z.string(), z.unknown()).optional().describe("Optional metadata to attach to the customer"),
       },
-      outputSchema: customerSchema.shape,
+      outputSchema: customerSchema,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ fullName, email, phone, countryCode, meta }, extra) => {
@@ -34,7 +35,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error creating customer: ${error}` }],
+          content: [{ type: "text", text: `Error creating customer: ${describeError(error)}` }],
         };
       }
     },
@@ -47,7 +48,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       inputSchema: {
         customerId: z.string().min(1).describe("The customer's unique identifier"),
       },
-      outputSchema: customerSchema.shape,
+      outputSchema: customerSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ customerId }, extra) => {
@@ -61,7 +62,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error fetching customer: ${error}` }],
+          content: [{ type: "text", text: `Error fetching customer: ${describeError(error)}` }],
         };
       }
     },
@@ -72,12 +73,12 @@ export function registerCustomerTools(registry: ToolRegistry): void {
     {
       description: "List all customers for the business with optional pagination.",
       inputSchema: {
-        page: z.number().int().positive().optional().describe("Page number for pagination"),
-        limit: z.number().int().positive().optional().describe("Maximum number of customers per page"),
+        page: z.number().int().nonnegative().optional().describe("Zero-based page number. The first page is 0."),
+        limit: z.number().int().positive().max(100).optional().describe("Customers per page, at most 100"),
         email: z.string().email().optional().describe("Filter by email address"),
         phone: z.string().optional().describe("Filter by phone number"),
       },
-      outputSchema: customerListOutputSchema.shape,
+      outputSchema: customerListOutputSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ page, limit, email, phone }, extra) => {
@@ -91,7 +92,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error listing customers: ${error}` }],
+          content: [{ type: "text", text: `Error listing customers: ${describeError(error)}` }],
         };
       }
     },
@@ -129,7 +130,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
           )
           .describe("KYC document type/value pairs, e.g. { PASSPORT: 'A12345678', DATE_OF_BIRTH: '1990-05-15' }. Each call replaces the stored documents, so send every document to keep. BVN is not accepted here: use afriex_verify_customer. PHONE is changed with afriex_update_customer."),
       },
-      outputSchema: customerSchema.shape,
+      outputSchema: customerSchema,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     async ({ customerId, kyc }, extra) => {
@@ -143,7 +144,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error updating KYC: ${error}` }],
+          content: [{ type: "text", text: `Error updating KYC: ${describeError(error)}` }],
         };
       }
     },
@@ -159,7 +160,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         email: z.string().email().optional().describe("The customer's new email address"),
         phone: z.string().min(1).optional().describe("The customer's new phone number"),
       },
-      outputSchema: customerSchema.shape,
+      outputSchema: customerSchema,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     async ({ customerId, fullName, email, phone }, extra) => {
@@ -173,7 +174,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error updating customer: ${error}` }],
+          content: [{ type: "text", text: `Error updating customer: ${describeError(error)}` }],
         };
       }
     },
@@ -188,7 +189,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
         docType: z.literal("BVN").describe("The type of document to verify"),
         docValue: z.string().min(1).describe("The document number to verify, e.g. the BVN"),
       },
-      outputSchema: customerSchema.shape,
+      outputSchema: customerSchema,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ customerId, docType, docValue }, extra) => {
@@ -202,7 +203,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error verifying customer: ${error}` }],
+          content: [{ type: "text", text: `Error verifying customer: ${describeError(error)}` }],
         };
       }
     },
@@ -215,7 +216,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       inputSchema: {
         customerId: z.string().min(1).describe("The customer's unique identifier"),
       },
-      outputSchema: deletedOutputSchema.shape,
+      outputSchema: deletedOutputSchema,
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ customerId }, extra) => {
@@ -229,7 +230,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error deleting customer: ${error}` }],
+          content: [{ type: "text", text: `Error deleting customer: ${describeError(error)}` }],
         };
       }
     },

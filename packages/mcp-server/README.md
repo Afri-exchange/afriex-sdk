@@ -17,7 +17,9 @@ npx @afriex/mcp-server --http --port=3001
 
 ## Tools
 
-The server exposes 30 tools covering every Afriex API endpoint. Every tool declares both an `inputSchema` and an `outputSchema` (MCP structured content) — see [Structured Output](#structured-output) below.
+The server exposes 51 tools covering every Afriex API endpoint. Every tool declares both an `inputSchema` and an `outputSchema` (MCP structured content) — see [Structured Output](#structured-output) below.
+
+List tools take a zero-based `page` (the first page is `0`) and a `limit` of at most `100`.
 
 | Tool | Description |
 |------|-------------|
@@ -41,13 +43,34 @@ The server exposes 30 tools covering every Afriex API endpoint. Every tool decla
 | `afriex_list_virtual_accounts` | List virtual accounts |
 | `afriex_create_virtual_account` | Create a virtual account |
 | `afriex_get_pool_account` | Get pool account for a country |
+| `afriex_simulate_virtual_account_transfer` | Pay into a virtual account (sandbox only) |
 | `afriex_create_transaction` | Send, receive, or swap funds |
 | `afriex_get_transaction` | Get transaction details |
 | `afriex_list_transactions` | List transactions with filters |
 | `afriex_authorize_transaction` | Authorize a pending transaction with an OTP |
+| `afriex_submit_pool_account_proof` | Submit proof of a deposit made to the pool account |
+| `afriex_get_transaction_advice` | Get the settlement advice of a withdrawal |
+| `afriex_simulate_transaction` | Complete a pending transaction with a chosen outcome (sandbox only) |
+| `afriex_list_payment_batches` | List payment batches |
+| `afriex_create_payment_batch` | Create an empty payment batch |
+| `afriex_get_payment_batch` | Get payment batch by ID |
+| `afriex_update_payment_batch` | Replace a batch's name and funding wallet |
+| `afriex_delete_payment_batch` | Delete a payment batch |
+| `afriex_list_payment_batch_recipients` | List the recipients of a batch |
+| `afriex_add_payment_batch_recipient` | Add one recipient to a batch |
+| `afriex_add_payment_batch_recipients` | Add several recipients to a batch |
+| `afriex_update_payment_batch_recipient` | Replace a recipient's account and amount |
+| `afriex_remove_payment_batch_recipient` | Remove a recipient from a batch |
+| `afriex_withdraw_payment_batch` | Pay every recipient in a batch, or retry a run's failed payouts |
+| `afriex_list_payment_batch_sessions` | List the runs of a batch |
 | `afriex_get_rates` | Get real-time exchange rates |
 | `afriex_convert_currency` | Convert an amount between currencies |
 | `afriex_create_checkout_session` | Create a hosted checkout page |
+| `afriex_create_upload_url` | Get a URL to upload a file to, and the key that refers to it |
+| `afriex_initiate_sme_registration` | Start an SME registration and send the passcode |
+| `afriex_confirm_sme_registration_otp` | Confirm the SME registration passcode |
+| `afriex_submit_sme_registration` | Submit the company details, directors and documents |
+| `afriex_get_sme_registration_status` | Get the SME registration status |
 | `afriex_verify_webhook_signature` | Verify a webhook signature |
 | `afriex_verify_and_parse_webhook` | Verify and parse a webhook payload |
 | `afriex_trigger_test_webhook` | Trigger a test webhook (sandbox only) |
@@ -55,6 +78,15 @@ The server exposes 30 tools covering every Afriex API endpoint. Every tool decla
 ## Structured Output
 
 Every tool result includes `structuredContent` alongside the human-readable `content` text block, validated against a per-tool `outputSchema` (Zod, defined in `src/schemas/output.ts`). This lets MCP clients that support structured tool output consume responses as typed JSON instead of parsing text. Schemas mirror the corresponding `@afriex/*` SDK response types (`Customer`, `Transaction`, `PaymentMethod`, etc.) and use `.passthrough()` so additional fields the API returns don't fail validation. Tools with no natural JSON response (e.g. `afriex_delete_customer`) synthesize a small `{ deleted: true, id }` result; tools that return a bare array or record (e.g. `afriex_get_institutions`, `afriex_get_balance`) wrap it in a named object (`{ institutions }`, `{ balances }`) since MCP structured content must be a JSON object.
+
+## Errors
+
+A failed tool call returns `isError: true` and a text block that says what went wrong:
+
+- An API error carries the HTTP status and the API's error code: `ApiError 409 DUPLICATE_REQUEST: This recipient is already in the batch`.
+- A request the SDK rejects before sending it names each field: `ValidationError: destinationAmount: A SWAP takes exactly one of sourceAmount or destinationAmount`.
+
+A `401` means the key is wrong or lacks the permission the endpoint needs. The two are indistinguishable by design.
 
 ## Configuration
 

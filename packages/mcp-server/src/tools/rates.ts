@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolRegistry } from "./index.js";
+import { describeError } from "./errors.js";
 import { ratesOutputSchema, convertCurrencyOutputSchema, toStructured } from "../schemas/output.js";
 
 export function registerRateTools(registry: ToolRegistry): void {
@@ -19,7 +20,7 @@ export function registerRateTools(registry: ToolRegistry): void {
           .optional()
           .describe("Target currency codes, comma-separated or array. E.g. 'NGN,KES,GHS' or ['NGN', 'KES', 'GHS']. If omitted, returns rates against all target currencies."),
       },
-      outputSchema: ratesOutputSchema.shape,
+      outputSchema: ratesOutputSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ fromSymbols, toSymbols }, extra) => {
@@ -33,7 +34,7 @@ export function registerRateTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error fetching rates: ${error}` }],
+          content: [{ type: "text", text: `Error fetching rates: ${describeError(error)}` }],
         };
       }
     },
@@ -48,7 +49,7 @@ export function registerRateTools(registry: ToolRegistry): void {
         from: z.string().length(3).toUpperCase().describe("Source currency code, e.g. USD"),
         to: z.string().length(3).toUpperCase().describe("Target currency code, e.g. NGN"),
       },
-      outputSchema: convertCurrencyOutputSchema.shape,
+      outputSchema: convertCurrencyOutputSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ amount, from, to }, extra) => {
@@ -62,7 +63,7 @@ export function registerRateTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error converting currency: ${error}` }],
+          content: [{ type: "text", text: `Error converting currency: ${describeError(error)}` }],
         };
       }
     },

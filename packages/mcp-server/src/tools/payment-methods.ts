@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolRegistry } from "./index.js";
+import { describeError } from "./errors.js";
 import {
   paymentMethodSchema,
   paymentMethodListOutputSchema,
@@ -11,6 +12,7 @@ import {
   virtualAccountListOutputSchema,
   virtualAccountCreatedOutputSchema,
   poolAccountOutputSchema,
+  simulateTransferOutputSchema,
   toStructured,
 } from "../schemas/output.js";
 
@@ -101,7 +103,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .optional()
           .describe("Recipient contact information"),
       },
-      outputSchema: paymentMethodSchema.shape,
+      outputSchema: paymentMethodSchema,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ channel, customerId, accountName, accountNumber, countryCode, institution, type, recipient }, extra) => {
@@ -121,7 +123,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error creating payment method: ${error}` }],
+          content: [{ type: "text", text: `Error creating payment method: ${describeError(error)}` }],
         };
       }
     },
@@ -134,7 +136,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       inputSchema: {
         paymentMethodId: z.string().min(1).describe("The payment method's unique identifier"),
       },
-      outputSchema: paymentMethodSchema.shape,
+      outputSchema: paymentMethodSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ paymentMethodId }, extra) => {
@@ -148,7 +150,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error fetching payment method: ${error}` }],
+          content: [{ type: "text", text: `Error fetching payment method: ${describeError(error)}` }],
         };
       }
     },
@@ -159,8 +161,8 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     {
       description: "List all payment methods with pagination and optional filters.",
       inputSchema: {
-        page: z.number().int().positive().optional().describe("Page number for pagination"),
-        limit: z.number().int().positive().optional().describe("Payment methods per page"),
+        page: z.number().int().nonnegative().optional().describe("Zero-based page number. The first page is 0."),
+        limit: z.number().int().positive().max(100).optional().describe("Payment methods per page, at most 100"),
         channel: z
           .union([paymentMethodListChannel, z.array(paymentMethodListChannel)])
           .optional()
@@ -178,7 +180,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .optional()
           .describe("Filter by one or more statuses. Defaults to active,pending"),
       },
-      outputSchema: paymentMethodListOutputSchema.shape,
+      outputSchema: paymentMethodListOutputSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ page, limit, channel, currencies, capabilities, status }, extra) => {
@@ -192,7 +194,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error listing payment methods: ${error}` }],
+          content: [{ type: "text", text: `Error listing payment methods: ${describeError(error)}` }],
         };
       }
     },
@@ -205,7 +207,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       inputSchema: {
         paymentMethodId: z.string().min(1).describe("The payment method's unique identifier"),
       },
-      outputSchema: deletedOutputSchema.shape,
+      outputSchema: deletedOutputSchema,
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ paymentMethodId }, extra) => {
@@ -219,7 +221,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error deleting payment method: ${error}` }],
+          content: [{ type: "text", text: `Error deleting payment method: ${describeError(error)}` }],
         };
       }
     },
@@ -239,7 +241,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .toUpperCase()
           .describe("Two-letter ISO country code, e.g. NG, GH, KE, US"),
       },
-      outputSchema: institutionListOutputSchema.shape,
+      outputSchema: institutionListOutputSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ channel, countryCode }, extra) => {
@@ -254,7 +256,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error fetching institutions: ${error}` }],
+          content: [{ type: "text", text: `Error fetching institutions: ${describeError(error)}` }],
         };
       }
     },
@@ -279,7 +281,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .enum(["swift_code", "routing_number"])
           .describe("The type of bank code to resolve"),
       },
-      outputSchema: resolveInstitutionCodeOutputSchema.shape,
+      outputSchema: resolveInstitutionCodeOutputSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ searchTerm, country, codeType }, extra) => {
@@ -294,7 +296,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error resolving institution code: ${error}` }],
+          content: [{ type: "text", text: `Error resolving institution code: ${describeError(error)}` }],
         };
       }
     },
@@ -319,7 +321,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .min(1)
           .describe("The bank code for BANK_ACCOUNT, or the provider code for MOBILE_MONEY. Get it from afriex_get_institutions."),
       },
-      outputSchema: resolveAccountOutputSchema.shape,
+      outputSchema: resolveAccountOutputSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ channel, accountNumber, countryCode, institutionCode }, extra) => {
@@ -339,7 +341,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error resolving account: ${error}` }],
+          content: [{ type: "text", text: `Error resolving account: ${describeError(error)}` }],
         };
       }
     },
@@ -348,12 +350,12 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
   server.registerTool(
     "afriex_get_crypto_wallet",
     {
-      description: "Get or create a crypto wallet address for a customer. Only works in production. Currently supports USDT and USDC.",
+      description: "Get or create the crypto wallet of a customer, or of the business when customerId is omitted. Returns one wallet with an address per supported network. Supports USDT and USDC.",
       inputSchema: {
         asset: z.enum(["USDT", "USDC"]).describe("Crypto asset: USDT (Tether) or USDC (USD Coin)"),
-        customerId: z.string().min(1).describe("The customer's unique identifier"),
+        customerId: z.string().min(1).optional().describe("The customer's unique identifier. Omit it for the business's own wallet."),
       },
-      outputSchema: cryptoWalletOutputSchema.shape,
+      outputSchema: cryptoWalletOutputSchema,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     async ({ asset, customerId }, extra) => {
@@ -368,7 +370,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error with crypto wallet: ${error}` }],
+          content: [{ type: "text", text: `Error with crypto wallet: ${describeError(error)}` }],
         };
       }
     },
@@ -385,15 +387,17 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .toUpperCase()
           .describe("Three-letter currency code, e.g. NGN, GHS, KES"),
         customerId: z.string().optional().describe("Customer ID to filter by. Omit to list business-level virtual accounts."),
+        country: z.string().length(2).toUpperCase().optional().describe("Two-letter ISO country code to filter by"),
+        amount: z.number().positive().optional().describe("Amount to filter by"),
         reference: z.string().optional().describe("Optional merchant-supplied reference to filter by"),
       },
-      outputSchema: virtualAccountListOutputSchema.shape,
+      outputSchema: virtualAccountListOutputSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
-    async ({ currency, customerId, reference }, extra) => {
+    async ({ currency, customerId, country, amount, reference }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
-        const accounts = await sdk.paymentMethods.listVirtualAccounts({ currency, customerId, reference });
+        const accounts = await sdk.paymentMethods.listVirtualAccounts({ currency, customerId, country, amount, reference });
         return {
           content: [{ type: "text", text: JSON.stringify(accounts, null, 2) }],
           structuredContent: toStructured(accounts),
@@ -401,7 +405,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error listing virtual accounts: ${error}` }],
+          content: [{ type: "text", text: `Error listing virtual accounts: ${describeError(error)}` }],
         };
       }
     },
@@ -421,7 +425,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
         label: virtualAccountLabel.optional().describe("Label for a static virtual account. Cannot be used with amount."),
         amount: z.number().positive().optional().describe("Amount for a dynamic virtual account. Cannot be used with label."),
       },
-      outputSchema: virtualAccountCreatedOutputSchema.shape,
+      outputSchema: virtualAccountCreatedOutputSchema,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ currency, customerId, label, amount }, extra) => {
@@ -446,7 +450,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error creating virtual account: ${error}` }],
+          content: [{ type: "text", text: `Error creating virtual account: ${describeError(error)}` }],
         };
       }
     },
@@ -464,7 +468,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .describe("Two-letter ISO country code, e.g. NG, GH, KE"),
         customerId: z.string().optional().describe("Optional customer ID to associate with this account"),
       },
-      outputSchema: poolAccountOutputSchema.shape,
+      outputSchema: poolAccountOutputSchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ country, customerId }, extra) => {
@@ -478,7 +482,45 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error fetching pool account: ${error}` }],
+          content: [{ type: "text", text: `Error fetching pool account: ${describeError(error)}` }],
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    "afriex_simulate_virtual_account_transfer",
+    {
+      description: "Sandbox only. Credit a bank transfer into a sandbox virtual account, which receives no money on its own. The deposit is reported by the transaction webhook. Production answers 403.",
+      inputSchema: {
+        accountNumber: z.string().min(1).describe("The virtual account number to pay into"),
+        amount: z.number().positive().describe("The amount transferred"),
+        currency: z
+          .string()
+          .length(3)
+          .toUpperCase()
+          .describe("The account's three-letter currency code, e.g. NGN"),
+        reference: z
+          .string()
+          .optional()
+          .describe("The reference a one-time account (created with an amount) was issued with. Not needed for a permanent account."),
+        outcome: z.enum(["success", "failed"]).optional().describe("Defaults to success"),
+      },
+      outputSchema: simulateTransferOutputSchema,
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    async (params, extra) => {
+      try {
+        const sdk = registry.getSdk(extra);
+        const transfer = await sdk.paymentMethods.simulateTransfer(params);
+        return {
+          content: [{ type: "text", text: JSON.stringify(transfer, null, 2) }],
+          structuredContent: toStructured(transfer),
+        };
+      } catch (error) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Error simulating transfer: ${describeError(error)}` }],
         };
       }
     },

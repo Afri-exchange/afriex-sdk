@@ -3,8 +3,11 @@ import { registerBalanceTools } from "./balance.js";
 import { registerCustomerTools } from "./customers.js";
 import { registerTransactionTools } from "./transactions.js";
 import { registerPaymentMethodTools } from "./payment-methods.js";
+import { registerPaymentBatchTools } from "./payment-batches.js";
 import { registerRateTools } from "./rates.js";
 import { registerCheckoutTools } from "./checkout.js";
+import { registerMediaTools } from "./media.js";
+import { registerSmeRegistrationTools } from "./sme-registration.js";
 import { registerWebhookTools } from "./webhooks.js";
 
 export type { ToolRegistry } from "../create-server.js";
@@ -14,7 +17,10 @@ export function registerAllTools(registry: ToolRegistry): void {
   registerCustomerTools(registry);
   registerTransactionTools(registry);
   registerPaymentMethodTools(registry);
+  registerPaymentBatchTools(registry);
   registerRateTools(registry);
   registerCheckoutTools(registry);
+  registerMediaTools(registry);
+  registerSmeRegistrationTools(registry);
   registerWebhookTools(registry);
 }

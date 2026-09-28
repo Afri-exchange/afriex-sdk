@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ToolRegistry } from "./index.js";
+import { describeError } from "./errors.js";
 import { checkoutSessionOutputSchema, toStructured } from "../schemas/output.js";
 
 export function registerCheckoutTools(registry: ToolRegistry): void {
@@ -51,7 +52,7 @@ export function registerCheckoutTools(registry: ToolRegistry): void {
           .optional()
           .describe("Optional metadata key-value pairs (values must be strings)"),
       },
-      outputSchema: checkoutSessionOutputSchema.shape,
+      outputSchema: checkoutSessionOutputSchema,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ amount, currency, merchantReference, redirectUrl, customer, channels, metadata }, extra) => {
@@ -75,7 +76,7 @@ export function registerCheckoutTools(registry: ToolRegistry): void {
       } catch (error) {
         return {
           isError: true,
-          content: [{ type: "text", text: `Error creating checkout session: ${error}` }],
+          content: [{ type: "text", text: `Error creating checkout session: ${describeError(error)}` }],
         };
       }
     },
