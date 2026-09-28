@@ -1,6 +1,6 @@
 {
   "name": "@afriex/transactions",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Send payouts, collect deposits and swap currencies with the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",

@@ -4,4 +4,4 @@
  * Kept equal to the version in package.json by `scripts/sync-sdk-version.mjs`,
  * which runs as part of `pnpm run version`. Do not edit it by hand.
  */
-export const SDK_VERSION = "4.1.0";
+export const SDK_VERSION = "5.0.0";

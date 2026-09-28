@@ -1,5 +1,94 @@
 # @afriex/customers
 
+## 4.0.0
+
+### Major Changes
+
+- d4d9454: **Breaking:** stop offering values the API rejects. Every removal below was confirmed against the sandbox, and each one turns a runtime `4xx` into a compile error.
+
+  **@afriex/customers**
+
+  - `UpdateCustomerKycRequest` no longer accepts `COUNTRY`, `PHONE` or `BVN`. The API answers `400 INVALID_KYC_DOCUMENT_TYPE` for all three, and rejects the whole request when one is mixed in with valid types. `updateKyc()` now throws a `ValidationError` that says where each value belongs: a BVN goes through `verify()`, a phone number through `update()`. `KycDocumentType` keeps all 21 values, since they can still be read back from `meta.kyc.data`; `UpdatableKycDocumentType` names the 18 that can be written.
+
+  **@afriex/payment-methods**
+
+  - `CreatablePaymentChannel` drops `ALIPAY` and `PAYBILL_TILL`. Create Alipay on `WE_CHAT` with `institutionCode` and `institutionName` set to `ALIPAY`.
+  - `InstitutionListChannel` is now `BANK_ACCOUNT | SWIFT | MOBILE_MONEY | ACH_BANK_ACCOUNT`. `UPI`, `INTERAC` and `WE_CHAT` answer `400 INVALID_TRANSACTION_CHANNEL`. `ACH_BANK_ACCOUNT` is new: the sandbox serves the US routing directory for it.
+  - `ListPaymentMethodsParams` filters are typed to what the endpoint accepts: `channel` takes the 8 values of `PaymentMethodListChannel`, `status` takes `active` and `pending`, `capabilities` takes `WITHDRAW`. Anything else answers 422.
+  - `ResolveAccountParams.institutionCode` is required. The API rejects a request without it for `MOBILE_MONEY` as well as `BANK_ACCOUNT`.
+  - `CreateVirtualAccountParams` drops `country` and `reference`, which the API rejects as not allowed, and types `label` as `VirtualAccountLabel`.
+  - `createVirtualAccount()` returns `PaymentMethod | null`. It is `null` when the issuing bank opens the account after the request returns; the account then arrives by the `PAYMENT_METHOD.CREATED` webhook. Before, the caller got an empty object typed as a full `PaymentMethod`.
+  - `ResolvedAccount` drops `recipientEmail`, `recipientPhone` and `recipientAddress`, which the endpoint never returns.
+
+  **@afriex/transactions**
+
+  - A `SWAP` takes exactly one of `sourceAmount` or `destinationAmount`, in the type (`SwapAmount`) and in the validator. The API rejects a swap that sends both.
+
+  **@afriex/webhooks**
+
+  - On `PaymentMethodWebhookData`, `institution`, `transaction`, `recipient`, `accountName` and `accountNumber` are optional. The API omits empty fields, and card payloads carry none of them. Readers need a guard. The type gains the card fields, `currency`, `capabilities` and `reference`.
+
+  **@afriex/mcp-server**
+
+  - Tool schemas follow the same narrowing, so a model is no longer offered values that fail. `afriex_create_virtual_account` reports `pending: true` when the account is opened later.
+
+### Minor Changes
+
+- d4d9454: Catch up with version 1.0.13 of the API reference. Everything here is additive.
+
+  **@afriex/transactions**
+
+  - `TransactionStatus` gains `RFI_REQUESTED`, a review state to treat as non-terminal like `IN_REVIEW`.
+  - `TransactionChannel` gains `POOL_ACCOUNT`, `PAYMENT_LINQ` and `ADMIN`.
+  - `TransactionFailureCode` gains `AFX_ACCOUNT_CLOSED` and `AFX_NAME_MISMATCH`.
+  - `TransactionMeta.settlement` (`"spot" | "request"`), and `correspondentBankName` / `correspondentBankAccountNumber` on the create request. The pair is validated as sent together, and `settlement: "request"` as WITHDRAW only.
+  - `meta.invoice` is documented as what it is: the object key of an uploaded invoice, not a Base64 document.
+  - `ListTransactionsParams.status` is typed as `TransactionListStatus`, which leaves out `COMPLETED`. The API answers 422 for it.
+
+  **@afriex/customers**
+
+  - `Customer.reference`, the value to supply as the pool-account reference on a payment proof.
+
+  **@afriex/payment-methods**
+
+  - `PaymentMethod.bankAddress` and the `PaymentMethodBankAddress` type.
+  - `ListVirtualAccountsParams` gains `country` and `amount`.
+  - `getPoolAccount()`, which returns the single pool account for a country. `listPoolAccounts()` is deprecated in its favour.
+  - Virtual accounts and pool accounts are no longer described as production only. Both answer in the sandbox.
+
+  **@afriex/core**
+
+  - `AfriexErrorCode` gains the codes the reference documents and the SDK lacked: `DUPLICATE_REQUEST`, `EMAIL_ALREADY_EXISTS`, `PHONE_NUMBER_ALREADY_EXISTS`, `EXTERNAL_REQUEST_ERROR`, `RATE_LIMIT_ERROR`, `OTP_INCORRECT`, `INVALID_TRANSACTION_CHANNEL`, `UNSUPPORTED_VIRTUAL_ACCOUNT_CURRENCY`, `VIRTUAL_ACCOUNT_PENDING_COMPLIANCE_REVIEW` and the three `INVALID_BUSINESS_*_ID` codes. It also gains four seen in the sandbox: `BAD_REQUEST_ERROR`, `INVALID_BUSINESS_PAYMENT_METHOD_REQUEST`, `PROCESSOR_NOT_FOUND` and `TRANSACTION_AMOUNT_TOO_SMALL`.
+  - `RATE_LIMIT_EXCEEDED` is deprecated. The API sends `RATE_LIMIT_ERROR`.
+  - `ApiError` reads the `{ message }` body that environment-restricted endpoints return with a 403, and reports those as `AfriexErrorCode.FORBIDDEN`. Before, they surfaced as "An API error occurred" with no code.
+
+  **@afriex/balance**
+
+  - `TopUpTransaction` gains `sourceId`, `merchantReference`, `rate` and `fee`, and its status union now covers every transaction status.
+
+  **@afriex/sdk**
+
+  - Re-exports the new types, plus `TopUpParams`, `TopUpTransaction` and the other top-up types, and `CreateCheckoutSessionResponse`.
+  - `TransactionStatus` is exported as a value as well as a type, along with `DEFAULT_TRANSACTION_TYPE`.
+
+### Patch Changes
+
+- d4d9454: Correct the READMEs and skill guides that ship with the packages. Every TypeScript example in them now compiles against the SDK.
+
+  - Pagination examples started at page 1, which skips the first page. Pages start at 0.
+  - Mobile money examples sent `accountNumber` with a leading `+`, which the API rejects. It takes digits only.
+  - The payment-methods guide said virtual accounts and pool accounts answer 403 in the sandbox. Both work there.
+  - The payment-methods guide recommended list filters the API rejects with 422, and said mobile money resolves without an `institutionCode`. It does not.
+  - The customers guide passed `BVN` and `NIN` to `updateKyc()`. A BVN goes through `verify()`, and `NIN` is not a document type.
+  - The transactions guide now covers the `409 DUPLICATE_REQUEST` a reused idempotency key returns, and the review statuses.
+  - The `@afriex/sdk` quick start created a checkout session without the required `channels`.
+
+- Updated dependencies [d4d9454]
+- Updated dependencies [d4d9454]
+- Updated dependencies [d4d9454]
+- Updated dependencies [d4d9454]
+  - @afriex/core@2.2.0
+
 ## 3.1.0
 
 ### Minor Changes

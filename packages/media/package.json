@@ -1,6 +1,6 @@
 {
   "name": "@afriex/media",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Upload invoices, payment proofs and documents to the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",
