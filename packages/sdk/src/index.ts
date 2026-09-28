@@ -1,4 +1,9 @@
-import { AfriexClient, AfriexConfig } from "@afriex/core";
+import {
+  AfriexClient,
+  AfriexConfig,
+  DEFAULT_USER_AGENT,
+} from "@afriex/core";
+import { SDK_VERSION } from "./version.js";
 import { CustomerService } from "@afriex/customers";
 import { TransactionService } from "@afriex/transactions";
 import { PaymentMethodService } from "@afriex/payment-methods";
@@ -28,7 +33,10 @@ export class AfriexSDK extends AfriexClient {
   public readonly webhookVerifier?: WebhookService;
 
   constructor(config: AfriexSDKConfig) {
-    super(config);
+    super({
+      ...config,
+      userAgent: config.userAgent || `${DEFAULT_USER_AGENT}/${SDK_VERSION}`,
+    });
 
     const httpClient = this.getHttpClient();
 
@@ -51,6 +59,8 @@ export class AfriexSDK extends AfriexClient {
 
 // Short alias
 export { AfriexSDK as Afriex };
+
+export { SDK_VERSION } from "./version.js";
 
 // Re-export core types
 export * from "@afriex/core";

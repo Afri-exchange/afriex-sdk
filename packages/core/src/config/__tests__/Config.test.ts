@@ -3,6 +3,7 @@ import {
   Config,
   DEFAULT_API_VERSION,
   DEFAULT_RETRYABLE_METHODS,
+  DEFAULT_USER_AGENT,
 } from "../Config.js";
 import { Environment } from "../Environment.js";
 
@@ -66,6 +67,24 @@ describe("Config", () => {
       });
 
       expect(config.apiVersion).toBe("2027-01-01");
+    });
+  });
+
+  describe("userAgent", () => {
+    it("should default to the SDK's name, without a version", () => {
+      const config = new Config({ apiKey: "test-api-key" });
+
+      expect(config.userAgent).toBe(DEFAULT_USER_AGENT);
+      expect(DEFAULT_USER_AGENT).toBe("Afriex-TypeScript-SDK");
+    });
+
+    it("should allow the user agent to be overridden", () => {
+      const config = new Config({
+        apiKey: "test-api-key",
+        userAgent: "my-app/1.2.3",
+      });
+
+      expect(config.userAgent).toBe("my-app/1.2.3");
     });
   });
 

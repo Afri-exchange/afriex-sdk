@@ -17,6 +17,12 @@ export const API_VERSION_HEADER = "x-api-version";
 /** The header a request signature is sent in. */
 export const API_SIGNATURE_HEADER = "x-api-signature";
 
+/**
+ * The `User-Agent` sent when none is configured. `@afriex/sdk` adds its own
+ * version to it; a client built from `@afriex/core` alone sends it as it is.
+ */
+export const DEFAULT_USER_AGENT = "Afriex-TypeScript-SDK";
+
 export type HttpMethod =
   | "GET"
   | "POST"
@@ -74,6 +80,11 @@ export interface AfriexConfig {
    * The result is sent in the `x-api-signature` header.
    */
   signRequest?: RequestSigner;
+  /**
+   * Sent as the `User-Agent` header. `@afriex/sdk` sets it to
+   * `Afriex-TypeScript-SDK/<version>` unless you pass your own.
+   */
+  userAgent?: string;
 }
 
 export interface RetryConfig {
@@ -103,6 +114,7 @@ export class Config {
   public readonly retryableMethods: HttpMethod[];
   public readonly apiVersion: string;
   public readonly signRequest?: RequestSigner;
+  public readonly userAgent: string;
 
   constructor(config: AfriexConfig) {
     this.validateConfig(config);
@@ -113,6 +125,7 @@ export class Config {
     this.enableLogging = config.enableLogging ?? true;
     this.apiVersion = config.apiVersion || DEFAULT_API_VERSION;
     this.signRequest = config.signRequest;
+    this.userAgent = config.userAgent || DEFAULT_USER_AGENT;
 
     const envConfig = DEFAULT_CONFIG[this.environment];
     const customConfig = config.customConfig || {};

@@ -41,6 +41,7 @@ const config = client.getConfig();
 | `retryConfig`   | `RetryConfig`                | No       | Custom retry configuration               |
 | `apiVersion`    | `string`                     | No       | Sent as `x-api-version` (default: `2026-05-18`) |
 | `signRequest`   | `RequestSigner`              | No       | Signs each request, for a business with payload signing enabled |
+| `userAgent`     | `string`                     | No       | Sent as `User-Agent` (default: `Afriex-TypeScript-SDK`) |
 
 ### Environment Values
 
@@ -96,6 +97,10 @@ A `409` on a retry means the first attempt worked, but it reaches your code as a
 
 Every request carries the `x-api-version` header, set to the version this SDK's types describe. `DEFAULT_API_VERSION` holds it. Pass `apiVersion` to send another one; the API answers `400` for a version it does not support.
 
+## User agent
+
+A client built from `@afriex/core` sends `User-Agent: Afriex-TypeScript-SDK`. `@afriex/sdk` adds its own version, as in `Afriex-TypeScript-SDK/4.1.0`. Pass `userAgent` to send something else.
+
 ## Request signing
 
 If payload signing is enabled for your business, pass a `signRequest` function. It is called for every request, and what it returns is sent in the `x-api-signature` header.
@@ -125,7 +130,7 @@ Afriex defines the signature scheme when it enables signing for your business. T
 - `RetryConfig`, `HttpMethod`, `DEFAULT_RETRYABLE_METHODS` - Retry configuration
 - `RequestSigner`, `RequestToSign`, `API_SIGNATURE_HEADER` - Request signing
 - `DEFAULT_API_VERSION`, `API_VERSION_HEADER` - The API version the SDK sends
-- `SDK_VERSION` - The version sent in the `User-Agent` header
+- `DEFAULT_USER_AGENT` - The `User-Agent` sent when none is configured
 - `Environment` - Environment enum
 - `ValidationError` - Validation error class
 - `AfriexError` - Base error class

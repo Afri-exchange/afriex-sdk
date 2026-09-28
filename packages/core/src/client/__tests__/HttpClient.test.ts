@@ -3,8 +3,6 @@ import ky, { isHTTPError, isNetworkError } from "ky";
 import { HttpClient } from "../HttpClient.js";
 import { Config } from "../../config/Config.js";
 import { Environment } from "../../config/Environment.js";
-import { SDK_VERSION } from "../../version.js";
-import packageJson from "../../../package.json";
 import {
   AfriexError,
   ApiError,
@@ -257,12 +255,29 @@ describe("HttpClient", () => {
       );
     });
 
-    it("should send the API version and the SDK version", () => {
+    it("should send the API version and the default user agent", () => {
       expect(ky.create).toHaveBeenCalledWith(
         expect.objectContaining({
           headers: expect.objectContaining({
             "x-api-version": "2026-05-18",
-            "User-Agent": `Afriex-TypeScript-SDK/${SDK_VERSION}`,
+            "User-Agent": "Afriex-TypeScript-SDK",
+          }),
+        })
+      );
+    });
+
+    it("should send the user agent it is configured with", () => {
+      new HttpClient(
+        new Config({
+          apiKey: "test-api-key",
+          userAgent: "Afriex-TypeScript-SDK/4.1.0",
+        })
+      );
+
+      expect(ky.create).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            "User-Agent": "Afriex-TypeScript-SDK/4.1.0",
           }),
         })
       );
@@ -278,10 +293,6 @@ describe("HttpClient", () => {
           headers: expect.objectContaining({ "x-api-version": "2027-01-01" }),
         })
       );
-    });
-
-    it("should report the version in package.json", () => {
-      expect(SDK_VERSION).toBe(packageJson.version);
     });
 
     it("should not retry POST or PATCH by default", () => {

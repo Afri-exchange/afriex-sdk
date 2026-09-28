@@ -5,7 +5,6 @@ import {
   API_VERSION_HEADER,
 } from "../config/Config.js";
 import { Logger } from "../utils/logger.js";
-import { SDK_VERSION } from "../version.js";
 import {
   AfriexError,
   ApiError,
@@ -34,7 +33,7 @@ export class HttpClient {
         "Content-Type": "application/json",
         "x-api-key": config.apiKey,
         [API_VERSION_HEADER]: config.apiVersion,
-        "User-Agent": `Afriex-TypeScript-SDK/${SDK_VERSION}`,
+        "User-Agent": config.userAgent,
       },
       retry: {
         limit: config.maxRetries,

@@ -122,8 +122,11 @@ interface AfriexSDKConfig {
   };
   apiVersion?: string; // Default: '2026-05-18', sent as x-api-version
   signRequest?: RequestSigner; // Optional - returns the x-api-signature value
+  userAgent?: string; // Default: 'Afriex-TypeScript-SDK/<version of @afriex/sdk>'
 }
 ```
+
+`SDK_VERSION` holds the version of `@afriex/sdk` that is installed.
 
 Retries are off by default. When they are on, `POST` and `PATCH` requests are
 still sent once unless `retryableMethods` lists them. See
