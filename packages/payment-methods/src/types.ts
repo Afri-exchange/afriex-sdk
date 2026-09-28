@@ -80,6 +80,21 @@ export interface PaymentMethodRecipient {
   recipientName?: string;
 }
 
+/**
+ * The postal address of the issuing bank, not the account holder. Populated by
+ * the provider that provisioned the account, so it appears on virtual accounts
+ * and other account-shaped payment methods whose provider supplies it.
+ */
+export interface PaymentMethodBankAddress {
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  /** Country, as supplied by the provider. */
+  country?: string;
+}
+
 export interface PaymentMethodTransaction {
   transactionInvoice?: string;
   transactionNarration?: string;
@@ -105,6 +120,11 @@ export interface PaymentMethod {
   accountNumber?: string;
   /** Bank routing number, present for channels that carry one (e.g. ACH). */
   routingNumber?: string;
+  /**
+   * The issuing bank's address. Quote it as the beneficiary bank when
+   * originating an international wire into a virtual account.
+   */
+  bankAddress?: PaymentMethodBankAddress;
   /** Last 4 digits of the card. CARD channel only. */
   last4?: string;
   /** Card brand. CARD channel only. */
@@ -331,6 +351,10 @@ export interface ListVirtualAccountsParams {
   currency: string;
   /** Optional customer ID. If not provided, lists business virtual accounts. */
   customerId?: string;
+  /** Optional ISO 3166-1 alpha-2 country code. */
+  country?: string;
+  /** Optional positive amount. */
+  amount?: number;
   /** Optional transaction reference */
   reference?: string;
 }

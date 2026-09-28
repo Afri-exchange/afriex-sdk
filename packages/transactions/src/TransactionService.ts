@@ -121,6 +121,17 @@ export class TransactionService {
         type === "DEPOSIT" && !("sourceId" in request && request.sourceId),
         "Source ID is required for DEPOSIT transactions"
       )
+      .condition(
+        "correspondentBankName",
+        Boolean(request.correspondentBankName) !==
+          Boolean(request.correspondentBankAccountNumber),
+        "correspondentBankName and correspondentBankAccountNumber must be provided together"
+      )
+      .condition(
+        "meta.settlement",
+        request.meta?.settlement === "request" && type !== "WITHDRAW",
+        "meta.settlement 'request' is only supported for WITHDRAW transactions"
+      )
       .throwIfInvalid();
   }
 

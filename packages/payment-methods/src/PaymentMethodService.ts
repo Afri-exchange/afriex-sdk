@@ -175,7 +175,8 @@ export class PaymentMethodService {
    *
    * Returns one wallet carrying an address per supported network, at
    * `.data.addresses`.
-   * Note: Only available in production
+   *
+   * Note: The API reference documents this endpoint as production only.
    */
   async getCryptoWallet(
     params: GetCryptoWalletParams
@@ -195,8 +196,8 @@ export class PaymentMethodService {
   /**
    * List existing virtual accounts
    * GET /payment-method/virtual-account
-   * Returns every active virtual account for the customer or business.
-   * Note: Only available in production
+   * Returns every active virtual account for the customer or business, or an
+   * empty list when there is none. It never creates one.
    */
   async listVirtualAccounts(
     params: ListVirtualAccountsParams
@@ -215,7 +216,10 @@ export class PaymentMethodService {
    * Create a new virtual account
    * POST /payment-method/virtual-account
    * Creates a dedicated virtual bank account for the customer or business.
-   * Note: Only available in production
+   *
+   * A virtual account for a customer can only be NGN; omit `customerId` to
+   * create one in another currency for the business itself. In the sandbox,
+   * fund it with `simulate-transfer`: it receives no money on its own.
    */
   async createVirtualAccount(
     params: CreateVirtualAccountParams
@@ -233,10 +237,23 @@ export class PaymentMethodService {
   }
 
   /**
-   * List pool accounts
+   * Get the pool account for a country
    * GET /payment-method/pool-account
-   * Returns every pool account for the customer or business.
-   * Note: Only available in production
+   *
+   * Returns the single pool account for `country`. Use its `reference` to
+   * reconcile incoming deposits. Every call also sends a
+   * `PAYMENT_METHOD.UPDATED` webhook carrying the pool account.
+   */
+  async getPoolAccount(params: ListPoolAccountsParams): Promise<PaymentMethod> {
+    return this.listPoolAccounts(params);
+  }
+
+  /**
+   * Get the pool account for a country
+   * GET /payment-method/pool-account
+   *
+   * @deprecated Use `getPoolAccount()`. Despite the name, this returns one
+   * pool account, not a list.
    */
   async listPoolAccounts(
     params: ListPoolAccountsParams

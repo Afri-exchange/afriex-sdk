@@ -80,7 +80,10 @@ const transaction = await afriex.transactions.create({
 | `meta.idempotencyKey` | `string`    | Yes                              | Unique key to prevent duplicates                                           |
 | `meta.reference`      | `string`    | Yes                              | Your internal reference                                                    |
 | `meta.narration`      | `string`    | -                                | Transaction description                                                    |
-| `meta.invoice`        | `string`    | -                                | Base64-encoded invoice document                                            |
+| `meta.invoice`        | `string`    | Yes for SWIFT withdrawals        | Object key of the uploaded invoice, as returned by the media upload endpoint. The file must already exist in storage |
+| `meta.settlement`     | `"spot" \| "request"` | -                  | `spot` (default) debits the Payout wallet at once. `request` is for `WITHDRAW` only: it debits the Collection wallet and queues the payout for the next business day |
+| `correspondentBankName` | `string`  | -                                | Correspondent bank name for a USD payout with `meta.settlement: "request"`. A fallback for the value on the payment method. Send it together with `correspondentBankAccountNumber` |
+| `correspondentBankAccountNumber` | `string` | -                        | Correspondent bank account number. Send it together with `correspondentBankName` |
 | `shouldPreferSourceAmount` | `boolean` | -                            | Derive `destinationAmount` from `sourceAmount` via the forward rate even when both are sent. Defaults to `false` (destination-wins) |
 
 ## Get Transaction

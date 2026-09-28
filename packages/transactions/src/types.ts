@@ -25,7 +25,13 @@ export const TransactionStatus = {
   SCHEDULED: "SCHEDULED",
   CUSTOMER_ACTION_REQUIRED: "CUSTOMER_ACTION_REQUIRED",
   REJECTED: "REJECTED",
+  /** Review state: still in flight and waiting on a review, not on you. */
   IN_REVIEW: "IN_REVIEW",
+  /**
+   * Review state: held pending a request for information. Someone may contact
+   * you about the transfer. Treat it as non-terminal, like `IN_REVIEW`.
+   */
+  RFI_REQUESTED: "RFI_REQUESTED",
   DISPUTED: "DISPUTED",
   DISPUTE_RESOLVED: "DISPUTE_RESOLVED",
   DISPUTE_WON: "DISPUTE_WON",
@@ -35,18 +41,30 @@ export const TransactionStatus = {
 export type TransactionStatus =
   (typeof TransactionStatus)[keyof typeof TransactionStatus];
 
+/**
+ * Statuses the list endpoint accepts as a filter. `COMPLETED` is left out: the
+ * API answers 422 for it.
+ */
+export type TransactionListStatus = Exclude<TransactionStatus, "COMPLETED">;
+
 export type TransactionListType =
   | TransactionType
   | "REVERSAL"
   | "SCHEDULED"
   | "SEND";
 
+/**
+ * The payment channel of a transaction. `ADMIN` marks an adjustment Afriex made
+ * to your wallet (sandbox top-ups report it); `PAYMENT_LINQ` a payment made
+ * through a payment link.
+ */
 export type TransactionChannel =
   | "BANK_ACCOUNT"
   | "MOBILE_MONEY"
   | "CARD"
   | "CRYPTO"
   | "VIRTUAL_BANK_ACCOUNT"
+  | "POOL_ACCOUNT"
   | "ACH_BANK_ACCOUNT"
   | "INTERAC"
   | "PAYBILL_TILL"
@@ -56,7 +74,16 @@ export type TransactionChannel =
   | "SWIFT"
   | "WE_CHAT"
   | "ALIPAY"
-  | "WALLET";
+  | "WALLET"
+  | "PAYMENT_LINQ"
+  | "ADMIN";
+
+/**
+ * How a withdrawal is settled. `spot` (the default) processes immediately and
+ * debits the Payout wallet. `request` debits the Collection wallet and queues
+ * the payout for the next business day in the destination country.
+ */
+export type TransactionSettlement = "spot" | "request";
 
 /**
  * The `meta` object passed when creating a transaction. `idempotencyKey` and `reference` are required.
@@ -67,7 +94,10 @@ export interface TransactionMeta {
    */
   narration?: string;
   /**
-   * 	Base64-encoded invoice document to attach to the transaction
+   * The invoice's object key, as returned by the media upload endpoint.
+   * Required for SWIFT withdrawals. Upload the file first and pass the returned
+   * `key` verbatim: the object is checked to exist before the transaction is
+   * created.
    */
   invoice?: string;
   /**
@@ -75,9 +105,15 @@ export interface TransactionMeta {
    */
   idempotencyKey: string;
   /**
-   * 	Your internal reference for the transaction (e.g. order ID)
+   * Your internal reference for the transaction (e.g. order ID). Returned on
+   * the transaction as `merchantReference`.
    */
   reference: string;
+  /**
+   * Settlement handling. Omit it, or send `spot`, for an ordinary payout from
+   * the Payout wallet. `request` is supported for WITHDRAW only.
+   */
+  settlement?: TransactionSettlement;
 }
 
 /**
@@ -92,6 +128,8 @@ export type TransactionFailureCode =
   | "AFX_INVALID_AMOUNT"
   | "AFX_INVALID_RECIPIENT"
   | "AFX_RECIPIENT_NOT_FOUND"
+  | "AFX_ACCOUNT_CLOSED"
+  | "AFX_NAME_MISMATCH"
   | "AFX_BENEFICIARY_RESTRICTED"
   | "AFX_INVALID_SENDER"
   | "AFX_INVALID_REQUEST"
@@ -192,6 +230,18 @@ interface CreateTransactionBase {
    * sourceAmount drive the payout via the forward rate.
    */
   shouldPreferSourceAmount?: boolean;
+  /**
+   * The correspondent (intermediary) bank name for a USD payout: a WITHDRAW to
+   * USD with `meta.settlement: "request"`. A fallback only; the value stored
+   * on the destination payment method takes precedence. Must be sent together
+   * with `correspondentBankAccountNumber`.
+   */
+  correspondentBankName?: string;
+  /**
+   * The correspondent (intermediary) bank account number. Must be sent
+   * together with `correspondentBankName`.
+   */
+  correspondentBankAccountNumber?: string;
 }
 
 /**
@@ -254,7 +304,7 @@ export interface ListTransactionsParams {
   limit?: number;
   transactionId?: string;
   reference?: string;
-  status?: TransactionStatus | TransactionStatus[];
+  status?: TransactionListStatus | TransactionListStatus[];
   type?: TransactionListType | TransactionListType[];
   channel?: TransactionChannel | TransactionChannel[];
   currency?: string | string[];

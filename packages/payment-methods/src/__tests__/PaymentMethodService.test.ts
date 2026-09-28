@@ -485,6 +485,35 @@ describe("PaymentMethodService", () => {
     });
   });
 
+  describe("getPoolAccount", () => {
+    it("should return the single pool account for a country", async () => {
+      const mockPaymentMethod = {
+        paymentMethodId: "pm-pool-123",
+        accountNumber: "111222333",
+        reference: "afx121011",
+        bankAddress: { line1: "1 Bank Street", city: "Lagos", country: "NG" },
+      };
+
+      (mockHttpClient.get as Mock).mockResolvedValue({
+        data: mockPaymentMethod,
+      });
+
+      const result = await paymentMethodService.getPoolAccount({
+        country: "NG",
+        customerId: "cust-123",
+      });
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith(
+        "/payment-method/pool-account",
+        {
+          params: { country: "NG", customerId: "cust-123" },
+        }
+      );
+      expect(result).toEqual(mockPaymentMethod);
+      expect(result.bankAddress?.city).toBe("Lagos");
+    });
+  });
+
   describe("listPoolAccounts", () => {
     it("should list pool accounts", async () => {
       const mockPaymentMethod = {

@@ -25,6 +25,12 @@ export interface CustomerMeta {
 
 export interface Customer {
   customerId: string;
+  /**
+   * A shortened reference for the customer. Supply it as the pool-account
+   * `reference` when submitting a payment proof. Falls back to the customer id
+   * when no shortened reference has been assigned.
+   */
+  reference?: string;
   /** The full name of the customer. */
   name: string;
   email: string;

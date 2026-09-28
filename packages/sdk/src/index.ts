@@ -81,9 +81,10 @@ export type {
   ListTransactionsParams,
   TransactionListResponse,
   TransactionListType,
+  TransactionListStatus,
+  TransactionSettlement,
   TransactionChannel,
   TransactionType,
-  TransactionStatus,
   TransactionMeta,
   TransactionMetaResponse,
   TransactionFailureCode,
@@ -92,6 +93,7 @@ export type {
 
 export type {
   PaymentMethod,
+  PaymentMethodBankAddress,
   PaymentMethodInstitution,
   PaymentMethodRecipient,
   PaymentMethodTransaction,
@@ -129,13 +131,22 @@ export type {
   PoolAccountResponse,
 } from "@afriex/payment-methods";
 
-export type { BalanceResponse, GetBalanceParams } from "@afriex/balance";
+export type {
+  BalanceResponse,
+  GetBalanceParams,
+  TopUpParams,
+  TopUpResponse,
+  TopUpTransaction,
+  TopUpTransactionType,
+  TopUpTransactionStatus,
+} from "@afriex/balance";
 
 export type { RatesResponse, GetRatesParams } from "@afriex/rates";
 
 export type {
   CheckoutSession,
   CreateCheckoutSessionRequest,
+  CreateCheckoutSessionResponse,
   CheckoutCustomer,
   CheckoutChannel,
 } from "@afriex/checkout";
@@ -162,3 +173,8 @@ export type {
 } from "@afriex/webhooks";
 
 export { WEBHOOK_SIGNATURE_HEADER } from "@afriex/webhooks";
+// `TransactionStatus` is a value as well as a type, so it is exported as both.
+export {
+  TransactionStatus,
+  DEFAULT_TRANSACTION_TYPE,
+} from "@afriex/transactions";

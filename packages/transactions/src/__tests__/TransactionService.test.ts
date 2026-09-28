@@ -308,6 +308,78 @@ describe("TransactionService", () => {
       ).rejects.toThrow(ValidationError);
     });
 
+    it("should send meta.settlement and the correspondent bank pair", async () => {
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: { transactionId: "txn-settlement" },
+      });
+
+      const request = {
+        customerId: "cust-123",
+        sourceAmount: "100" as const,
+        sourceCurrency: "NGN",
+        destinationCurrency: "USD",
+        destinationId: "pm-swift",
+        correspondentBankName: "Citibank N.A. New York",
+        correspondentBankAccountNumber: "10991234",
+        meta: {
+          idempotencyKey: "test-key-settlement",
+          reference: "test-ref-settlement",
+          settlement: "request" as const,
+          invoice: "64f0c2a1e4b0a1b2c3d4e5f6/invoice.pdf",
+        },
+      };
+
+      await transactionService.create(request);
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith("/transaction", request);
+    });
+
+    it("should throw ValidationError when only one correspondent bank field is sent", async () => {
+      await expect(
+        transactionService.create({
+          customerId: "cust-123",
+          sourceAmount: "100",
+          sourceCurrency: "NGN",
+          destinationCurrency: "USD",
+          destinationId: "pm-swift",
+          correspondentBankName: "Citibank N.A. New York",
+          meta: {
+            idempotencyKey: "test-key-correspondent",
+            reference: "test-ref-correspondent",
+          },
+        })
+      ).rejects.toMatchObject({
+        name: "ValidationError",
+        fields: [
+          {
+            field: "correspondentBankName",
+            message:
+              "correspondentBankName and correspondentBankAccountNumber must be provided together",
+          },
+        ],
+      });
+
+      expect(mockHttpClient.post).not.toHaveBeenCalled();
+    });
+
+    it("should throw ValidationError when settlement request is used outside WITHDRAW", async () => {
+      await expect(
+        transactionService.create({
+          type: "DEPOSIT",
+          customerId: "cust-123",
+          sourceAmount: "100",
+          sourceCurrency: "KES",
+          destinationCurrency: "USD",
+          sourceId: "pm-456",
+          meta: {
+            idempotencyKey: "test-key-settlement-deposit",
+            reference: "test-ref-settlement-deposit",
+            settlement: "request",
+          },
+        })
+      ).rejects.toThrow(ValidationError);
+    });
+
     it("should create a DEPOSIT transaction successfully", async () => {
       const mockTransaction = {
         transactionId: "txn-456",

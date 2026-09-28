@@ -78,11 +78,13 @@ Create a new transaction.
 
 Amounts are accepted as a number or a numeric string (`5000` or `"5000"`). Responses always return them as strings. When only one amount is sent, the API derives the other at the live rate.
 
-**Optional fields:** `customerId`, `meta.narration`, `meta.invoice`, `shouldPreferSourceAmount` (opt in to deriving `destinationAmount` from `sourceAmount` via the forward rate even when both amounts are sent; defaults to `false`, which keeps destination-wins semantics)
+**Optional fields:** `customerId`, `meta.narration`, `meta.invoice` (the object key of an uploaded invoice; required for SWIFT withdrawals), `meta.settlement` (`spot` by default; `request` debits the Collection wallet and is for `WITHDRAW` only), `correspondentBankName` and `correspondentBankAccountNumber` (sent together, for USD payouts), `shouldPreferSourceAmount` (opt in to deriving `destinationAmount` from `sourceAmount` via the forward rate even when both amounts are sent; defaults to `false`, which keeps destination-wins semantics)
 
 ### `get(transactionId: string): Promise<Transaction>`
 
-Retrieve a transaction by ID. The response may include `channel`, `merchantReference`, `rate`, and `meta.otpRequired`/`meta.failureReason` in addition to the fields sent on create.
+Retrieve a transaction by ID. The response may include `channel`, `merchantReference`, `rate`, `fee`, and `meta.otpRequired`/`meta.failureReason` in addition to the fields sent on create.
+
+`IN_REVIEW` and `RFI_REQUESTED` are review states: the transaction is still in flight. Treat them, and any status you do not recognise, as non-terminal.
 
 ### `list(params?: ListTransactionsParams): Promise<TransactionListResponse>`
 
