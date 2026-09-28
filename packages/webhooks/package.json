@@ -1,6 +1,6 @@
 {
   "name": "@afriex/webhooks",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Verify and parse Afriex webhook signatures in TypeScript",
   "type": "module",
   "main": "./dist/index.js",

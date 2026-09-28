@@ -1,6 +1,6 @@
 {
   "name": "@afriex/sdk",
-  "version": "4.1.0",
+  "version": "5.0.0",
   "description": "Official TypeScript SDK for the Afriex Business API: cross-border payouts, collections, virtual accounts, exchange rates and webhooks",
   "type": "module",
   "main": "./dist/index.js",

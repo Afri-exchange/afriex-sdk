@@ -1,6 +1,6 @@
 {
   "name": "@afriex/payment-methods",
-  "version": "4.1.0",
+  "version": "5.0.0",
   "description": "Bank accounts, mobile money wallets, virtual accounts and crypto wallets for the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,6 +1,6 @@
 {
   "name": "@afriex/sme-registration",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Register a business for dedicated KES virtual accounts with the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",

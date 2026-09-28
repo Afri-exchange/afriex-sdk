@@ -1,6 +1,6 @@
 {
   "name": "@afriex/core",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "HTTP client, configuration and typed errors for the Afriex Business API SDK",
   "type": "module",
   "main": "./dist/index.js",

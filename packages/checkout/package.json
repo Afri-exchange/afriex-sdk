@@ -1,6 +1,6 @@
 {
   "name": "@afriex/checkout",
-  "version": "3.0.1",
+  "version": "3.1.0",
   "description": "Hosted checkout sessions for card, mobile money and bank transfer payments with the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",

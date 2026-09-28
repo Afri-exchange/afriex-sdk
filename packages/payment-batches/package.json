@@ -1,6 +1,6 @@
 {
   "name": "@afriex/payment-batches",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Bulk payouts to bank accounts and mobile money wallets with the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",

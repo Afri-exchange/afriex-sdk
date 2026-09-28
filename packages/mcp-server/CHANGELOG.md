@@ -1,5 +1,87 @@
 # @afriex/mcp-server
 
+## 2.1.0
+
+### Minor Changes
+
+- d4d9454: Bring the MCP server in line with the SDK and the API.
+
+  **Fixed**
+
+  - Tool results are no longer rejected when the API returns a field the output schema does not list. Every tool passed its schema's `.shape`, which dropped the setting that allows extra fields. A client that validates structured output, as the official MCP client does, then refused the result: `afriex_create_customer` failed this way once the API began returning `reference`, after the customer had been created.
+  - `page` accepts `0`. Pages are zero-based, so the first page could not be requested. `limit` is capped at `100`, the most the API returns.
+  - `afriex_create_transaction` takes `sourceAmount` or `destinationAmount`, as a string or a number. It required `sourceAmount` and refused numbers.
+  - `afriex_get_crypto_wallet` no longer requires `customerId`. Without it, the wallet is the business's own.
+  - `meta.invoice` is described as the key of an uploaded file, not a Base64 document.
+  - The status and channel lists in `afriex_list_transactions` match the API: `RFI_REQUESTED` and eight channels were missing.
+
+  **Added**
+
+  - 21 tools for the endpoints the SDK gained: pool-account payment proofs, settlement advices, the two sandbox simulations, upload URLs, payment batches and SME registration. The server now has 51.
+  - `afriex_create_transaction` accepts `meta.settlement`, `correspondentBankName` and `correspondentBankAccountNumber`.
+  - `afriex_list_virtual_accounts` accepts `country` and `amount`.
+  - A failed tool call says why: an API error carries its status and error code, and a validation error names each field.
+
+- d4d9454: **Breaking:** stop offering values the API rejects. Every removal below was confirmed against the sandbox, and each one turns a runtime `4xx` into a compile error.
+
+  **@afriex/customers**
+
+  - `UpdateCustomerKycRequest` no longer accepts `COUNTRY`, `PHONE` or `BVN`. The API answers `400 INVALID_KYC_DOCUMENT_TYPE` for all three, and rejects the whole request when one is mixed in with valid types. `updateKyc()` now throws a `ValidationError` that says where each value belongs: a BVN goes through `verify()`, a phone number through `update()`. `KycDocumentType` keeps all 21 values, since they can still be read back from `meta.kyc.data`; `UpdatableKycDocumentType` names the 18 that can be written.
+
+  **@afriex/payment-methods**
+
+  - `CreatablePaymentChannel` drops `ALIPAY` and `PAYBILL_TILL`. Create Alipay on `WE_CHAT` with `institutionCode` and `institutionName` set to `ALIPAY`.
+  - `InstitutionListChannel` is now `BANK_ACCOUNT | SWIFT | MOBILE_MONEY | ACH_BANK_ACCOUNT`. `UPI`, `INTERAC` and `WE_CHAT` answer `400 INVALID_TRANSACTION_CHANNEL`. `ACH_BANK_ACCOUNT` is new: the sandbox serves the US routing directory for it.
+  - `ListPaymentMethodsParams` filters are typed to what the endpoint accepts: `channel` takes the 8 values of `PaymentMethodListChannel`, `status` takes `active` and `pending`, `capabilities` takes `WITHDRAW`. Anything else answers 422.
+  - `ResolveAccountParams.institutionCode` is required. The API rejects a request without it for `MOBILE_MONEY` as well as `BANK_ACCOUNT`.
+  - `CreateVirtualAccountParams` drops `country` and `reference`, which the API rejects as not allowed, and types `label` as `VirtualAccountLabel`.
+  - `createVirtualAccount()` returns `PaymentMethod | null`. It is `null` when the issuing bank opens the account after the request returns; the account then arrives by the `PAYMENT_METHOD.CREATED` webhook. Before, the caller got an empty object typed as a full `PaymentMethod`.
+  - `ResolvedAccount` drops `recipientEmail`, `recipientPhone` and `recipientAddress`, which the endpoint never returns.
+
+  **@afriex/transactions**
+
+  - A `SWAP` takes exactly one of `sourceAmount` or `destinationAmount`, in the type (`SwapAmount`) and in the validator. The API rejects a swap that sends both.
+
+  **@afriex/webhooks**
+
+  - On `PaymentMethodWebhookData`, `institution`, `transaction`, `recipient`, `accountName` and `accountNumber` are optional. The API omits empty fields, and card payloads carry none of them. Readers need a guard. The type gains the card fields, `currency`, `capabilities` and `reference`.
+
+  **@afriex/mcp-server**
+
+  - Tool schemas follow the same narrowing, so a model is no longer offered values that fail. `afriex_create_virtual_account` reports `pending: true` when the account is opened later.
+
+### Patch Changes
+
+- d4d9454: Deprecate exports that do not describe the API, and correct two guides.
+
+  **@afriex/core**
+
+  Nothing is removed and no value changes. These exports are marked `@deprecated`, each with what to use in its place:
+
+  - `SUPPORTED_CURRENCIES`, `SUPPORTED_COUNTRIES`, `isValidCurrency`, `isValidCountry`, `Currency` and `Country`. The lists hold 11 currencies and 20 countries; the API supports 72 currencies. `isValidCurrency("ZAR")` answers `false` for a currency the API accepts.
+  - `PaymentMethod`, whose values (`bank_account`, `debit_card`) are not the API's.
+  - `PaginationParams`, `PaginatedResponse`, `ApiResponse`, `Money` and `Address`, which match nothing the API takes or returns.
+
+  **@afriex/rates**
+
+  - `getRates()` with no arguments returns the rates from `USD`, not every pair. The README and the guide said it returned all pairs; `fromSymbols` defaults to `USD` only.
+  - The comments on `fromSymbols` and `toSymbols` were swapped, and `getRates` named an endpoint it does not call.
+  - The README said `getRate()` returns `'0'` for a pair without a rate. It throws.
+
+  **@afriex/checkout**
+
+  - `createSession()` checks the limits the API sets on `metadata` before sending: at most 50 entries, keys of 1 to 128 characters, values of at most 1024. The API rejects a request that goes over any of them.
+
+- Updated dependencies [d4d9454]
+- Updated dependencies [d4d9454]
+- Updated dependencies [d4d9454]
+- Updated dependencies [d4d9454]
+- Updated dependencies [d4d9454]
+- Updated dependencies [d4d9454]
+- Updated dependencies [d4d9454]
+- Updated dependencies [d4d9454]
+  - @afriex/sdk@5.0.0
+
 ## 2.0.0
 
 ### Major Changes
