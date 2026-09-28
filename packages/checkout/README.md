@@ -31,7 +31,8 @@ const session = await checkoutService.createSession({
     phone: "+2348192837465",
     countryCode: "NG",
   },
-  channels: ["VIRTUAL_BANK_ACCOUNT"],
+  // A cap, not an exact list: channels the currency cannot collect on are dropped
+  channels: ["VIRTUAL_BANK_ACCOUNT", "MOBILE_MONEY", "CARD"],
   metadata: {
     orderId: "ord_123",
     cartId: "cart_456",
@@ -40,9 +41,15 @@ const session = await checkoutService.createSession({
 
 // Redirect user to checkout URL
 window.location.href = session.checkoutUrl;
+
+// The channels the payer will actually be offered
+console.log(session.channels);
 ```
 
 `amount` is sent in minor units. For example, NGN 5,000.00 should be passed as `500000`.
+
+Checkout is available in the sandbox only for now; production answers `403` until
+Afriex enables it for your business.
 
 ## API
 
@@ -57,12 +64,23 @@ Creates a hosted checkout session where customers can complete payments.
 - `request.merchantReference` - Unique reference used to identify the session end-to-end
 - `request.redirectUrl` - HTTPS URL to return the customer to after checkout
 - `request.customer` - Customer information (`name`, `email`, `phone`, `countryCode`)
-- `request.channels` - Optional allowed payment channels. Defaults to `VIRTUAL_BANK_ACCOUNT` when omitted
+- `request.channels` - Required, non-empty. Any of `VIRTUAL_BANK_ACCOUNT`, `MOBILE_MONEY`, `CARD`. Channels the currency does not support are dropped
 - `request.metadata` - Optional flat key/value metadata where all values are strings
 
 **Returns:**
 
-- `CheckoutSession` - Contains the hosted `checkoutUrl`
+- `CheckoutSession` - The hosted `checkoutUrl`, plus `channels`: the ones the payer will be offered
+
+**Errors:**
+
+- `409 DUPLICATE_REQUEST` - `merchantReference` is already used by an active session or a transaction
+- `422` - none of the requested `channels` is supported for the `currency`
+
+## Reconciling a payment
+
+`CHECKOUT_SESSION.CREATED` fires when the session is created. It is not a payment
+signal. Track the payment through `TRANSACTION.UPDATED` on the transaction the
+session produces, matched on your `merchantReference`.
 
 ## License
 

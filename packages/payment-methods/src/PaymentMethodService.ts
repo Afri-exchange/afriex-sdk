@@ -29,6 +29,10 @@ export class PaymentMethodService {
   /**
    * Create a new payment method
    * POST /payment-method
+   *
+   * `accountName`, `accountNumber` and `institution` are required for every
+   * channel except UPI and INTERAC, which take no `institution`, and
+   * VIRTUAL_BANK_ACCOUNT, which takes none of the three.
    */
   async create(request: CreatePaymentMethodRequest): Promise<PaymentMethod> {
     this.validateCreateRequest(request);
@@ -258,14 +262,32 @@ export class PaymentMethodService {
     return value;
   }
 
+  /**
+   * Which account fields are required depends on the channel: UPI and INTERAC
+   * take no institution, and VIRTUAL_BANK_ACCOUNT takes none of accountName,
+   * accountNumber or institution.
+   */
   private validateCreateRequest(request: CreatePaymentMethodRequest): void {
-    new ValidationBuilder()
-      .required("channel", request.channel)
+    const { channel } = request;
+    const needsAccount = channel !== "VIRTUAL_BANK_ACCOUNT";
+    const needsInstitution =
+      needsAccount && channel !== "UPI" && channel !== "INTERAC";
+
+    const builder = new ValidationBuilder()
+      .required("channel", channel)
       .required("customerId", request.customerId)
-      .required("accountName", request.accountName)
-      .required("accountNumber", request.accountNumber)
-      .required("countryCode", request.countryCode)
-      .required("institution", request.institution)
-      .throwIfInvalid();
+      .required("countryCode", request.countryCode);
+
+    if (needsAccount) {
+      builder
+        .required("accountName", request.accountName)
+        .required("accountNumber", request.accountNumber);
+    }
+
+    if (needsInstitution) {
+      builder.required("institution", request.institution);
+    }
+
+    builder.throwIfInvalid();
   }
 }

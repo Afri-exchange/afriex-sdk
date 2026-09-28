@@ -20,7 +20,8 @@ const session = await afriex.checkout.createSession({
     phone: "+2348192837465",
     countryCode: "NG",
   },
-  channels: ["VIRTUAL_BANK_ACCOUNT"],
+  // A cap, not an exact list: channels the currency cannot collect on are dropped
+  channels: ["VIRTUAL_BANK_ACCOUNT", "MOBILE_MONEY", "CARD"],
   metadata: {
     orderId: "order-456",
     cartId: "cart-123",
@@ -28,7 +29,9 @@ const session = await afriex.checkout.createSession({
 });
 
 // Redirect customer to session.checkoutUrl
-console.log(session.checkoutUrl); // https://checkout.afriex.com/pay/...
+console.log(session.checkoutUrl); // https://pay.afriex.com/pay/...
+// The channels the payer will actually be offered
+console.log(session.channels); // ["VIRTUAL_BANK_ACCOUNT", "CARD"]
 ```
 
 **Response:**
@@ -36,6 +39,7 @@ console.log(session.checkoutUrl); // https://checkout.afriex.com/pay/...
 ```typescript
 {
   checkoutUrl: string; // Redirect customer here
+  channels?: ("VIRTUAL_BANK_ACCOUNT" | "MOBILE_MONEY" | "CARD")[]; // What the payer will be offered
 }
 ```
 
@@ -51,7 +55,7 @@ console.log(session.checkoutUrl); // https://checkout.afriex.com/pay/...
 | `customer.email`       | `string`   | Yes      | Customer's email address                                     |
 | `customer.phone`       | `string`   | Yes      | Phone number in E.164 format                                 |
 | `customer.countryCode` | `string`   | Yes      | ISO 3166-1 alpha-2 country code                              |
-| `channels`             | `string[]` | Yes      | Allowed payment channels; must be non-empty. `VIRTUAL_BANK_ACCOUNT` and `MOBILE_MONEY` are supported |
+| `channels`             | `string[]` | Yes      | Channels you are willing to offer; must be non-empty. Any of `VIRTUAL_BANK_ACCOUNT`, `MOBILE_MONEY`, `CARD`. Ones the currency does not support are dropped |
 | `metadata`             | `object`   | No       | Optional flat key/value metadata with string values          |
 
 ## Session Flow
@@ -60,7 +64,7 @@ console.log(session.checkoutUrl); // https://checkout.afriex.com/pay/...
 2. **Redirect customer** to `checkoutUrl`
 3. **Customer completes payment** on Afriex-hosted page
 4. **Afriex redirects** the customer back to `redirectUrl`
-5. **Receive webhook** on your configured callback URL for session updates
+5. **Track the payment** through the `TRANSACTION.UPDATED` webhook on the transaction the session produces
 
 import { Callout } from "fumadocs-ui/components/callout";
 
@@ -71,7 +75,18 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 <Callout type="tip">
   Use `merchantReference` as your end-to-end identifier for lookup,
-  reconciliation, and webhook matching.
+  reconciliation, and webhook matching. Reusing one that is still active returns
+  `409 DUPLICATE_REQUEST`.
+</Callout>
+
+<Callout type="warn">
+  `CHECKOUT_SESSION.CREATED` fires when the session is created. It is not a
+  payment signal.
+</Callout>
+
+<Callout type="note">
+  Checkout is available in the sandbox only for now. Production answers `403`
+  until Afriex enables it for your business.
 </Callout>
 
 ## Use Cases

@@ -111,9 +111,19 @@ const poolAccount = await paymentMethods.listPoolAccounts({
 
 Create a new payment method.
 
-**Required fields:** `customerId`, `channel`, `accountName`, `accountNumber`, `countryCode`, `institution`
+**Always required:** `customerId`, `channel`, `countryCode`
 
-**Optional fields:** `recipient`, `transaction`
+**Required by channel:**
+
+| Channel | `accountName` | `accountNumber` | `institution` |
+| :-- | :-- | :-- | :-- |
+| `BANK_ACCOUNT`, `MOBILE_MONEY`, `SWIFT`, `ACH_BANK_ACCOUNT`, `WE_CHAT` | Required | Required | Required |
+| `UPI`, `INTERAC` | Required | Required | Not needed |
+| `VIRTUAL_BANK_ACCOUNT` | Not needed | Not needed | Not needed |
+
+For `MOBILE_MONEY`, send `accountNumber` as digits only (country code plus national number). A leading `+` is rejected.
+
+**Optional fields:** `type`, `recipient`, `transaction`
 
 ### `get(paymentMethodId: string): Promise<PaymentMethod>`
 

@@ -73,17 +73,62 @@ describe("TransactionService", () => {
       ).rejects.toThrow(ValidationError);
     });
 
-    it("should throw ValidationError when destinationAmount is missing", async () => {
+    it("should create a WITHDRAW with sourceAmount and no destinationAmount", async () => {
+      const mockTransaction = {
+        transactionId: "txn-source-only",
+        customerId: "cust-123",
+        status: "PENDING",
+        sourceAmount: "100",
+        sourceCurrency: "USD",
+        destinationAmount: "155000",
+        destinationCurrency: "NGN",
+      };
+
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: mockTransaction,
+      });
+
+      const request = {
+        type: "WITHDRAW" as const,
+        customerId: "cust-123",
+        sourceAmount: "100" as const,
+        destinationCurrency: "NGN",
+        sourceCurrency: "USD",
+        destinationId: "pm-123",
+        meta: {
+          idempotencyKey: "test-key-source-only",
+          reference: "test-ref-source-only",
+        },
+      };
+
+      const result = await transactionService.create(request);
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith("/transaction", request);
+      expect(result).toEqual(mockTransaction);
+    });
+
+    it("should throw ValidationError when both amounts are missing", async () => {
       await expect(
         transactionService.create({
           customerId: "cust-123",
-          sourceAmount: "100",
-          destinationAmount: "" as unknown as `${number}`,
+          sourceAmount: "" as unknown as `${number}`,
           destinationCurrency: "NGN",
           sourceCurrency: "USD",
           destinationId: "pm-123",
-        } as any)
-      ).rejects.toThrow(ValidationError);
+          meta: {
+            idempotencyKey: "test-key-no-amounts",
+            reference: "test-ref-no-amounts",
+          },
+        })
+      ).rejects.toMatchObject({
+        name: "ValidationError",
+        fields: [
+          {
+            field: "sourceAmount",
+            message: "Either sourceAmount or destinationAmount is required",
+          },
+        ],
+      });
     });
 
     it("should create a SWAP transaction without customerId or destinationAmount", async () => {
@@ -125,17 +170,68 @@ describe("TransactionService", () => {
       expect(result).toEqual(mockTransaction);
     });
 
-    it("should throw ValidationError when sourceAmount is missing", async () => {
+    it("should create a WITHDRAW with destinationAmount and no sourceAmount", async () => {
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: { transactionId: "txn-destination-only" },
+      });
+
       await expect(
         transactionService.create({
           customerId: "cust-123",
-          sourceAmount: "" as unknown as `${number}`,
           destinationAmount: "1000",
           destinationCurrency: "NGN",
           sourceCurrency: "USD",
           destinationId: "pm-123",
-        } as any)
-      ).rejects.toThrow(ValidationError);
+          meta: {
+            idempotencyKey: "test-key-destination-only",
+            reference: "test-ref-destination-only",
+          },
+        })
+      ).resolves.toEqual({ transactionId: "txn-destination-only" });
+    });
+
+    it("should pass numeric amounts through unchanged", async () => {
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: { transactionId: "txn-numeric" },
+      });
+
+      const request = {
+        type: "WITHDRAW" as const,
+        customerId: "cust-123",
+        destinationAmount: 5000,
+        destinationCurrency: "NGN",
+        sourceCurrency: "USD",
+        destinationId: "pm-123",
+        meta: {
+          idempotencyKey: "test-key-numeric",
+          reference: "test-ref-numeric",
+        },
+      };
+
+      await transactionService.create(request);
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith("/transaction", request);
+    });
+
+    it("should create a SWAP from a destinationAmount", async () => {
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: { transactionId: "txn-swap-destination", type: "SWAP" },
+      });
+
+      const request = {
+        type: "SWAP" as const,
+        destinationAmount: 16500,
+        sourceCurrency: "USD",
+        destinationCurrency: "NGN",
+        meta: {
+          idempotencyKey: "swap-key-destination",
+          reference: "swap-ref-destination",
+        },
+      };
+
+      await transactionService.create(request);
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith("/transaction", request);
     });
 
     it("should throw ValidationError when destinationId is missing for WITHDRAW", async () => {

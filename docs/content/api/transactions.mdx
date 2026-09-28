@@ -70,8 +70,8 @@ const transaction = await afriex.transactions.create({
 | Field                 | Type        | Required                         | Description                                                                |
 | :-------------------- | :---------- | :------------------------------- | :------------------------------------------------------------------------- |
 | `customerId`          | `string`    | Yes for `DEPOSIT` and `WITHDRAW` | Customer ID. Optional for `SWAP` when using the business wallet            |
-| `sourceAmount`        | `${number}` | Yes                              | Amount in source currency                                                  |
-| `destinationAmount`   | `${number}` | Yes for `DEPOSIT` and `WITHDRAW` | Amount in destination currency. Optional for `SWAP`; the API calculates it |
+| `sourceAmount`        | `number \| ${number}` | One of the two amounts | Amount in source currency. Send it alone and the API derives the destination amount at the live rate |
+| `destinationAmount`   | `number \| ${number}` | One of the two amounts | Amount in destination currency. Send it alone and the API derives the source amount. A `SWAP` takes exactly one of the two |
 | `sourceCurrency`      | `string`    | Yes                              | Source currency (e.g., `USD`)                                              |
 | `destinationCurrency` | `string`    | Yes                              | Destination currency (e.g., `NGN`)                                         |
 | `type`                | `string`    | -                                | `WITHDRAW` (default), `DEPOSIT`, or `SWAP`                                 |

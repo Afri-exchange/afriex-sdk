@@ -10,6 +10,12 @@ export const DEFAULT_TRANSACTION_TYPE: TransactionType = "WITHDRAW";
 export const TransactionStatus = {
   PENDING: "PENDING",
   PROCESSING: "PROCESSING",
+  /**
+   * @deprecated Not part of the published API. The terminal success status is
+   * `SUCCESS`, and the list endpoint rejects `COMPLETED` as a filter with 422.
+   * Kept only so older stored values still type-check.
+   */
+  COMPLETED: "COMPLETED",
   SUCCESS: "SUCCESS",
   FAILED: "FAILED",
   CANCELLED: "CANCELLED",
@@ -144,11 +150,36 @@ export interface Transaction {
 }
 
 /**
+ * A monetary amount on a request: a number or a numeric string. Responses
+ * always return amounts as strings.
+ */
+export type TransactionAmount = `${number}` | number;
+
+/**
+ * The amounts of a transaction. At least one is required; the API derives the
+ * other side at the live rate.
+ *
+ * When both are sent, `destinationAmount` wins unless
+ * `shouldPreferSourceAmount` is true.
+ */
+export type TransactionAmounts =
+  | {
+      /** The transaction amount in the source currency. */
+      sourceAmount: TransactionAmount;
+      /** The transaction amount in the destination currency. */
+      destinationAmount?: TransactionAmount;
+    }
+  | {
+      /** The transaction amount in the source currency. */
+      sourceAmount?: TransactionAmount;
+      /** The transaction amount in the destination currency. */
+      destinationAmount: TransactionAmount;
+    };
+
+/**
  * Common fields shared by all transaction creation variants
  */
 interface CreateTransactionBase {
-  /** The transaction amount in the source currency */
-  sourceAmount: `${number}`;
   destinationCurrency: string;
   sourceCurrency: string;
   /** Required transaction metadata. Must include idempotencyKey and reference. */
@@ -163,41 +194,41 @@ interface CreateTransactionBase {
   shouldPreferSourceAmount?: boolean;
 }
 
-interface CreateCustomerTransactionBase extends CreateTransactionBase {
-  /** The unique identifier of the customer */
-  customerId: string;
-  /** The transaction amount in the destination currency */
-  destinationAmount: `${number}`;
-}
-
 /**
  * Withdraw transaction — sends funds to a destination payment method.
  * `type` defaults to `WITHDRAW` if omitted.
  */
-interface CreateWithdrawTransaction extends CreateCustomerTransactionBase {
-  type?: "WITHDRAW";
-  /** The ID of the destination payment method to send funds to */
-  destinationId: string;
-}
+export type CreateWithdrawTransaction = CreateTransactionBase &
+  TransactionAmounts & {
+    type?: "WITHDRAW";
+    /** The unique identifier of the customer */
+    customerId: string;
+    /** The ID of the destination payment method to send funds to */
+    destinationId: string;
+  };
 
 /**
  * Deposit transaction — pulls funds from a source payment method.
  */
-interface CreateDepositTransaction extends CreateCustomerTransactionBase {
-  type: "DEPOSIT";
-  /** The ID of the source payment method to pull funds from */
-  sourceId: string;
-}
+export type CreateDepositTransaction = CreateTransactionBase &
+  TransactionAmounts & {
+    type: "DEPOSIT";
+    /** The unique identifier of the customer */
+    customerId: string;
+    /** The ID of the source payment method to pull funds from */
+    sourceId: string;
+  };
 
 /**
- * Swap transaction — exchanges between currencies.
- * The API calculates the final destination amount.
+ * Swap transaction — exchanges between currencies inside the wallet.
+ * The API computes the side you leave out at the live exchange rate.
  */
-interface CreateSwapTransaction extends CreateTransactionBase {
-  type: "SWAP";
-  customerId?: string;
-  destinationAmount?: `${number}`;
-}
+export type CreateSwapTransaction = CreateTransactionBase &
+  TransactionAmounts & {
+    type: "SWAP";
+    /** Optional. When omitted, the swap runs against the business wallet. */
+    customerId?: string;
+  };
 
 /**
  * Request body for creating a transaction. Use `WITHDRAW` (default) to send funds,

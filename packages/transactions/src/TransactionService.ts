@@ -100,11 +100,10 @@ export class TransactionService {
         type !== "SWAP" && !request.customerId,
         "Customer ID is required for DEPOSIT and WITHDRAW transactions"
       )
-      .required("sourceAmount", request.sourceAmount)
       .condition(
-        "destinationAmount",
-        type !== "SWAP" && !request.destinationAmount,
-        "Destination amount is required for DEPOSIT and WITHDRAW transactions"
+        "sourceAmount",
+        !request.sourceAmount && !request.destinationAmount,
+        "Either sourceAmount or destinationAmount is required"
       )
       .required("sourceCurrency", request.sourceCurrency)
       .required("destinationCurrency", request.destinationCurrency)

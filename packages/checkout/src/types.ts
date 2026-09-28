@@ -18,9 +18,12 @@ export interface CreateCheckoutSessionRequest {
   redirectUrl: string;
   customer: CheckoutCustomer;
   /**
-   * Payment channels to offer on the session. Required, and must be non-empty —
-   * the API rejects a request that omits it. Only `VIRTUAL_BANK_ACCOUNT` and
-   * `MOBILE_MONEY` are currently accepted.
+   * Payment channels you are willing to offer on the session. Required, and
+   * must be non-empty — the API rejects a request that omits it.
+   *
+   * It is a cap, not an exact list: channels the `currency` does not support
+   * are dropped, so the same list works on every corridor. `CARD` is collected
+   * through hosted checkout only.
    */
   channels: CheckoutChannel[];
   metadata?: Record<string, string>;
@@ -28,7 +31,10 @@ export interface CreateCheckoutSessionRequest {
 
 export interface CheckoutSession {
   checkoutUrl: string;
-  /** The channels enabled on the session, echoed back from the request. */
+  /**
+   * The channels the payer will actually be offered: the requested `channels`,
+   * in the order sent, minus any the currency cannot collect on.
+   */
   channels?: CheckoutChannel[];
 }
 

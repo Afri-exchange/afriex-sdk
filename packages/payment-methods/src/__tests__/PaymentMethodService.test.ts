@@ -59,6 +59,107 @@ describe("PaymentMethodService", () => {
         })
       ).rejects.toThrow(ValidationError);
     });
+
+    it("should create a UPI payment method without an institution", async () => {
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: { paymentMethodId: "pm-upi", channel: "UPI" },
+      });
+
+      const request = {
+        channel: "UPI" as const,
+        customerId: "cust-123",
+        accountName: "Raj Kumar",
+        accountNumber: "rajkumar@upi",
+        countryCode: "IN",
+      };
+
+      await paymentMethodService.create(request);
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        "/payment-method",
+        request
+      );
+    });
+
+    it("should create an INTERAC payment method without an institution", async () => {
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: { paymentMethodId: "pm-interac", channel: "INTERAC" },
+      });
+
+      await expect(
+        paymentMethodService.create({
+          channel: "INTERAC",
+          customerId: "cust-123",
+          accountName: "John Doe",
+          accountNumber: "john.doe@email.com",
+          countryCode: "CA",
+        })
+      ).resolves.toEqual({ paymentMethodId: "pm-interac", channel: "INTERAC" });
+    });
+
+    it("should create a VIRTUAL_BANK_ACCOUNT payment method without account fields", async () => {
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: { paymentMethodId: "pm-vba", channel: "VIRTUAL_BANK_ACCOUNT" },
+      });
+
+      const request = {
+        channel: "VIRTUAL_BANK_ACCOUNT" as const,
+        customerId: "cust-123",
+        countryCode: "NG",
+      };
+
+      await paymentMethodService.create(request);
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        "/payment-method",
+        request
+      );
+    });
+
+    it("should still require an institution for institution-backed channels", async () => {
+      await expect(
+        paymentMethodService.create({
+          channel: "BANK_ACCOUNT",
+          customerId: "cust-123",
+          accountName: "John Doe",
+          accountNumber: "1234567890",
+          countryCode: "NG",
+        } as any)
+      ).rejects.toMatchObject({
+        name: "ValidationError",
+        fields: [{ field: "institution", message: "institution is required" }],
+      });
+
+      expect(mockHttpClient.post).not.toHaveBeenCalled();
+    });
+
+    it("should require accountName and accountNumber for UPI", async () => {
+      await expect(
+        paymentMethodService.create({
+          channel: "UPI",
+          customerId: "cust-123",
+          countryCode: "IN",
+        } as any)
+      ).rejects.toMatchObject({
+        name: "ValidationError",
+        fields: [
+          { field: "accountName", message: "accountName is required" },
+          { field: "accountNumber", message: "accountNumber is required" },
+        ],
+      });
+    });
+
+    it("should require customerId on every channel", async () => {
+      await expect(
+        paymentMethodService.create({
+          channel: "VIRTUAL_BANK_ACCOUNT",
+          countryCode: "NG",
+        } as any)
+      ).rejects.toMatchObject({
+        name: "ValidationError",
+        fields: [{ field: "customerId", message: "customerId is required" }],
+      });
+    });
   });
 
   describe("get", () => {

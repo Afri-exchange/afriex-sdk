@@ -138,10 +138,32 @@ describe("CheckoutService", () => {
       ).rejects.toThrow("Validation failed");
     });
 
+    it("should accept CARD alongside the other channels", async () => {
+      const mockSession = {
+        checkoutUrl: "https://sandbox.pay.afriex.com/pay/session_card",
+        channels: ["VIRTUAL_BANK_ACCOUNT", "CARD"],
+      };
+
+      (mockHttpClient.post as Mock).mockResolvedValue({ data: mockSession });
+
+      const request: CreateCheckoutSessionRequest = {
+        ...validRequest,
+        channels: ["VIRTUAL_BANK_ACCOUNT", "MOBILE_MONEY", "CARD"],
+      };
+
+      const result = await checkoutService.createSession(request);
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        "/checkout-session",
+        request
+      );
+      expect(result).toEqual(mockSession);
+    });
+
     it("should throw validation error when channels contain an unsupported value", async () => {
       const invalidRequest = {
         ...validRequest,
-        channels: ["CARD"] as any,
+        channels: ["BANK_ACCOUNT"] as any,
       };
 
       await expect(

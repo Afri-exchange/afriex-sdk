@@ -9,6 +9,7 @@ export class CheckoutService {
   private static readonly supportedChannels = new Set([
     "VIRTUAL_BANK_ACCOUNT",
     "MOBILE_MONEY",
+    "CARD",
   ]);
 
   private httpClient: HttpClient;
@@ -23,6 +24,12 @@ export class CheckoutService {
    *
    * Creates a hosted checkout session where customers can complete payments.
    * Returns a checkout URL that can be embedded or redirected to.
+   *
+   * `channels` is a cap, not an exact list: channels the `currency` cannot
+   * collect on are dropped, and the ones the payer will be offered come back on
+   * the response as `channels`.
+   *
+   * Note: Only available in sandbox for now; production answers 403.
    */
   async createSession(
     request: CreateCheckoutSessionRequest

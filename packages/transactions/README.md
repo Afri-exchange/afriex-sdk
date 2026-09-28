@@ -70,11 +70,13 @@ const authorized = await transactions.authorize("transaction-id", {
 
 Create a new transaction.
 
-**WITHDRAW required fields:** `customerId`, `sourceCurrency`, `destinationCurrency`, `destinationId`, `meta`, and exactly one of `sourceAmount`/`destinationAmount`
+**WITHDRAW required fields:** `customerId`, `sourceCurrency`, `destinationCurrency`, `destinationId`, `meta`, and at least one of `sourceAmount`/`destinationAmount`
 
-**DEPOSIT required fields:** `customerId`, `sourceAmount`, `destinationAmount`, `sourceCurrency`, `destinationCurrency`, `sourceId`, `meta`
+**DEPOSIT required fields:** `customerId`, `sourceCurrency`, `destinationCurrency`, `sourceId`, `meta`, and at least one of `sourceAmount`/`destinationAmount`
 
-**SWAP required fields:** `sourceCurrency`, `destinationCurrency`, `meta`, and exactly one of `sourceAmount`/`destinationAmount`
+**SWAP required fields:** `sourceCurrency`, `destinationCurrency`, `meta`, and exactly one of `sourceAmount`/`destinationAmount` (the API rejects a swap that sends both)
+
+Amounts are accepted as a number or a numeric string (`5000` or `"5000"`). Responses always return them as strings. When only one amount is sent, the API derives the other at the live rate.
 
 **Optional fields:** `customerId`, `meta.narration`, `meta.invoice`, `shouldPreferSourceAmount` (opt in to deriving `destinationAmount` from `sourceAmount` via the forward rate even when both amounts are sent; defaults to `false`, which keeps destination-wins semantics)
 

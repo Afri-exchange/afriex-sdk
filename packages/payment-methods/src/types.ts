@@ -122,20 +122,78 @@ export interface PaymentMethod {
   meta?: Record<string, unknown>;
 }
 
-export interface CreatePaymentMethodRequest {
-  channel: CreatablePaymentChannel;
+/** Channels addressed by an alias (a UPI ID, an Interac email) rather than an institution. */
+export type AliasPaymentChannel = "UPI" | "INTERAC";
+
+/** Channels that name the account through a bank, mobile money provider or wallet. */
+export type InstitutionPaymentChannel = Exclude<
+  CreatablePaymentChannel,
+  AliasPaymentChannel | "VIRTUAL_BANK_ACCOUNT"
+>;
+
+/** Fields every payment method creation request shares. */
+interface CreatePaymentMethodBase {
   /**
-   *The capability of this payment method. `DEPOSIT` means funds can be pulled from this method (e.g. charge/collect from the customer). `WITHDRAW` means funds can be sent to this method (e.g. pay out to the customer). If omitted, defaults to `WITHDRAW`.
+   * The capability of this payment method. `DEPOSIT` means funds can be pulled from this method (e.g. charge/collect from the customer). `WITHDRAW` means funds can be sent to this method (e.g. pay out to the customer). If omitted, defaults to `WITHDRAW`.
    */
   type?: "WITHDRAW" | "DEPOSIT";
+  /**
+   * The customer the payment method belongs to.
+   *
+   * The API reference marks this optional, attaching the method to the business
+   * when omitted, but the sandbox answers `404 BUSINESS_CUSTOMER_NOT_FOUND`
+   * without it. It stays required until the two agree.
+   */
   customerId: string;
-  accountName: string;
-  accountNumber: string;
   countryCode: string;
-  institution: PaymentMethodInstitution;
   recipient?: PaymentMethodRecipient;
   transaction?: PaymentMethodTransaction;
 }
+
+/** BANK_ACCOUNT, MOBILE_MONEY, SWIFT and the other institution-backed channels. */
+export interface CreateInstitutionPaymentMethodRequest
+  extends CreatePaymentMethodBase {
+  channel: InstitutionPaymentChannel;
+  accountName: string;
+  /**
+   * The account number. For `MOBILE_MONEY`, send the number as digits only
+   * (country code + national number); a leading `+` is rejected.
+   */
+  accountNumber: string;
+  institution: PaymentMethodInstitution;
+}
+
+/** UPI and INTERAC: the alias identifies the account, so no institution is needed. */
+export interface CreateAliasPaymentMethodRequest
+  extends CreatePaymentMethodBase {
+  channel: AliasPaymentChannel;
+  accountName: string;
+  /** The UPI ID or the email registered for Interac. */
+  accountNumber: string;
+  institution?: PaymentMethodInstitution;
+}
+
+/** VIRTUAL_BANK_ACCOUNT takes none of the account fields. */
+export interface CreateVirtualBankAccountPaymentMethodRequest
+  extends CreatePaymentMethodBase {
+  channel: "VIRTUAL_BANK_ACCOUNT";
+  accountName?: string;
+  accountNumber?: string;
+  institution?: PaymentMethodInstitution;
+}
+
+/**
+ * Request body for POST /payment-method. Which account fields are required
+ * depends on `channel`:
+ *
+ * - institution-backed channels need `accountName`, `accountNumber` and `institution`
+ * - `UPI` and `INTERAC` need `accountName` and `accountNumber`
+ * - `VIRTUAL_BANK_ACCOUNT` needs none of the three
+ */
+export type CreatePaymentMethodRequest =
+  | CreateInstitutionPaymentMethodRequest
+  | CreateAliasPaymentMethodRequest
+  | CreateVirtualBankAccountPaymentMethodRequest;
 
 export interface ListPaymentMethodsParams {
   page?: number;
