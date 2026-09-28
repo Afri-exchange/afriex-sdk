@@ -63,6 +63,8 @@ console.log("Balances:", balances);
 | `environment`      | `string`      | `'production'`      | `'staging'` or `'production'`       |
 | `webhookPublicKey` | `string`      | -                   | Public key for webhook verification |
 | `retryConfig`      | `RetryConfig` | `{ maxRetries: 0 }` | Request retry configuration         |
+| `apiVersion`       | `string`      | `'2026-05-18'`      | Sent as the `x-api-version` header  |
+| `signRequest`      | `function`    | -                   | Signs each request, when payload signing is enabled for your business |
 
 ### Enable Retries
 
@@ -78,6 +80,21 @@ const afriex = new AfriexSDK({
   },
 });
 ```
+
+Only `GET`, `PUT`, `HEAD`, `DELETE`, `OPTIONS` and `TRACE` requests are retried. `POST` and `PATCH` are sent once, because repeating one can repeat its effect: a second `paymentBatches.withdraw()` pays every recipient again. To retry other methods, list them in `retryConfig.retryableMethods`.
+
+### Sign Requests
+
+If payload signing is enabled for your business, pass a function that returns the signature. It is sent in the `x-api-signature` header.
+
+```typescript
+const afriex = new AfriexSDK({
+  apiKey: "...",
+  signRequest: ({ method, url, body }) => sign(body),
+});
+```
+
+`body` is the JSON exactly as it is sent. Afriex defines the signature scheme when it enables signing; `sign` stands for your implementation of it.
 
 ## Environments
 

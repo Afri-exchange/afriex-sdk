@@ -90,8 +90,24 @@ export const afriex = new AfriexSDK({
 
 Fail condition: no `retryConfig` — `DEFAULT_CONFIG` sets `maxRetries: 0`, so a
 single 503 fails the request outright.
-Fix: supply `retryConfig`, and make sure every retried write carries a stable
-`meta.idempotencyKey`.
+Fix: supply `retryConfig`.
+
+### Check: writes are not retried blindly
+
+Expected: `retryConfig.retryableMethods` is absent, or lists neither `POST`
+nor `PATCH`.
+
+With the default methods, the SDK retries reads and sends every `POST` and
+`PATCH` once. A write that fails with a 5xx or a timeout may still have been
+applied, so the application reads the state back (for a transaction,
+`transactions.list({ reference })`) before it sends the write again, and
+reuses the same `meta.idempotencyKey` when it does.
+
+Fail condition: `retryableMethods` includes `POST` on a client that calls
+`paymentBatches.withdraw` — a repeat starts a second run and pays every
+recipient again.
+Fix: remove `POST` from `retryableMethods` and retry writes in application
+code, where the state can be checked first.
 
 ### Check: request logging does not leak request bodies
 
@@ -221,6 +237,17 @@ Fix: keep test values in fixtures that only the test environment loads.
 
 ## Webhook Checks
 
+### Check: the firewall admits Afriex's webhook addresses
+
+Expected: inbound traffic to the webhook endpoint is allowed from
+`34.197.33.100` in production and `34.234.189.210` in the sandbox.
+
+Fail condition: a firewall or allowlist in front of the endpoint that does not
+include the address for the environment — deliveries are dropped before they
+reach the handler, and nothing is logged on the application side.
+Fix: add the address to the allowlist. The address is not a substitute for
+verifying the signature.
+
 ### Check: the endpoint verifies signatures against the raw body
 
 Expected:
@@ -346,6 +373,8 @@ Source: packages/core/src/errors/ApiError.ts
 - [ ] API key read from a secret store; no key in source or client bundles
 - [ ] Separate sandbox and production keys; `environment` set explicitly
 - [ ] `retryConfig` configured — retries are off by default
+- [ ] `retryableMethods` does not include `POST` or `PATCH`
+- [ ] Afriex's webhook IP address is allowed through the firewall
 - [ ] `logLevel` is `LogLevel.ERROR` in production
 - [ ] Every `transactions.create` carries a persisted, reused `meta.idempotencyKey`
 - [ ] Order state settles on `TRANSACTION.UPDATED`, not on `create()` resolving

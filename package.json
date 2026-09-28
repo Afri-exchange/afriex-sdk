@@ -14,7 +14,7 @@
     "clean": "turbo run clean",
     "dev": "turbo run dev --parallel",
     "changeset": "changeset",
-    "version": "changeset version",
+    "version": "changeset version && node scripts/sync-sdk-version.mjs",
     "release": "turbo run build && changeset publish"
   },
   "devDependencies": {

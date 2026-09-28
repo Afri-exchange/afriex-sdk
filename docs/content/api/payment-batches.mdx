@@ -84,6 +84,8 @@ console.log(added.errors); // { "0000000000": "INVALID_BUSINESS_PAYMENT_METHOD_R
   of them are rejected. Read `errors`, keyed by account number, on every call.
 </Callout>
 
+`addRecipient()` answers `409 DUPLICATE_REQUEST` for an account that is already in the batch.
+
 ## List, Update and Remove Recipients
 
 ```typescript

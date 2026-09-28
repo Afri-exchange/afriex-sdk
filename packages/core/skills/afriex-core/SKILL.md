@@ -3,12 +3,13 @@ name: afriex-core
 description: >
   Transport, configuration, and error handling for the Afriex Business API via
   @afriex/core — AfriexClient, AfriexConfig, Environment.STAGING vs PRODUCTION,
-  baseUrl, timeout, retryConfig/maxRetries/retryableStatusCodes, the x-api-key
-  header, and the AfriexError / ApiError / RateLimitError / NetworkError /
+  baseUrl, timeout, retryConfig/maxRetries/retryableStatusCodes/
+  retryableMethods, the x-api-key, x-api-version and x-api-signature headers,
+  signRequest, and the AfriexError / ApiError / RateLimitError / NetworkError /
   ValidationError hierarchy plus AfriexErrorCode. Load when configuring an
   Afriex client, choosing sandbox vs production, tuning retries or timeouts,
-  handling or narrowing Afriex SDK errors, or calling an endpoint the typed
-  services do not cover.
+  signing requests, handling or narrowing Afriex SDK errors, or calling an
+  endpoint the typed services do not cover.
 metadata:
   type: core
   library: '@afriex/core'
@@ -49,7 +50,9 @@ console.log(response.data);
 
 `environment` selects the base URL: `Environment.STAGING` →
 `https://sandbox.api.afriex.com/api/v1`, `Environment.PRODUCTION` →
-`https://api.afriex.com/api/v1`. The key is sent as the `x-api-key` header.
+`https://api.afriex.com/api/v1`. The key is sent as the `x-api-key` header,
+and every request carries `x-api-version`, set to the version the SDK's types
+describe (`DEFAULT_API_VERSION`).
 
 ## Core Patterns
 
@@ -71,6 +74,29 @@ const client = new AfriexClient({
 
 `retryDelay` is the base for exponential backoff: attempt *n* waits
 `retryDelay * 2 ** (n - 1)` ms.
+
+Only `GET`, `PUT`, `HEAD`, `DELETE`, `OPTIONS` and `TRACE` are retried. `POST`
+and `PATCH` are sent once whatever `maxRetries` is, because repeating one can
+repeat its effect. A request that times out is not retried either.
+
+### Sign requests when payload signing is enabled
+
+```ts
+import { AfriexClient, Environment, type RequestToSign } from "@afriex/core";
+
+declare function sign(payload: string): Promise<string>;
+
+const client = new AfriexClient({
+  apiKey: process.env.AFRIEX_API_KEY!,
+  environment: Environment.PRODUCTION,
+  signRequest: ({ body }: RequestToSign) => sign(body),
+});
+```
+
+`signRequest` receives the `method`, the full `url` and the `body` exactly as
+it is sent, and its result goes in the `x-api-signature` header. Afriex defines
+the signature scheme when it enables signing for a business; the SDK only
+sends what the function returns.
 
 ### Narrow failures by error class
 
@@ -173,6 +199,52 @@ const client = new AfriexClient({
 or 429 surfaces as a thrown error with no retry attempt.
 
 Source: packages/core/src/config/Environment.ts (DEFAULT_CONFIG)
+
+### CRITICAL Retrying every POST to make writes resilient
+
+Wrong:
+
+```ts
+import { AfriexSDK, Environment } from "@afriex/sdk";
+
+const afriex = new AfriexSDK({
+  apiKey: process.env.AFRIEX_API_KEY!,
+  environment: Environment.PRODUCTION,
+  retryConfig: {
+    maxRetries: 3,
+    retryDelay: 1000,
+    retryableStatusCodes: [408, 429, 500, 502, 503, 504],
+    retryableMethods: ["GET", "POST", "PATCH"],
+  },
+});
+
+await afriex.paymentBatches.withdraw("batch_123");
+```
+
+Correct:
+
+```ts
+import { AfriexSDK, Environment } from "@afriex/sdk";
+
+const afriex = new AfriexSDK({
+  apiKey: process.env.AFRIEX_API_KEY!,
+  environment: Environment.PRODUCTION,
+  retryConfig: {
+    maxRetries: 3,
+    retryDelay: 1000,
+    retryableStatusCodes: [408, 429, 500, 502, 503, 504],
+  },
+});
+
+await afriex.paymentBatches.withdraw("batch_123");
+```
+
+`retryableMethods` applies to every request the client sends. A 503 can arrive
+after the API has acted, and a repeated `paymentBatches.withdraw` starts a
+second run that pays every recipient again. Leave `POST` out, and after a
+failed write read the state back before sending it again.
+
+Source: packages/core/src/config/Config.ts (`DEFAULT_RETRYABLE_METHODS`)
 
 ### CRITICAL Omitting environment sends test traffic to production
 

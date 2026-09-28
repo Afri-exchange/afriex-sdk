@@ -3,6 +3,8 @@ import ky, { isHTTPError, isNetworkError } from "ky";
 import { HttpClient } from "../HttpClient.js";
 import { Config } from "../../config/Config.js";
 import { Environment } from "../../config/Environment.js";
+import { SDK_VERSION } from "../../version.js";
+import packageJson from "../../../package.json";
 import {
   AfriexError,
   ApiError,
@@ -253,6 +255,137 @@ describe("HttpClient", () => {
           }),
         })
       );
+    });
+
+    it("should send the API version and the SDK version", () => {
+      expect(ky.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            "x-api-version": "2026-05-18",
+            "User-Agent": `Afriex-TypeScript-SDK/${SDK_VERSION}`,
+          }),
+        })
+      );
+    });
+
+    it("should send the API version it is configured with", () => {
+      new HttpClient(
+        new Config({ apiKey: "test-api-key", apiVersion: "2027-01-01" })
+      );
+
+      expect(ky.create).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          headers: expect.objectContaining({ "x-api-version": "2027-01-01" }),
+        })
+      );
+    });
+
+    it("should report the version in package.json", () => {
+      expect(SDK_VERSION).toBe(packageJson.version);
+    });
+
+    it("should not retry POST or PATCH by default", () => {
+      const { retry } = vi.mocked(ky.create).mock.calls[0][0] as {
+        retry: { methods: string[] };
+      };
+
+      expect(retry.methods).toEqual([
+        "get",
+        "put",
+        "head",
+        "delete",
+        "options",
+        "trace",
+      ]);
+    });
+
+    it("should retry the methods it is configured with", () => {
+      new HttpClient(
+        new Config({
+          apiKey: "test-api-key",
+          retryConfig: {
+            maxRetries: 2,
+            retryDelay: 10,
+            retryableStatusCodes: [503],
+            retryableMethods: ["GET", "POST"],
+          },
+        })
+      );
+
+      expect(ky.create).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          retry: expect.objectContaining({ methods: ["get", "post"] }),
+        })
+      );
+    });
+  });
+
+  describe("Request signing", () => {
+    type BeforeRequestHook = (state: { request: Request }) => unknown;
+
+    function signingHook(signRequest?: Config["signRequest"]) {
+      new HttpClient(new Config({ apiKey: "test-api-key", signRequest }));
+      const { hooks } = vi.mocked(ky.create).mock.lastCall![0] as {
+        hooks: { beforeRequest: BeforeRequestHook[] };
+      };
+      return hooks.beforeRequest[0];
+    }
+
+    it("should sign the method, URL and body, and send the signature", async () => {
+      const signRequest = vi.fn().mockResolvedValue("signed-value");
+      const request = new Request(
+        "https://sandbox.api.afriex.com/api/v1/transaction?page=0",
+        { method: "POST", body: JSON.stringify({ amount: "100" }) }
+      );
+
+      await signingHook(signRequest)({ request });
+
+      expect(signRequest).toHaveBeenCalledWith({
+        method: "POST",
+        url: "https://sandbox.api.afriex.com/api/v1/transaction?page=0",
+        body: '{"amount":"100"}',
+      });
+      expect(request.headers.get("x-api-signature")).toBe("signed-value");
+    });
+
+    it("should leave the body readable after signing", async () => {
+      const request = new Request("https://sandbox.api.afriex.com/api/v1/x", {
+        method: "POST",
+        body: JSON.stringify({ amount: "100" }),
+      });
+
+      await signingHook(() => "signed-value")({ request });
+
+      await expect(request.text()).resolves.toBe('{"amount":"100"}');
+    });
+
+    it("should sign an empty string for a request without a body", async () => {
+      const signRequest = vi.fn().mockReturnValue("signed-value");
+      const request = new Request("https://sandbox.api.afriex.com/api/v1/x");
+
+      await signingHook(signRequest)({ request });
+
+      expect(signRequest).toHaveBeenCalledWith({
+        method: "GET",
+        url: "https://sandbox.api.afriex.com/api/v1/x",
+        body: "",
+      });
+    });
+
+    it("should send no signature when the signer returns none", async () => {
+      const request = new Request("https://sandbox.api.afriex.com/api/v1/x");
+
+      await signingHook(() => undefined)({ request });
+
+      expect(request.headers.has("x-api-signature")).toBe(false);
+    });
+
+    it("should send no signature when no signer is configured", async () => {
+      const request = new Request("https://sandbox.api.afriex.com/api/v1/x");
+
+      await signingHook()({ request });
+
+      expect(request.headers.has("x-api-signature")).toBe(false);
     });
   });
 });

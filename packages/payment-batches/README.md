@@ -105,6 +105,8 @@ Add one recipient.
 
 **Returns:** the saved account. Its `id` is the `paymentMethodId` of the recipient, not its `recipientId`.
 
+An account that is already in the batch is answered with `409 DUPLICATE_REQUEST`.
+
 ### `addRecipients(batchId: string, recipients: PaymentBatchRecipientRequest[]): Promise<PaymentBatchOutcomes>`
 
 Add several recipients. Each one is added independently, so the call succeeds even when some of them fail.

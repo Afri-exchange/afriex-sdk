@@ -118,9 +118,17 @@ interface AfriexSDKConfig {
     maxRetries: number;
     retryDelay: number;
     retryableStatusCodes: number[]; // Default: [408, 429, 500, 502, 503, 504]
+    retryableMethods?: HttpMethod[]; // Default: every method except POST and PATCH
   };
+  apiVersion?: string; // Default: '2026-05-18', sent as x-api-version
+  signRequest?: RequestSigner; // Optional - returns the x-api-signature value
 }
 ```
+
+Retries are off by default. When they are on, `POST` and `PATCH` requests are
+still sent once unless `retryableMethods` lists them. See
+[`@afriex/core`](https://www.npmjs.com/package/@afriex/core) for retries and
+request signing.
 
 `staging` points at `https://sandbox.api.afriex.com/api/v1`, `production` at
 `https://api.afriex.com/api/v1`.

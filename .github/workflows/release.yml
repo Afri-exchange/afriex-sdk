@@ -104,6 +104,9 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
+          # Bumps the versions, then writes the new one into the SDK's
+          # User-Agent (scripts/sync-sdk-version.mjs).
+          version: pnpm run version
           publish: pnpm changeset publish
           title: "chore: release packages"
           commit: "chore: release packages"

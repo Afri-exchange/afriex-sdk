@@ -1,6 +1,11 @@
 import ky, { type KyInstance, isHTTPError, isNetworkError } from "ky";
-import { Config } from "../config/Config.js";
+import {
+  Config,
+  API_SIGNATURE_HEADER,
+  API_VERSION_HEADER,
+} from "../config/Config.js";
 import { Logger } from "../utils/logger.js";
+import { SDK_VERSION } from "../version.js";
 import {
   AfriexError,
   ApiError,
@@ -28,16 +33,37 @@ export class HttpClient {
       headers: {
         "Content-Type": "application/json",
         "x-api-key": config.apiKey,
-        "User-Agent": "Afriex-TypeScript-SDK/1.0.0",
+        [API_VERSION_HEADER]: config.apiVersion,
+        "User-Agent": `Afriex-TypeScript-SDK/${SDK_VERSION}`,
       },
       retry: {
         limit: config.maxRetries,
+        // POST and PATCH are retried only when the caller asks for it:
+        // repeating one can repeat its effect.
+        methods: config.retryableMethods.map((method) => method.toLowerCase()),
         statusCodes: config.retryableStatusCodes,
         delay: (attemptCount) =>
           config.retryDelay * Math.pow(2, attemptCount - 1),
       },
       hooks: {
         beforeRequest: [
+          async ({ request }) => {
+            const { signRequest } = config;
+            if (!signRequest) {
+              return;
+            }
+
+            // The body is read from a copy, so the request can still be sent.
+            const body = request.body ? await request.clone().text() : "";
+            const signature = await signRequest({
+              method: request.method,
+              url: request.url,
+              body,
+            });
+            if (signature) {
+              request.headers.set(API_SIGNATURE_HEADER, signature);
+            }
+          },
           ({ request }) => {
             this.logger.debug("Request:", {
               method: request.method,
