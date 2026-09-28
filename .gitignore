@@ -46,7 +46,7 @@ sample/
 **/src/**/*.d.ts
 **/src/**/*.d.ts.map
 
-.changeset/*.md
+
 !.changeset/README.md
 **_Analysis.md
 **addendum.md
