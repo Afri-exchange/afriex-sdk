@@ -1,0 +1,47 @@
+{
+  "name": "@afriex/payment-batches",
+  "version": "0.0.0",
+  "description": "Payment batch service for Afriex SDK",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@afriex/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@tanstack/intent": "^0.3.6",
+    "rimraf": "^6.1.3",
+    "typescript": "^7.0.2"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "!dist/**/*.map",
+    "skills"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Afri-exchange/afriex-sdk",
+    "directory": "packages/payment-batches"
+  },
+  "author": "Victory Lucky <luckyvictory54@gmail.com>",
+  "keywords": [
+    "tanstack-intent"
+  ]
+}

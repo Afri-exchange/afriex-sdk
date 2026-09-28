@@ -1,0 +1,156 @@
+---
+title: Payment Batches
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Payment Batches API
+
+Save a list of recipients with the amount each one is paid, then pay all of them in one call.
+
+## Create a Batch
+
+```typescript
+const batch = await afriex.paymentBatches.create({
+  name: "June payroll",
+  sourcePaymentMethod: { currencyCode: "USD" },
+});
+```
+
+**Parameters:**
+
+| Field                              | Type       | Required | Description                                                     |
+| :--------------------------------- | :--------- | :------- | :-------------------------------------------------------------- |
+| `name`                             | `string`   | Yes      | A label for the batch                                           |
+| `sourcePaymentMethod.currencyCode` | `string`   | Yes      | The wallet to pay from. Every payout is converted from it       |
+| `sourcePaymentMethod.channel`      | `"WALLET"` | -        | The only funding channel, and the default                       |
+
+The batch starts empty. Add recipients, then start the payouts.
+
+## Get, List, Update and Delete
+
+```typescript
+const batch = await afriex.paymentBatches.get("batch-id");
+
+const batches = await afriex.paymentBatches.list({ page: 0, limit: 20 });
+console.log(batches.data[0].meta?.memberCount); // recipients in the batch
+
+await afriex.paymentBatches.update("batch-id", {
+  name: "July payroll",
+  sourcePaymentMethod: { currencyCode: "USD" },
+});
+
+await afriex.paymentBatches.delete("batch-id");
+```
+
+`update()` replaces the batch whole: send the name and the funding method, even when only one of them changes. Pages start at `0`, and `limit` is capped at `100`.
+
+## Add Recipients
+
+```typescript
+// One recipient
+const saved = await afriex.paymentBatches.addRecipient("batch-id", {
+  channel: "BANK_ACCOUNT",
+  accountName: "Ada Obi",
+  accountNumber: "0123456789",
+  countryCode: "NG",
+  institution: { institutionCode: "000013", institutionName: "GTBank" },
+  amount: { value: "20000", currencyCode: "NGN" },
+});
+
+// Several recipients
+const added = await afriex.paymentBatches.addRecipients("batch-id", [
+  // ...
+]);
+
+console.log(added.successes); // { "0123456789": "Recipient added successfully" }
+console.log(added.errors); // { "0000000000": "INVALID_BUSINESS_PAYMENT_METHOD_REQUEST" }
+```
+
+**Parameters:**
+
+| Field                 | Type               | Required                          | Description                                  |
+| :-------------------- | :----------------- | :-------------------------------- | :------------------------------------------- |
+| `channel`             | `string`           | Yes                               | The payout channel, such as `BANK_ACCOUNT`   |
+| `accountName`         | `string`           | Yes                               | The account holder                           |
+| `accountNumber`       | `string`           | Yes                               | The account number, phone number or alias    |
+| `countryCode`         | `string`           | Yes                               | ISO 3166-1 alpha-2 code of the account       |
+| `institution`         | `object`           | Yes, except for `UPI` and `INTERAC` | The bank or provider, as on a payment method |
+| `amount.value`        | `string \| number` | Yes                               | What the recipient is paid on each run       |
+| `amount.currencyCode` | `string`           | Yes                               | The currency the recipient receives          |
+
+<Callout type="warn">
+  `addRecipients()` adds each recipient on its own and succeeds even when some
+  of them are rejected. Read `errors`, keyed by account number, on every call.
+</Callout>
+
+## List, Update and Remove Recipients
+
+```typescript
+const recipients = await afriex.paymentBatches.listRecipients("batch-id");
+const recipient = recipients.data[0];
+
+await afriex.paymentBatches.updateRecipient("batch-id", recipient.recipientId, {
+  channel: "BANK_ACCOUNT",
+  accountName: "Ada Obi",
+  accountNumber: "0123456789",
+  countryCode: "NG",
+  institution: { institutionCode: "000013", institutionName: "GTBank" },
+  amount: { value: "25000", currencyCode: "NGN" },
+  paymentMethodId: recipient.paymentMethodId,
+});
+
+await afriex.paymentBatches.removeRecipient("batch-id", recipient.recipientId);
+```
+
+A recipient has two ids:
+
+| Id                | What it is                                   | Where it comes from                                           |
+| :---------------- | :------------------------------------------- | :------------------------------------------------------------ |
+| `recipientId`     | The recipient in this batch                  | `listRecipients()`                                            |
+| `paymentMethodId` | The saved account the recipient is paid to   | `listRecipients()`, and `id` on `addRecipient()` and `updateRecipient()` |
+
+`updateRecipient()` and `removeRecipient()` take the `recipientId`. An update replaces the recipient whole, so send its account details as well as the amount. Removing a recipient keeps the saved account as a payment method.
+
+## Start the Payouts
+
+```typescript
+const run = await afriex.paymentBatches.withdraw("batch-id");
+
+console.log(run.successes); // keyed by recipientId
+console.log(run.errors); // keyed by recipientId
+```
+
+A recipient in `successes` has a payout in flight. The payouts settle asynchronously, so configure a webhook URL first and follow each one through `TRANSACTION.UPDATED`.
+
+<Callout type="warn">
+  Every call without a `sessionId` is a new run and pays every recipient
+  again. To retry, pass the `sessionId` of the run to retry.
+</Callout>
+
+A call made while a run of the same batch is still in progress is refused with `409`.
+
+## Retry Failed Payouts
+
+```typescript
+const sessions = await afriex.paymentBatches.listSessions("batch-id", {
+  limit: 1,
+});
+
+const lastRun = sessions.data[0];
+console.log(lastRun.meta?.results);
+// { "recipient-id": { status: "PROCESSING_FAILED", errorMessage: "..." } }
+
+await afriex.paymentBatches.withdraw("batch-id", { sessionId: lastRun.id });
+```
+
+With a `sessionId`, only the recipients that failed in that run are paid.
+
+## Key Permissions
+
+| Methods                                           | Permission                    |
+| :------------------------------------------------ | :---------------------------- |
+| `list`, `get`, `listRecipients`                   | `PAYMENT_METHOD.READ`         |
+| `create`, `update`, `delete`, and recipient changes | `PAYMENT_METHOD.CREATE`       |
+| `withdraw`                                        | `TRANSACTION.WITHDRAW.CREATE` |
+| `listSessions`                                    | `TRANSACTION.HISTORY.READ`    |

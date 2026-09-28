@@ -1,0 +1,92 @@
+---
+title: SME Registration
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# SME Registration API
+
+Register your business as its own SME in Kenya, so that dedicated KES virtual accounts are issued under your legal entity.
+
+<Callout>
+  You need this only to collect KES through dedicated virtual accounts. No
+  other corridor requires it.
+</Callout>
+
+The registration has three steps, called in order.
+
+## 1. Initiate
+
+```typescript
+const registration = await afriex.smeRegistration.initiate({
+  mobile: "+254712345678",
+  email: "admin@company.co.ke",
+  businessType: 2,
+});
+
+console.log(registration.onboardingRequestId, registration.expiresAt);
+```
+
+A one-time passcode is sent to `mobile`. `businessType` must be `2`: only Limited Liability Companies are supported.
+
+## 2. Confirm the Passcode
+
+```typescript
+const registration = await afriex.smeRegistration.confirmOtp({
+  onboardingRequestId: "onboarding-request-id",
+  otp: "483921",
+});
+
+console.log(registration.status); // DETAILS_PENDING
+```
+
+## 3. Submit the Details
+
+`submit()` takes the company details, `directors`, and optionally `organizationShareholders` and `media`. At least one director is required.
+
+The API reference does not list the company detail fields, so `submit()` sends the object you pass as it is. Upload every document with [`media.upload()`](/api/media) first, and pass the returned `key` in the field that asks for the file.
+
+## Get the Status
+
+```typescript
+const registration = await afriex.smeRegistration.getStatus();
+
+console.log(registration.status, registration.reviewStatus);
+```
+
+| Field                 | Type               | Description                                                                 |
+| :-------------------- | :----------------- | :-------------------------------------------------------------------------- |
+| `onboardingRequestId` | `string \| null`   | `null` when the business has never registered                               |
+| `status`              | `string \| null`   | How far the steps have got                                                  |
+| `reviewStatus`        | `string`           | The review outcome. Present once the registration is submitted              |
+| `rejectReasons`       | `string[] \| null` | Why the registration was rejected                                           |
+| `isReviewStatusStale` | `boolean`          | `true` when `reviewStatus` is the last known outcome, not a fresh one       |
+
+## Status Values
+
+| `status`          | Meaning                                         |
+| :---------------- | :---------------------------------------------- |
+| `OTP_PENDING`     | `initiate()` was called. Confirm the passcode   |
+| `DETAILS_PENDING` | The passcode was confirmed. Submit the details  |
+| `SUBMITTED`       | The details were submitted                      |
+| `REJECTED`        | The registration was rejected                   |
+| `EXPIRED`         | A step was not completed before `expiresAt`     |
+
+`reviewStatus` is one of `SUBMITTED`, `PROCESSING`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `CLOSED` or `UNKNOWN`. Dedicated KES virtual accounts are issued only once it is `APPROVED`. Treat `UNKNOWN` as still in review.
+
+## Mobile Numbers
+
+Every mobile number, the applicant's and each director's, must be Kenyan. These forms are accepted:
+
+| Format                        | Example         |
+| :---------------------------- | :-------------- |
+| E.164 with `+`                | `+254712345678` |
+| International without `+`     | `254712345678`  |
+| National with leading zero    | `0712345678`    |
+| National without leading zero | `712345678`     |
+
+A number from another country is rejected with `422`.
+
+## Key Permissions
+
+The three steps need the `COMPLIANCE.KYB.SUBMIT` permission, and `getStatus()` needs `COMPLIANCE.KYB.READ`.

@@ -204,6 +204,38 @@ importers:
         specifier: ^13.1.3
         version: 13.1.3
 
+  packages/media:
+    dependencies:
+      '@afriex/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@tanstack/intent':
+        specifier: ^0.3.6
+        version: 0.3.6
+      rimraf:
+        specifier: ^6.1.3
+        version: 6.1.3
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  packages/payment-batches:
+    dependencies:
+      '@afriex/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@tanstack/intent':
+        specifier: ^0.3.6
+        version: 0.3.6
+      rimraf:
+        specifier: ^6.1.3
+        version: 6.1.3
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
   packages/payment-methods:
     dependencies:
       '@afriex/core':
@@ -250,18 +282,43 @@ importers:
       '@afriex/customers':
         specifier: workspace:*
         version: link:../customers
+      '@afriex/media':
+        specifier: workspace:*
+        version: link:../media
+      '@afriex/payment-batches':
+        specifier: workspace:*
+        version: link:../payment-batches
       '@afriex/payment-methods':
         specifier: workspace:*
         version: link:../payment-methods
       '@afriex/rates':
         specifier: workspace:*
         version: link:../rates
+      '@afriex/sme-registration':
+        specifier: workspace:*
+        version: link:../sme-registration
       '@afriex/transactions':
         specifier: workspace:*
         version: link:../transactions
       '@afriex/webhooks':
         specifier: workspace:*
         version: link:../webhooks
+    devDependencies:
+      '@tanstack/intent':
+        specifier: ^0.3.6
+        version: 0.3.6
+      rimraf:
+        specifier: ^6.1.3
+        version: 6.1.3
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  packages/sme-registration:
+    dependencies:
+      '@afriex/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       '@tanstack/intent':
         specifier: ^0.3.6

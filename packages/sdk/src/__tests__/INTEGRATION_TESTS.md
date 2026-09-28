@@ -54,9 +54,11 @@ The integration tests:
 1. **Create real resources** in the sandbox environment:
 
    - Customers
-   - Payment methods
-   - Transactions
+   - Payment methods and virtual accounts
+   - Transactions, including a pool-account deposit left `IN_REVIEW`
    - Balance top-ups
+   - Uploaded files
+   - Payment batches
 
 2. **Verify API responses** match expected schemas
 
@@ -77,8 +79,13 @@ Integration tests cover:
 - ✅ Balance Service (get balance, top up sandbox)
 - ✅ Rates Service (get rates, convert)
 - ✅ Customer Service (CRUD operations, KYC updates)
-- ✅ Payment Method Service (CRUD operations, institutions)
-- ✅ Transaction Service (create, list)
+- ✅ Payment Method Service (CRUD operations, institutions, simulated transfer)
+- ✅ Transaction Service (create, list, simulate, pool-account proof)
+- ✅ Media Service (upload URL, upload)
+- ✅ Payment Batch Service (batch, recipients, run, sessions)
+
+SME registration is not covered: it needs a key with the `COMPLIANCE.KYB.*`
+permissions and a Kenyan phone that can receive the passcode.
 
 ## Debugging
 

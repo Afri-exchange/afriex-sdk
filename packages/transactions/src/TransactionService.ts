@@ -5,6 +5,9 @@ import {
   AuthorizeTransactionRequest,
   ListTransactionsParams,
   TransactionListResponse,
+  SimulateTransactionRequest,
+  SettlementAdvice,
+  SubmitPoolAccountProofRequest,
   DEFAULT_TRANSACTION_TYPE,
 } from "./types.js";
 
@@ -87,6 +90,105 @@ export class TransactionService {
     const response = await this.httpClient.post<{ data: Transaction }>(
       `/transaction/${transactionId}/authorize`,
       request
+    );
+    return response.data;
+  }
+
+  /**
+   * Finalize a pending sandbox transaction with the outcome you choose.
+   * POST /transaction/{transactionId}/simulate
+   *
+   * The transaction must still be PENDING, PROCESSING or UNKNOWN; a deposit
+   * waiting for an OTP has to be authorized first. The returned transaction
+   * is the one before it is finalized: the result arrives by the
+   * TRANSACTION.UPDATED webhook shortly after.
+   *
+   * Note: Sandbox only. Production answers 403.
+   */
+  async simulate(
+    transactionId: string,
+    request: SimulateTransactionRequest
+  ): Promise<Transaction> {
+    if (!transactionId) {
+      throw new ValidationError("Transaction ID is required");
+    }
+
+    new ValidationBuilder()
+      .required("outcome", request?.outcome)
+      .condition(
+        "outcome",
+        Boolean(request?.outcome) &&
+          request.outcome !== "success" &&
+          request.outcome !== "failed",
+        "outcome must be 'success' or 'failed'"
+      )
+      .throwIfInvalid();
+
+    const response = await this.httpClient.post<{ data: Transaction }>(
+      `/transaction/${transactionId}/simulate`,
+      { outcome: request.outcome }
+    );
+    return response.data;
+  }
+
+  /**
+   * Get the settlement and remittance advice for a transaction.
+   * GET /transaction/{transactionId}/advice
+   *
+   * Advices exist only for USD withdrawals created with
+   * `meta.settlement: "request"`. Any other transaction answers 404. The
+   * download URL is valid for 5 minutes; call again for a fresh one.
+   */
+  async getAdvice(transactionId: string): Promise<SettlementAdvice> {
+    if (!transactionId) {
+      throw new ValidationError("Transaction ID is required");
+    }
+
+    const response = await this.httpClient.get<{ data: SettlementAdvice }>(
+      `/transaction/${transactionId}/advice`
+    );
+    return response.data;
+  }
+
+  /**
+   * Submit proof of a deposit made to the business pool account.
+   * POST /transaction/pool-account
+   *
+   * Creates a deposit in IN_REVIEW. An operator then confirms or rejects the
+   * bank inflow: approval arrives as TRANSACTION.CREATED, rejection as
+   * POOL_DEPOSIT_REQUEST.REJECTED.
+   */
+  async submitPoolAccountProof(
+    request: SubmitPoolAccountProofRequest
+  ): Promise<Transaction> {
+    new ValidationBuilder()
+      .condition(
+        "amount",
+        typeof request?.amount !== "number" ||
+          Number.isNaN(request.amount) ||
+          request.amount < 0,
+        "amount must be a number that is not negative"
+      )
+      .required("customerId", request?.customerId)
+      .required("countryCode", request?.countryCode)
+      .required("reference", request?.reference)
+      .required("fileKey", request?.fileKey)
+      .required("timestamp", request?.timestamp)
+      .condition(
+        "senderDetails.name",
+        request?.senderDetails !== undefined && !request.senderDetails?.name,
+        "senderDetails.name is required when senderDetails is sent"
+      )
+      .throwIfInvalid();
+
+    const timestamp =
+      request.timestamp instanceof Date
+        ? request.timestamp.toISOString()
+        : request.timestamp;
+
+    const response = await this.httpClient.post<{ data: Transaction }>(
+      "/transaction/pool-account",
+      { ...request, timestamp }
     );
     return response.data;
   }

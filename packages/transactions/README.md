@@ -62,6 +62,24 @@ const authorized = await transactions.authorize("transaction-id", {
   type: "OTP",
   otp: "123456",
 });
+
+// Submit proof of a deposit made to the pool account
+const deposit = await transactions.submitPoolAccountProof({
+  amount: 5000,
+  customerId: "customer-id",
+  countryCode: "NG",
+  reference: "customer-reference",
+  fileKey: "key-of-the-uploaded-proof",
+  timestamp: new Date(),
+});
+
+// Get the settlement advice of a withdrawal created with settlement "request"
+const advice = await transactions.getAdvice("transaction-id");
+
+// Sandbox only: complete a pending transaction now
+const simulated = await transactions.simulate("transaction-id", {
+  outcome: "success",
+});
 ```
 
 ## API Reference
@@ -97,6 +115,32 @@ List transactions with optional pagination and filters.
 ### `authorize(transactionId: string, request: AuthorizeTransactionRequest): Promise<Transaction>`
 
 Complete a transaction that was created in a `CUSTOMER_ACTION_REQUIRED` state and needs an extra authorization step, such as an OTP on a mobile-money deposit (`meta.otpRequired: true`). Today the only supported variant is `{ type: "OTP", otp: string }`.
+
+### `submitPoolAccountProof(request: SubmitPoolAccountProofRequest): Promise<Transaction>`
+
+Submit proof of a deposit made to the business pool account. The deposit is created `IN_REVIEW`; an operator then confirms the bank inflow. Approval arrives as a `TRANSACTION.CREATED` webhook, rejection as `POOL_DEPOSIT_REQUEST.REJECTED`.
+
+**Required:** `amount`, `customerId`, `countryCode`, `reference`, `fileKey`, `timestamp`
+
+**Optional:** `senderDetails` (`name` is required when it is sent; `accountNumber`, `bankName` and `countryCode` are optional)
+
+`reference` is the customer's `reference` to credit that customer, or the pool account's own `reference` to credit the business. `fileKey` is the key of the proof, uploaded with `@afriex/media` and `type: "transaction"`. `timestamp` is an ISO 8601 string or a `Date`.
+
+A second submission that matches on every field is rejected with `409`.
+
+### `getAdvice(transactionId: string): Promise<SettlementAdvice>`
+
+Get the settlement and remittance advice of a transaction. Only a USD withdrawal created with `meta.settlement: "request"` has one; any other transaction answers `404`.
+
+**Returns:** `{ url, reference, status, version, generatedAt }`. `url` downloads the PDF and is valid for 5 minutes. `status` is `PENDING` until the withdrawal succeeds, then `COMPLETED`.
+
+### `simulate(transactionId: string, request: SimulateTransactionRequest): Promise<Transaction>`
+
+Complete a pending sandbox transaction with the outcome you choose: `{ outcome: "success" }` or `{ outcome: "failed" }`.
+
+The transaction must still be `PENDING`, `PROCESSING` or `UNKNOWN`. The returned transaction is the one before it is finalized; the final status arrives through the `TRANSACTION.UPDATED` webhook.
+
+**Note:** Sandbox only. Production answers `403`.
 
 ## Transaction Status Values
 

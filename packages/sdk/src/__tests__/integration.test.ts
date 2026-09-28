@@ -330,6 +330,157 @@ describe.skipIf(SKIP_INTEGRATION_TESTS)("Afriex SDK Integration Tests", () => {
         })
       ).rejects.toThrow();
     }, 10000);
+
+    it("should finalize a pending transaction with simulate", async () => {
+      expect(createdCustomerId).toBeDefined();
+
+      // An account number ending in 0003 keeps the payout pending until it
+      // is simulated.
+      const timestamp = Date.now();
+      const paymentMethod = await sdk.paymentMethods.create({
+        channel: "BANK_ACCOUNT",
+        customerId: createdCustomerId,
+        accountName: "Integration Test",
+        accountNumber: `01${String(timestamp).slice(-4)}0003`,
+        countryCode: "NG",
+        institution: { institutionCode: "000013", institutionName: "GTBank" },
+      });
+
+      try {
+        const transaction = await sdk.transactions.create({
+          customerId: createdCustomerId,
+          destinationId: paymentMethod.paymentMethodId,
+          sourceAmount: "5",
+          sourceCurrency: "USD",
+          destinationCurrency: "NGN",
+          meta: {
+            idempotencyKey: `simulate-${timestamp}`,
+            reference: `simulate-${timestamp}`,
+          },
+        });
+
+        const simulated = await sdk.transactions.simulate(
+          transaction.transactionId,
+          { outcome: "failed" }
+        );
+        expect(simulated.transactionId).toBe(transaction.transactionId);
+
+        // Only a withdrawal created with settlement "request" has an advice.
+        await expect(
+          sdk.transactions.getAdvice(transaction.transactionId)
+        ).rejects.toThrow();
+      } finally {
+        await sdk.paymentMethods.delete(paymentMethod.paymentMethodId);
+      }
+    }, 30000);
+  });
+
+  describe("Media Service", () => {
+    it("should create an upload URL", async () => {
+      const uploadUrl = await sdk.media.createUploadUrl({
+        fileName: `integration-${Date.now()}.png`,
+      });
+
+      expect(uploadUrl.url).toMatch(/^https:\/\//);
+      expect(uploadUrl.key).toBeDefined();
+      expect(uploadUrl.expiresIn).toBeGreaterThan(0);
+    }, 10000);
+
+    it("should upload a proof and submit it for a pool-account deposit", async () => {
+      expect(createdCustomerId).toBeDefined();
+
+      const customer = await sdk.customers.get(createdCustomerId);
+      const proof = await sdk.media.upload({
+        fileName: `proof-${Date.now()}.pdf`,
+        type: "transaction",
+        file: new TextEncoder().encode("%PDF-1.4 integration test"),
+        contentType: "application/pdf",
+      });
+      expect(proof.key).toBeDefined();
+
+      const deposit = await sdk.transactions.submitPoolAccountProof({
+        amount: 5000,
+        customerId: createdCustomerId,
+        countryCode: "NG",
+        reference: customer.reference ?? createdCustomerId,
+        fileKey: proof.key,
+        timestamp: new Date(),
+      });
+
+      expect(deposit.transactionId).toBeDefined();
+      expect(deposit.status).toBe("IN_REVIEW");
+    }, 30000);
+  });
+
+  describe("Virtual Account Simulation", () => {
+    it("should simulate a transfer into a virtual account", async () => {
+      expect(createdCustomerId).toBeDefined();
+
+      const account = await sdk.paymentMethods.createVirtualAccount({
+        currency: "NGN",
+        customerId: createdCustomerId,
+      });
+      expect(account?.accountNumber).toBeDefined();
+
+      try {
+        const transfer = await sdk.paymentMethods.simulateTransfer({
+          accountNumber: account!.accountNumber!,
+          amount: 2500,
+          currency: "NGN",
+        });
+        expect(transfer.reference).toBeDefined();
+      } finally {
+        await sdk.paymentMethods.delete(account!.paymentMethodId);
+      }
+    }, 30000);
+  });
+
+  describe("Payment Batch Service", () => {
+    it("should run a batch through its whole life", async () => {
+      const timestamp = Date.now();
+      const recipient = {
+        channel: "BANK_ACCOUNT",
+        accountName: "Integration Recipient",
+        accountNumber: `02${String(timestamp).slice(-8)}`,
+        countryCode: "NG",
+        institution: { institutionCode: "000013", institutionName: "GTBank" },
+        amount: { value: "20000", currencyCode: "NGN" },
+      };
+
+      const batch = await sdk.paymentBatches.create({
+        name: `Integration batch ${timestamp}`,
+        sourcePaymentMethod: { currencyCode: "USD" },
+      });
+      expect(batch.id).toBeDefined();
+
+      try {
+        const saved = await sdk.paymentBatches.addRecipient(
+          batch.id,
+          recipient
+        );
+
+        const recipients = await sdk.paymentBatches.listRecipients(batch.id);
+        expect(recipients.data).toHaveLength(1);
+        // addRecipient returns the saved account, not the recipient.
+        expect(recipients.data[0].paymentMethodId).toBe(saved.id);
+
+        const run = await sdk.paymentBatches.withdraw(batch.id);
+        expect(run.successes).toBeDefined();
+        expect(run.errors).toBeDefined();
+
+        const sessions = await sdk.paymentBatches.listSessions(batch.id);
+        expect(sessions.data.length).toBeGreaterThan(0);
+
+        for (const item of recipients.data) {
+          await sdk.paymentBatches.removeRecipient(batch.id, item.recipientId);
+          await sdk.paymentMethods.delete(item.paymentMethodId);
+        }
+      } finally {
+        await sdk.paymentBatches.delete(batch.id);
+      }
+
+      await expect(sdk.paymentBatches.get(batch.id)).rejects.toThrow();
+    }, 60000);
   });
 
   describe("Cleanup", () => {

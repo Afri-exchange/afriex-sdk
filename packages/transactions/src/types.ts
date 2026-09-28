@@ -333,3 +333,76 @@ export interface TransactionListResponse {
   page: number;
   total: number;
 }
+
+/** The outcome to finalize a sandbox transaction to. */
+export type SimulateTransactionOutcome = "success" | "failed";
+
+/**
+ * Request body for POST /transaction/{transactionId}/simulate.
+ * Sandbox only.
+ */
+export interface SimulateTransactionRequest {
+  outcome: SimulateTransactionOutcome;
+}
+
+/**
+ * A settlement and remittance advice, as returned by
+ * GET /transaction/{transactionId}/advice. It is not a tax invoice.
+ */
+export interface SettlementAdvice {
+  /** Presigned download URL for the advice PDF. Valid for 5 minutes. */
+  url: string;
+  /** Stable advice reference, reused when the advice is regenerated. */
+  reference: string;
+  /** `PENDING` until the withdrawal succeeds, `COMPLETED` afterwards. */
+  status: "PENDING" | "COMPLETED";
+  /** Starts at 1 and increments when the advice is regenerated on completion. */
+  version: number;
+  generatedAt: string;
+}
+
+/** Who sent a pool-account deposit. Helps the reviewer reconcile it. */
+export interface PoolAccountProofSender {
+  /** The sender's full name. */
+  name: string;
+  /** The sender's account number or wallet identifier. */
+  accountNumber?: string;
+  /** The sender's bank or financial institution. */
+  bankName?: string;
+  /** ISO 3166-1 alpha-2 country code for the sender. */
+  countryCode?: string;
+}
+
+/**
+ * Request body for POST /transaction/pool-account: proof of a deposit made to
+ * the business pool account.
+ */
+export interface SubmitPoolAccountProofRequest {
+  /** The deposit amount in the major currency unit. */
+  amount: number;
+  /**
+   * The customer the deposit should be credited to. It must match the customer
+   * `reference` names. It is not used for routing when `reference` is the
+   * business's own pool-account reference.
+   */
+  customerId: string;
+  /** ISO 3166-1 alpha-2 country code of the pool account. */
+  countryCode: string;
+  /**
+   * The pool-account reference: `Customer.reference` to credit a customer, or
+   * the `reference` on the business pool account to credit the business.
+   */
+  reference: string;
+  /**
+   * The object key of the uploaded proof of payment. Request the upload URL
+   * with type `transaction`; a key from a `user` upload is rejected as not
+   * found.
+   */
+  fileKey: string;
+  /**
+   * When the payment was sent, as an ISO 8601 string or a Date. Two
+   * submissions that match on every field, this one included, are duplicates.
+   */
+  timestamp: string | Date;
+  senderDetails?: PoolAccountProofSender;
+}

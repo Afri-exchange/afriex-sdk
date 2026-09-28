@@ -17,6 +17,8 @@ import {
   PoolAccountResponse,
   InstitutionCodesParams,
   InstitutionCodesResponse,
+  SimulateTransferRequest,
+  SimulateTransferResult,
 } from "./types.js";
 
 export class PaymentMethodService {
@@ -245,6 +247,43 @@ export class PaymentMethodService {
       return null;
     }
     return data as PaymentMethod;
+  }
+
+  /**
+   * Simulate a bank transfer into a sandbox virtual account
+   * POST /payment-method/virtual-account/simulate-transfer
+   *
+   * Sandbox virtual accounts receive no money on their own. This credits one
+   * the way the provider's deposit notification would, so balances and the
+   * transaction webhook behave as in production. For an account created with
+   * an `amount`, also pass the `reference` it was issued with.
+   *
+   * Note: Sandbox only. Production answers 403.
+   */
+  async simulateTransfer(
+    request: SimulateTransferRequest
+  ): Promise<SimulateTransferResult> {
+    new ValidationBuilder()
+      .required("accountNumber", request?.accountNumber)
+      .condition(
+        "amount",
+        typeof request?.amount !== "number" || !(request.amount > 0),
+        "amount must be a positive number"
+      )
+      .required("currency", request?.currency)
+      .condition(
+        "outcome",
+        request?.outcome !== undefined &&
+          request.outcome !== "success" &&
+          request.outcome !== "failed",
+        "outcome must be 'success' or 'failed'"
+      )
+      .throwIfInvalid();
+
+    const response = await this.httpClient.post<{
+      data: SimulateTransferResult;
+    }>("/payment-method/virtual-account/simulate-transfer", request);
+    return response.data;
   }
 
   /**

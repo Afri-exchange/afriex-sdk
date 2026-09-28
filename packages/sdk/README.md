@@ -93,9 +93,12 @@ const isValid = afriex.webhooks.verify(payload, signature);
 | `afriex.customers`      | Customer CRUD, KYC updates, and document verification       |
 | `afriex.transactions`   | Create, authorize, list, and track transactions             |
 | `afriex.paymentMethods` | Bank, mobile money, crypto wallets, virtual & pool accounts |
+| `afriex.paymentBatches` | Pay many recipients in one call                             |
 | `afriex.balance`        | Organization wallet balances and sandbox top-ups            |
 | `afriex.rates`          | Exchange rates and conversions                              |
 | `afriex.checkout`       | Hosted checkout sessions (card, virtual account, momo)      |
+| `afriex.media`          | Upload invoices, payment proofs and documents               |
+| `afriex.smeRegistration` | Register the business for dedicated KES virtual accounts   |
 | `afriex.webhooks`       | Webhook signature verification and sandbox test triggers    |
 
 Every service is always available on the client. `afriex.webhooks.verify()` returns `false`
@@ -154,9 +157,12 @@ For smaller bundle sizes, install packages individually:
 | `@afriex/customers`       | Customer management and KYC                            |
 | `@afriex/transactions`    | Transaction handling                                   |
 | `@afriex/payment-methods` | Payment methods, institutions, virtual & pool accounts |
+| `@afriex/payment-batches` | Bulk payouts to a saved list of recipients             |
 | `@afriex/balance`         | Balance queries and sandbox top-ups                    |
 | `@afriex/rates`           | Exchange rates and conversions                         |
 | `@afriex/checkout`        | Hosted checkout sessions                               |
+| `@afriex/media`           | File uploads                                           |
+| `@afriex/sme-registration` | SME registration for KES virtual accounts             |
 | `@afriex/webhooks`        | Webhook verification and test triggers                 |
 
 Each service package depends only on `@afriex/core`, so you can mix and match.

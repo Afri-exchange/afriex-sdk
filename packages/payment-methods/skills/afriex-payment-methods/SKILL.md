@@ -4,7 +4,8 @@ description: >
   Create and resolve Afriex payout and collection rails with
   @afriex/payment-methods PaymentMethodService — create, get, list, delete,
   getInstitutions, resolveAccount, resolveInstitutionCode, getCryptoWallet,
-  listVirtualAccounts, createVirtualAccount, and getPoolAccount. Covers
+  listVirtualAccounts, createVirtualAccount, getPoolAccount, and the
+  sandbox-only simulateTransfer. Covers
   PaymentChannel vs CreatablePaymentChannel, the fields each channel requires,
   the WITHDRAW/DEPOSIT type flag, institution codes, SWIFT and routing-number
   lookup, the list filters, and static vs dynamic virtual accounts. Load when
@@ -167,6 +168,38 @@ console.log(staticAccount?.accountNumber, dynamicAccount?.reference);
 account, `amount` mints a single-use one that carries its own `reference`. A
 virtual account for a customer can only be `NGN`; omit `customerId` to create
 one in another currency for the business.
+
+### Pay into a sandbox virtual account
+
+```ts
+import { AfriexSDK, Environment } from "@afriex/sdk";
+
+const afriex = new AfriexSDK({
+  apiKey: process.env.AFRIEX_SANDBOX_API_KEY!,
+  environment: Environment.STAGING,
+});
+
+const account = await afriex.paymentMethods.createVirtualAccount({
+  currency: "NGN",
+  customerId: "cus_123",
+  amount: 50000,
+});
+
+if (account?.accountNumber) {
+  const transfer = await afriex.paymentMethods.simulateTransfer({
+    accountNumber: account.accountNumber,
+    amount: 50000,
+    currency: "NGN",
+    reference: account.reference,
+  });
+  console.log(transfer.reference);
+}
+```
+
+A sandbox virtual account receives no money on its own. `simulateTransfer`
+credits it the way a bank transfer would, and the deposit is reported by the
+transaction webhook. `reference` is needed only for an account created with an
+`amount`. Production answers `403`.
 
 ### Resolve a SWIFT code or US routing number to a bank name
 

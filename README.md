@@ -79,9 +79,12 @@ if (afriex.webhooks) {
 | `afriex.customers`      | Customer CRUD and KYC management             |
 | `afriex.transactions`   | Create and track transactions                |
 | `afriex.paymentMethods` | Bank, mobile money, crypto, virtual accounts |
+| `afriex.paymentBatches` | Pay many recipients in one call              |
 | `afriex.balance`        | Organization wallet balances                 |
 | `afriex.rates`          | Exchange rates and conversions               |
 | `afriex.checkout`       | Hosted checkout sessions                     |
+| `afriex.media`          | File uploads                                 |
+| `afriex.smeRegistration` | SME registration for KES virtual accounts   |
 | `afriex.webhooks`       | Webhook signature verification (optional)    |
 
 ## Configuration
@@ -104,9 +107,12 @@ For smaller bundle sizes, install packages individually:
 | `@afriex/customers`       | Customer management           |
 | `@afriex/transactions`    | Transaction handling          |
 | `@afriex/payment-methods` | Payment methods               |
+| `@afriex/payment-batches` | Bulk payouts                  |
 | `@afriex/balance`         | Balance queries               |
 | `@afriex/rates`           | Exchange rates                |
 | `@afriex/checkout`        | Hosted checkout sessions      |
+| `@afriex/media`           | File uploads                  |
+| `@afriex/sme-registration` | SME registration             |
 | `@afriex/webhooks`        | Webhook verification          |
 
 ## AI agents

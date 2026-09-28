@@ -6,6 +6,9 @@ import { BalanceService } from "@afriex/balance";
 import { RateService } from "@afriex/rates";
 import { CheckoutService } from "@afriex/checkout";
 import { WebhookService } from "@afriex/webhooks";
+import { MediaService } from "@afriex/media";
+import { PaymentBatchService } from "@afriex/payment-batches";
+import { SmeRegistrationService } from "@afriex/sme-registration";
 
 export interface AfriexSDKConfig extends AfriexConfig {
   webhookPublicKey?: string;
@@ -15,9 +18,12 @@ export class AfriexSDK extends AfriexClient {
   public readonly customers: CustomerService;
   public readonly transactions: TransactionService;
   public readonly paymentMethods: PaymentMethodService;
+  public readonly paymentBatches: PaymentBatchService;
   public readonly balance: BalanceService;
   public readonly rates: RateService;
   public readonly checkout: CheckoutService;
+  public readonly media: MediaService;
+  public readonly smeRegistration: SmeRegistrationService;
   public readonly webhooks: WebhookService;
   public readonly webhookVerifier?: WebhookService;
 
@@ -29,9 +35,12 @@ export class AfriexSDK extends AfriexClient {
     this.customers = new CustomerService(httpClient);
     this.transactions = new TransactionService(httpClient);
     this.paymentMethods = new PaymentMethodService(httpClient);
+    this.paymentBatches = new PaymentBatchService(httpClient);
     this.balance = new BalanceService(httpClient);
     this.rates = new RateService(httpClient);
     this.checkout = new CheckoutService(httpClient);
+    this.media = new MediaService(httpClient);
+    this.smeRegistration = new SmeRegistrationService(httpClient);
     this.webhooks = new WebhookService(httpClient, config.webhookPublicKey);
 
     if (config.webhookPublicKey) {
@@ -54,6 +63,9 @@ export { BalanceService } from "@afriex/balance";
 export { RateService } from "@afriex/rates";
 export { CheckoutService } from "@afriex/checkout";
 export { WebhookVerifier, WebhookService } from "@afriex/webhooks";
+export { MediaService } from "@afriex/media";
+export { PaymentBatchService } from "@afriex/payment-batches";
+export { SmeRegistrationService } from "@afriex/sme-registration";
 
 // Re-export types from each package - using explicit exports to avoid conflicts
 export type {
@@ -81,6 +93,11 @@ export type {
   TransactionAmounts,
   SwapAmount,
   AuthorizeTransactionRequest,
+  SimulateTransactionRequest,
+  SimulateTransactionOutcome,
+  SettlementAdvice,
+  SubmitPoolAccountProofRequest,
+  PoolAccountProofSender,
   ListTransactionsParams,
   TransactionListResponse,
   TransactionListType,
@@ -136,6 +153,8 @@ export type {
   ListPoolAccountsParams,
   VirtualAccountListResponse,
   PoolAccountResponse,
+  SimulateTransferRequest,
+  SimulateTransferResult,
 } from "@afriex/payment-methods";
 
 export type {
@@ -157,6 +176,50 @@ export type {
   CheckoutCustomer,
   CheckoutChannel,
 } from "@afriex/checkout";
+
+export type {
+  MediaUploadType,
+  CreateUploadUrlRequest,
+  UploadUrl,
+  UploadableFile,
+  UploadFileRequest,
+  UploadedFile,
+} from "@afriex/media";
+
+export type {
+  PaymentBatch,
+  PaymentBatchRequest,
+  PaymentBatchSource,
+  PaymentBatchFundingMethod,
+  PaymentBatchListItem,
+  PaymentBatchListParams,
+  PaymentBatchListResponse,
+  PaymentBatchInstitution,
+  PaymentBatchAmount,
+  PaymentBatchRecipientRequest,
+  UpdatePaymentBatchRecipientRequest,
+  SavedPaymentBatchRecipient,
+  PaymentBatchRecipient,
+  PaymentBatchRecipientListResponse,
+  PaymentBatchOutcomes,
+  WithdrawPaymentBatchParams,
+  PaymentBatchSession,
+  PaymentBatchSessionResult,
+  PaymentBatchSessionListResponse,
+} from "@afriex/payment-batches";
+
+export type {
+  SmeRegistration,
+  SmeRegistrationRequest,
+  SmeRegistrationStep,
+  SmeRegistrationStatus,
+  SmeRegistrationStatusResult,
+  SmeReviewStatus,
+  SmeBusinessType,
+  InitiateSmeRegistrationData,
+  ConfirmSmeRegistrationOtpData,
+  SubmitSmeRegistrationData,
+} from "@afriex/sme-registration";
 
 export type {
   WebhookPayload,

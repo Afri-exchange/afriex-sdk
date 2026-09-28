@@ -30,6 +30,12 @@ export const AfriexErrorCode = {
     "INVALID_BUSINESS_PAYMENT_METHOD_REQUEST",
   INVALID_BUSINESS_PAYMENT_METHOD_ID: "INVALID_BUSINESS_PAYMENT_METHOD_ID",
   INVALID_BUSINESS_POOL_ACCOUNT_REQUEST: "INVALID_BUSINESS_POOL_ACCOUNT_REQUEST",
+  /**
+   * 400. Observed in the sandbox on the payment batch endpoints, e.g. for a
+   * recipient or session that is not in the batch.
+   */
+  INVALID_BUSINESS_PAYMENT_BATCH_REQUEST:
+    "INVALID_BUSINESS_PAYMENT_BATCH_REQUEST",
   INVALID_KYC_DOCUMENT_TYPE: "INVALID_KYC_DOCUMENT_TYPE",
   /** 400. The channel is not supported by the endpoint, e.g. institution lookup. */
   INVALID_TRANSACTION_CHANNEL: "INVALID_TRANSACTION_CHANNEL",
@@ -51,6 +57,8 @@ export const AfriexErrorCode = {
   PHONE_NUMBER_ALREADY_EXISTS: "PHONE_NUMBER_ALREADY_EXISTS",
 
   // Not found
+  /** 404. Observed in the sandbox for a payment batch that does not exist. */
+  NOT_FOUND_ERROR: "NOT_FOUND_ERROR",
   BUSINESS_CUSTOMER_NOT_FOUND: "BUSINESS_CUSTOMER_NOT_FOUND",
   BUSINESS_TRANSACTION_NOT_FOUND: "BUSINESS_TRANSACTION_NOT_FOUND",
   BUSINESS_PAYMENT_METHOD_NOT_FOUND: "BUSINESS_PAYMENT_METHOD_NOT_FOUND",
@@ -103,6 +111,7 @@ export const ERROR_CODE_MESSAGES: Record<AfriexErrorCode, string> = {
   [AfriexErrorCode.INVALID_BUSINESS_PAYMENT_METHOD_REQUEST]: "Invalid business payment method request",
   [AfriexErrorCode.INVALID_BUSINESS_PAYMENT_METHOD_ID]: "Invalid business payment method id",
   [AfriexErrorCode.INVALID_BUSINESS_POOL_ACCOUNT_REQUEST]: "Invalid business pool account request",
+  [AfriexErrorCode.INVALID_BUSINESS_PAYMENT_BATCH_REQUEST]: "Invalid business payment batch request",
   [AfriexErrorCode.INVALID_KYC_DOCUMENT_TYPE]: "Invalid KYC document type or value",
   [AfriexErrorCode.INVALID_TRANSACTION_CHANNEL]: "The channel is not supported by this endpoint",
   [AfriexErrorCode.OTP_INCORRECT]: "The one-time password is incorrect",
@@ -110,6 +119,7 @@ export const ERROR_CODE_MESSAGES: Record<AfriexErrorCode, string> = {
   [AfriexErrorCode.DUPLICATE_REQUEST]: "A request with the same idempotency key or reference already exists",
   [AfriexErrorCode.EMAIL_ALREADY_EXISTS]: "A customer with this email already exists",
   [AfriexErrorCode.PHONE_NUMBER_ALREADY_EXISTS]: "A customer with this phone number already exists",
+  [AfriexErrorCode.NOT_FOUND_ERROR]: "The resource was not found",
   [AfriexErrorCode.BUSINESS_CUSTOMER_NOT_FOUND]: "Business customer not found",
   [AfriexErrorCode.BUSINESS_TRANSACTION_NOT_FOUND]: "Business transaction not found",
   [AfriexErrorCode.BUSINESS_PAYMENT_METHOD_NOT_FOUND]: "Business payment method not found",

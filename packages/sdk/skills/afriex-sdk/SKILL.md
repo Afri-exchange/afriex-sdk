@@ -3,7 +3,8 @@ name: afriex-sdk
 description: >
   Entry point for the Afriex Business API TypeScript SDK (@afriex/sdk) — the
   AfriexSDK / Afriex facade and its customers, transactions, paymentMethods,
-  balance, rates, checkout, and webhooks services. Covers installation,
+  paymentBatches, balance, rates, checkout, media, smeRegistration, and
+  webhooks services. Covers installation,
   AfriexSDKConfig including webhookPublicKey, choosing sandbox vs production,
   the end-to-end customer → payment method → transaction → webhook payout flow,
   and which sub-skill covers each service. Load when starting an Afriex
@@ -58,9 +59,12 @@ import it where needed — each construction builds a fresh HTTP client.
 | Register senders and recipients, submit KYC       | `afriex.customers`         | `afriex-customers`                |
 | Add bank, mobile money, or virtual account rails  | `afriex.paymentMethods`    | `afriex-payment-methods`          |
 | Send payouts, collect deposits, swap currencies   | `afriex.transactions`      | `afriex-transactions`             |
+| Pay many recipients in one call                   | `afriex.paymentBatches`    | `afriex-payment-batches`          |
 | Read wallet balances, fund a sandbox wallet       | `afriex.balance`           | `afriex-balance`                  |
 | Quote exchange rates                              | `afriex.rates`             | `afriex-rates`                    |
 | Host a payment page                               | `afriex.checkout`          | `afriex-checkout`                 |
+| Upload an invoice, a proof or a document          | `afriex.media`             | `afriex-media`                    |
+| Register for dedicated KES virtual accounts       | `afriex.smeRegistration`   | `afriex-sme-registration`         |
 | Verify inbound events, replay test events         | `afriex.webhooks`          | `afriex-webhooks`                 |
 | Configure transport, errors, retries              | `AfriexClient`, errors  | `afriex-core`                     |
 | Ship to production safely                         | —                       | `afriex-go-live`                  |

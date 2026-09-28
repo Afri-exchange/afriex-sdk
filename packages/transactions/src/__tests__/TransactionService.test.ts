@@ -563,4 +563,168 @@ describe("TransactionService", () => {
       ).rejects.toThrow(ValidationError);
     });
   });
+
+  describe("simulate", () => {
+    it("should post the outcome and return the transaction", async () => {
+      const mockTransaction = { transactionId: "txn-123", status: "PENDING" };
+
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: mockTransaction,
+      });
+
+      const result = await transactionService.simulate("txn-123", {
+        outcome: "success",
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        "/transaction/txn-123/simulate",
+        { outcome: "success" }
+      );
+      expect(result).toEqual(mockTransaction);
+    });
+
+    it("should accept the failed outcome", async () => {
+      (mockHttpClient.post as Mock).mockResolvedValue({ data: {} });
+
+      await transactionService.simulate("txn-123", { outcome: "failed" });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        "/transaction/txn-123/simulate",
+        { outcome: "failed" }
+      );
+    });
+
+    it("should throw ValidationError when transactionId is missing", async () => {
+      await expect(
+        transactionService.simulate("", { outcome: "success" })
+      ).rejects.toThrow("Transaction ID is required");
+    });
+
+    it("should throw ValidationError for an outcome the API does not know", async () => {
+      await expect(
+        transactionService.simulate("txn-123", {
+          outcome: "SUCCESS" as "success",
+        })
+      ).rejects.toThrow(ValidationError);
+      expect(mockHttpClient.post).not.toHaveBeenCalled();
+    });
+
+    it("should throw ValidationError when the outcome is missing", async () => {
+      await expect(
+        transactionService.simulate("txn-123", {} as { outcome: "success" })
+      ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  describe("getAdvice", () => {
+    it("should return the settlement advice", async () => {
+      const mockAdvice = {
+        url: "https://example.com/advice.pdf",
+        reference: "ADV-0001",
+        status: "PENDING",
+        version: 1,
+        generatedAt: "2026-05-18T10:00:00.000Z",
+      };
+
+      (mockHttpClient.get as Mock).mockResolvedValue({ data: mockAdvice });
+
+      const result = await transactionService.getAdvice("txn-123");
+
+      expect(mockHttpClient.get).toHaveBeenCalledWith(
+        "/transaction/txn-123/advice"
+      );
+      expect(result).toEqual(mockAdvice);
+    });
+
+    it("should throw ValidationError when transactionId is missing", async () => {
+      await expect(transactionService.getAdvice("")).rejects.toThrow(
+        "Transaction ID is required"
+      );
+    });
+  });
+
+  describe("submitPoolAccountProof", () => {
+    const proof = {
+      amount: 5000,
+      customerId: "cust-123",
+      countryCode: "NG",
+      reference: "AFX4821",
+      fileKey: "business-id/proof.pdf",
+      timestamp: "2026-05-18T10:00:00.000Z",
+    };
+
+    it("should submit the proof and return the transaction", async () => {
+      const mockTransaction = { transactionId: "txn-123", status: "IN_REVIEW" };
+
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: mockTransaction,
+      });
+
+      const result = await transactionService.submitPoolAccountProof({
+        ...proof,
+        senderDetails: { name: "John Doe", bankName: "GTBank" },
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        "/transaction/pool-account",
+        { ...proof, senderDetails: { name: "John Doe", bankName: "GTBank" } }
+      );
+      expect(result).toEqual(mockTransaction);
+    });
+
+    it("should send a Date timestamp as an ISO 8601 string", async () => {
+      (mockHttpClient.post as Mock).mockResolvedValue({ data: {} });
+
+      await transactionService.submitPoolAccountProof({
+        ...proof,
+        timestamp: new Date("2026-05-18T10:00:00.000Z"),
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        "/transaction/pool-account",
+        { ...proof, timestamp: "2026-05-18T10:00:00.000Z" }
+      );
+    });
+
+    it.each(["customerId", "countryCode", "reference", "fileKey", "timestamp"])(
+      "should throw ValidationError when %s is missing",
+      async (field) => {
+        await expect(
+          transactionService.submitPoolAccountProof({ ...proof, [field]: "" })
+        ).rejects.toThrow(ValidationError);
+        expect(mockHttpClient.post).not.toHaveBeenCalled();
+      }
+    );
+
+    it("should throw ValidationError when the amount is not a number", async () => {
+      await expect(
+        transactionService.submitPoolAccountProof({
+          ...proof,
+          amount: "5000" as unknown as number,
+        })
+      ).rejects.toMatchObject({
+        fields: [
+          {
+            field: "amount",
+            message: "amount must be a number that is not negative",
+          },
+        ],
+      });
+    });
+
+    it("should throw ValidationError when the amount is negative", async () => {
+      await expect(
+        transactionService.submitPoolAccountProof({ ...proof, amount: -1 })
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("should throw ValidationError when senderDetails has no name", async () => {
+      await expect(
+        transactionService.submitPoolAccountProof({
+          ...proof,
+          senderDetails: { name: "", bankName: "GTBank" },
+        })
+      ).rejects.toThrow(ValidationError);
+    });
+  });
 });

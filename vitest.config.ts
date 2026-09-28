@@ -16,6 +16,13 @@ export default defineConfig({
       "@afriex/rates": path.resolve("./packages/rates/src/index.ts"),
       "@afriex/checkout": path.resolve("./packages/checkout/src/index.ts"),
       "@afriex/webhooks": path.resolve("./packages/webhooks/src/index.ts"),
+      "@afriex/media": path.resolve("./packages/media/src/index.ts"),
+      "@afriex/payment-batches": path.resolve(
+        "./packages/payment-batches/src/index.ts"
+      ),
+      "@afriex/sme-registration": path.resolve(
+        "./packages/sme-registration/src/index.ts"
+      ),
       "@afriex/sdk": path.resolve("./packages/sdk/src/index.ts"),
     },
   },

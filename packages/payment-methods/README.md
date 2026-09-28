@@ -87,6 +87,13 @@ const virtualAccount = await paymentMethods.createVirtualAccount({
 const poolAccount = await paymentMethods.getPoolAccount({
   country: "NG",
 });
+
+// Sandbox only: credit a virtual account the way a bank transfer would
+const transfer = await paymentMethods.simulateTransfer({
+  accountNumber: "6520751033",
+  amount: 2500,
+  currency: "NGN",
+});
 ```
 
 ## Payment Channels
@@ -209,6 +216,18 @@ Get the pool account for a country. Use its `reference` to reconcile incoming de
 **Optional:** `customerId`
 
 `listPoolAccounts()` is the deprecated name for the same call.
+
+### `simulateTransfer(request: SimulateTransferRequest): Promise<SimulateTransferResult>`
+
+Credit a bank transfer into a sandbox virtual account, which receives no money on its own. The deposit is reported by the transaction webhook.
+
+**Required:** `accountNumber`, `amount`, `currency`
+
+**Optional:** `reference` (needed only for an account created with an `amount`: pass the reference it was issued with), `outcome` (`success` by default, or `failed`)
+
+**Returns:** `{ reference }`, the reference of the new deposit
+
+**Note:** Sandbox only. Production answers `403`.
 
 ## License
 

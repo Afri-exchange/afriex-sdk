@@ -1,0 +1,69 @@
+---
+title: Media
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Media API
+
+Upload a file and get back the key that other requests take.
+
+## Upload a File
+
+```typescript
+import { readFile } from "node:fs/promises";
+
+const { key } = await afriex.media.upload({
+  fileName: "invoice-1042.pdf",
+  type: "transaction",
+  file: await readFile("./invoice-1042.pdf"),
+  contentType: "application/pdf",
+});
+```
+
+**Parameters:**
+
+| Field         | Type                                  | Required | Description                                                          |
+| :------------ | :------------------------------------ | :------- | :------------------------------------------------------------------- |
+| `fileName`    | `string`                              | Yes      | The name of the file                                                 |
+| `file`        | `Blob \| ArrayBuffer \| Uint8Array`   | Yes      | The file contents. A Node.js `Buffer` is a `Uint8Array`              |
+| `type`        | `"transaction" \| "user"`             | -        | What the file is for. Defaults to `user`                             |
+| `contentType` | `string`                              | -        | Sent as the `Content-Type` of the upload                             |
+
+`upload()` requests an upload URL, sends the file to it, and returns `{ key }`. The upload goes to the storage host, so it is sent without your API key.
+
+## Where the Key Goes
+
+| The file is                       | Upload it with `type` | Pass the key as                                                                     |
+| :-------------------------------- | :-------------------- | :---------------------------------------------------------------------------------- |
+| An invoice for a SWIFT withdrawal | `transaction`         | `meta.invoice` on [`transactions.create()`](/api/transactions#create-transaction)   |
+| A pool-account payment proof      | `transaction`         | `fileKey` on [`transactions.submitPoolAccountProof()`](/api/transactions#submit-a-pool-account-payment-proof) |
+| An identity document              | `user`                | The document field that asks for it                                                 |
+
+<Callout type="warn">
+  `transaction` and `user` files are stored apart. A payment proof uploaded
+  without `type: "transaction"` uploads successfully and is then rejected as
+  not found when you submit it.
+</Callout>
+
+## Create an Upload URL
+
+Use `createUploadUrl()` when something other than your server sends the file, such as a browser.
+
+```typescript
+const { url, key, expiresIn } = await afriex.media.createUploadUrl({
+  fileName: "passport.png",
+  type: "user",
+});
+
+// Send the file with PUT before the URL expires
+await fetch(url, { method: "PUT", body: file });
+```
+
+| Field       | Type     | Description                                                          |
+| :---------- | :------- | :------------------------------------------------------------------- |
+| `url`       | `string` | The presigned URL to `PUT` the file to                               |
+| `key`       | `string` | The reference to pass to later requests                              |
+| `expiresIn` | `number` | How many seconds the URL stays valid for the upload, usually `300`   |
+
+Later requests take the `key`. No endpoint accepts the presigned URL.

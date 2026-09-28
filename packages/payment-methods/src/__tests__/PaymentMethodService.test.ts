@@ -572,4 +572,85 @@ describe("PaymentMethodService", () => {
       ).rejects.toThrow("Country is required");
     });
   });
+
+  describe("simulateTransfer", () => {
+    it("should simulate a transfer and return its reference", async () => {
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: { reference: "ref-123" },
+      });
+
+      const result = await paymentMethodService.simulateTransfer({
+        accountNumber: "9900112233",
+        amount: 5000,
+        currency: "NGN",
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        "/payment-method/virtual-account/simulate-transfer",
+        { accountNumber: "9900112233", amount: 5000, currency: "NGN" }
+      );
+      expect(result).toEqual({ reference: "ref-123" });
+    });
+
+    it("should pass the reference and outcome through", async () => {
+      (mockHttpClient.post as Mock).mockResolvedValue({
+        data: { reference: "ref-123" },
+      });
+
+      await paymentMethodService.simulateTransfer({
+        accountNumber: "9900112233",
+        amount: 5000,
+        currency: "NGN",
+        reference: "order-1",
+        outcome: "failed",
+      });
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        "/payment-method/virtual-account/simulate-transfer",
+        {
+          accountNumber: "9900112233",
+          amount: 5000,
+          currency: "NGN",
+          reference: "order-1",
+          outcome: "failed",
+        }
+      );
+    });
+
+    it("should throw ValidationError when the account number is missing", async () => {
+      await expect(
+        paymentMethodService.simulateTransfer({
+          accountNumber: "",
+          amount: 5000,
+          currency: "NGN",
+        })
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("should throw ValidationError when the amount is not positive", async () => {
+      await expect(
+        paymentMethodService.simulateTransfer({
+          accountNumber: "9900112233",
+          amount: 0,
+          currency: "NGN",
+        })
+      ).rejects.toMatchObject({
+        fields: [
+          { field: "amount", message: "amount must be a positive number" },
+        ],
+      });
+    });
+
+    it("should throw ValidationError for an outcome the API does not know", async () => {
+      await expect(
+        paymentMethodService.simulateTransfer({
+          accountNumber: "9900112233",
+          amount: 5000,
+          currency: "NGN",
+          outcome: "pending" as "success",
+        })
+      ).rejects.toThrow(ValidationError);
+      expect(mockHttpClient.post).not.toHaveBeenCalled();
+    });
+  });
 });

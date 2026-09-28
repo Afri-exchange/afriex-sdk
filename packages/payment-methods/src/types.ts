@@ -439,6 +439,32 @@ export interface PoolAccountResponse {
 }
 
 /**
+ * Request body for POST /payment-method/virtual-account/simulate-transfer.
+ * Sandbox only.
+ */
+export interface SimulateTransferRequest {
+  /** The virtual account number to pay into. */
+  accountNumber: string;
+  /** The amount transferred. */
+  amount: number;
+  /** The account's currency. */
+  currency: string;
+  /**
+   * The reference a one-time (amount-bound) account was issued with. Not
+   * needed for a reusable account.
+   */
+  reference?: string;
+  /** Defaults to `success`. */
+  outcome?: "success" | "failed";
+}
+
+/** The simulated transfer, as accepted by the sandbox. */
+export interface SimulateTransferResult {
+  /** The reference of the new deposit. */
+  reference: string;
+}
+
+/**
  * Parameters for listing pool accounts
  * GET /payment-method/pool-account
  */

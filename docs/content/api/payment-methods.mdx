@@ -234,6 +234,36 @@ if (dynamicAccount) {
   `PAYMENT_METHOD.CREATED` webhook.
 </Callout>
 
+## Simulate a Transfer (Sandbox)
+
+A sandbox virtual account receives no money on its own. Credit one the way a real bank transfer would:
+
+```typescript
+const transfer = await afriex.paymentMethods.simulateTransfer({
+  accountNumber: "6520751033",
+  amount: 2500,
+  currency: "NGN",
+});
+
+console.log(transfer.reference);
+```
+
+**Parameters:**
+
+| Field           | Type                    | Required | Description                                                                    |
+| :-------------- | :---------------------- | :------- | :----------------------------------------------------------------------------- |
+| `accountNumber` | `string`                | Yes      | The virtual account number to pay into                                         |
+| `amount`        | `number`                | Yes      | The amount transferred                                                         |
+| `currency`      | `string`                | Yes      | The account's currency                                                         |
+| `reference`     | `string`                | -        | The reference a one-time account was issued with. Needed only for that account |
+| `outcome`       | `"success" \| "failed"` | -        | Defaults to `success`                                                          |
+
+The deposit is reported by the transaction webhook, and the balance changes as it would in production.
+
+<Callout type="warn">
+  Sandbox only. Production answers `403`.
+</Callout>
+
 ## Get Pool Account
 
 Get the pool account for a supported country:
@@ -250,3 +280,5 @@ console.log(poolAccount.accountNumber, poolAccount.reference);
 **Pool accounts** are shared across multiple customers in a country. Use the `reference` on the returned payment method to reconcile incoming deposits. Every call also sends a `PAYMENT_METHOD.UPDATED` webhook carrying the pool account.
 
 `listPoolAccounts()` is the deprecated name for the same call.
+
+After a customer pays into the pool account, [submit the proof of payment](/api/transactions#submit-a-pool-account-payment-proof) to have the deposit credited.

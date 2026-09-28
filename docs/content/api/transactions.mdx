@@ -2,6 +2,8 @@
 title: Transactions
 ---
 
+import { Callout } from "fumadocs-ui/components/callout";
+
 # Transactions API
 
 Create and track money transfers.
@@ -130,6 +132,86 @@ const transaction = await afriex.transactions.authorize("transaction-id", {
   otp: "123456",
 });
 ```
+
+## Submit a Pool-Account Payment Proof
+
+When a customer pays into your pool account, submit the proof of payment so the deposit can be confirmed and credited.
+
+```typescript
+import { readFile } from "node:fs/promises";
+
+const proof = await afriex.media.upload({
+  fileName: "transfer-receipt.pdf",
+  type: "transaction",
+  file: await readFile("./transfer-receipt.pdf"),
+});
+
+const deposit = await afriex.transactions.submitPoolAccountProof({
+  amount: 5000,
+  customerId: customer.customerId,
+  countryCode: "NG",
+  reference: customer.reference,
+  fileKey: proof.key,
+  timestamp: new Date("2026-05-18T10:00:00.000Z"),
+  senderDetails: { name: "John Doe", bankName: "GTBank" },
+});
+
+console.log(deposit.status); // IN_REVIEW
+```
+
+**Parameters:**
+
+| Field           | Type             | Required | Description                                                                                              |
+| :-------------- | :--------------- | :------- | :------------------------------------------------------------------------------------------------------- |
+| `amount`        | `number`         | Yes      | The deposit amount, in the major currency unit                                                           |
+| `customerId`    | `string`         | Yes      | The customer to credit. It must be the customer `reference` names                                        |
+| `countryCode`   | `string`         | Yes      | ISO 3166-1 alpha-2 code of the pool account                                                              |
+| `reference`     | `string`         | Yes      | `customer.reference` to credit a customer, or the pool account's own `reference` to credit the business  |
+| `fileKey`       | `string`         | Yes      | The key of the uploaded proof. Upload it with `type: "transaction"`                                      |
+| `timestamp`     | `string \| Date` | Yes      | When the payment was sent                                                                                |
+| `senderDetails` | `object`         | -        | `name` (required when the object is sent), `accountNumber`, `bankName`, `countryCode`                    |
+
+The deposit is created `IN_REVIEW`. An operator then confirms the bank inflow: approval arrives as a `TRANSACTION.CREATED` webhook, rejection as `POOL_DEPOSIT_REQUEST.REJECTED`.
+
+A second submission that matches on every field is rejected with `409`.
+
+## Get a Settlement Advice
+
+A USD withdrawal created with `meta.settlement: "request"` gets a settlement and remittance advice, as a PDF.
+
+```typescript
+const advice = await afriex.transactions.getAdvice("transaction-id");
+
+console.log(advice.url, advice.status, advice.version);
+```
+
+| Field         | Type                       | Description                                                          |
+| :------------ | :------------------------- | :------------------------------------------------------------------- |
+| `url`         | `string`                   | Download URL for the PDF, valid for 5 minutes                        |
+| `reference`   | `string`                   | The advice reference. It stays the same when the advice is regenerated |
+| `status`      | `"PENDING" \| "COMPLETED"` | `PENDING` until the withdrawal succeeds                              |
+| `version`     | `number`                   | Starts at `1` and goes up when the advice is regenerated             |
+| `generatedAt` | `string`                   | When this version was generated                                      |
+
+Any other transaction answers `404`. The advice is not a tax invoice.
+
+## Simulate an Outcome (Sandbox)
+
+Complete a pending sandbox transaction now, with the outcome you choose.
+
+```typescript
+const transaction = await afriex.transactions.simulate("transaction-id", {
+  outcome: "failed", // or "success"
+});
+```
+
+The transaction must still be `PENDING`, `PROCESSING` or `UNKNOWN`. A deposit waiting for an OTP has to be [authorized](#authorize-transaction) first.
+
+`simulate()` returns the transaction as it stands before it is finalized. The final status arrives a few seconds later through the `TRANSACTION.UPDATED` webhook, or on the next `get()`.
+
+<Callout type="warn">
+  Sandbox only. Production answers `403`.
+</Callout>
 
 ## Status Values
 

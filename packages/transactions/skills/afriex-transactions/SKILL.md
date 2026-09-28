@@ -2,13 +2,15 @@
 name: afriex-transactions
 description: >
   Move money with @afriex/transactions TransactionService — create WITHDRAW,
-  DEPOSIT, and SWAP transactions, get, list, and authorize. Covers the required
+  DEPOSIT, and SWAP transactions, get, list, authorize, submitPoolAccountProof,
+  getAdvice, and the sandbox-only simulate. Covers the required
   meta.idempotencyKey and meta.reference, sourceAmount/destinationAmount string
   amounts, shouldPreferSourceAmount, TransactionStatus values including
   CUSTOMER_ACTION_REQUIRED and OTP authorization, TransactionChannel and status
-  list filters, and meta.failureReason AFX_* codes. Load when sending a payout,
-  collecting a deposit, swapping currencies, polling transaction status, or
-  handling a failed transfer.
+  list filters, meta.failureReason AFX_* codes, pool-account payment proofs,
+  settlement advices, and the sandbox test values. Load when sending a payout,
+  collecting a deposit, swapping currencies, polling transaction status,
+  testing an outcome in the sandbox, or handling a failed transfer.
 metadata:
   type: core
   library: '@afriex/transactions'
@@ -164,6 +166,39 @@ over time, so fall back to `message` for a code you do not recognise.
 
 `IN_REVIEW` and `RFI_REQUESTED` are review states: the transaction is still in
 flight. Treat them, and any status you do not recognise, as non-terminal.
+
+### Submit proof of a deposit made to the pool account
+
+```ts
+import { AfriexSDK } from "@afriex/sdk";
+
+const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
+
+const customer = await afriex.customers.get("cus_123");
+
+const deposit = await afriex.transactions.submitPoolAccountProof({
+  amount: 5000,
+  customerId: customer.customerId,
+  countryCode: "NG",
+  reference: customer.reference ?? customer.customerId,
+  fileKey: "business-id/transfer-receipt.pdf",
+  timestamp: new Date("2026-05-18T10:00:00.000Z"),
+});
+
+console.log(deposit.transactionId, deposit.status);
+```
+
+`fileKey` is the key of the proof, uploaded with `afriex.media.upload` and
+`type: "transaction"`. The deposit is created `IN_REVIEW` and credits nothing
+yet: approval arrives as `TRANSACTION.CREATED`, rejection as
+`POOL_DEPOSIT_REQUEST.REJECTED`. A second submission that matches on every
+field, `timestamp` included, is answered with `409`.
+
+### Test an outcome in the sandbox
+
+`simulate(transactionId, { outcome })` completes a pending sandbox transaction
+now, and the last digits of an account number choose an outcome on their own.
+See [references/sandbox-testing.md](references/sandbox-testing.md).
 
 ## Common Mistakes
 

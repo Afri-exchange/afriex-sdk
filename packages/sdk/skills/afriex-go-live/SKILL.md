@@ -188,9 +188,36 @@ export async function seedTestWallet(): Promise<void> {
 }
 ```
 
-Fail condition: `topUpSandbox` or `triggerTestWebhook` reachable on a
-production code path — both answer `403 FORBIDDEN` there.
+Fail condition: `balance.topUpSandbox`, `webhooks.triggerTestWebhook`,
+`transactions.simulate` or `paymentMethods.simulateTransfer` reachable on a
+production code path — all four answer `403 FORBIDDEN` there.
 Fix: guard them behind an environment check or keep them in test-only modules.
+
+### Check: no sandbox test value reaches production
+
+Expected:
+
+```ts
+const SANDBOX_OUTCOME_SUFFIXES = ["0001", "0002", "0003", "0004", "0005"];
+
+export function assertRealAccount(accountNumber: string): void {
+  if (process.env.NODE_ENV !== "production") {
+    return;
+  }
+  if (SANDBOX_OUTCOME_SUFFIXES.some((suffix) => accountNumber.endsWith(suffix))) {
+    console.warn("account number matches a sandbox test value", accountNumber);
+  }
+}
+```
+
+In the sandbox, an account number, phone number or card number ending in
+`0001` to `0005` chooses the outcome of a transaction, the OTP is always
+`123456`, and `SIMULATE_INSTANT` in `meta.reference` completes a transaction
+early. None of this applies in production, where those are ordinary values.
+
+Fail condition: a fixture account, the OTP `123456` or a `SIMULATE_INSTANT`
+reference hard-coded on a path that runs in production.
+Fix: keep test values in fixtures that only the test environment loads.
 
 ## Webhook Checks
 
@@ -322,7 +349,8 @@ Source: packages/core/src/errors/ApiError.ts
 - [ ] `logLevel` is `LogLevel.ERROR` in production
 - [ ] Every `transactions.create` carries a persisted, reused `meta.idempotencyKey`
 - [ ] Order state settles on `TRANSACTION.UPDATED`, not on `create()` resolving
-- [ ] `topUpSandbox` and `triggerTestWebhook` are unreachable in production
+- [ ] `topUpSandbox`, `triggerTestWebhook`, `simulate` and `simulateTransfer` are unreachable in production
+- [ ] No sandbox test account, OTP or `SIMULATE_INSTANT` reference on a production path
 - [ ] Webhook route uses a raw body parser and `verifyAndParse`
 - [ ] `AFRIEX_WEBHOOK_PUBLIC_KEY` asserted at boot
 - [ ] Webhook handlers deduplicate on `transactionId` plus `status`

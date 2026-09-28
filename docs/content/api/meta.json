@@ -5,9 +5,12 @@
     "customers",
     "transactions",
     "payment-methods",
+    "payment-batches",
     "checkout",
     "balance",
     "rates",
+    "media",
+    "sme-registration",
     "webhooks"
   ]
 }

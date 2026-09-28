@@ -32,7 +32,10 @@
     "@afriex/balance": "workspace:*",
     "@afriex/rates": "workspace:*",
     "@afriex/checkout": "workspace:*",
-    "@afriex/webhooks": "workspace:*"
+    "@afriex/webhooks": "workspace:*",
+    "@afriex/media": "workspace:*",
+    "@afriex/payment-batches": "workspace:*",
+    "@afriex/sme-registration": "workspace:*"
   },
   "devDependencies": {
     "@tanstack/intent": "^0.3.6",
