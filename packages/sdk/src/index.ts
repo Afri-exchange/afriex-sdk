@@ -162,14 +162,21 @@ export type {
   TransactionWebhookPayload,
   TransactionEventType,
   TransactionWebhookData,
+  TransactionWebhookMeta,
+  TransactionWebhookFailureReason,
   TransactionWebhookStatus,
   CheckoutSessionWebhookPayload,
   CheckoutSessionEventType,
   CheckoutSessionWebhookData,
+  CheckoutSessionWebhookCustomer,
+  PoolDepositRequestWebhookPayload,
+  PoolDepositRequestEventType,
+  PoolDepositRejectedWebhookData,
   TriggerWebhookRequest,
   TriggerWebhookResult,
   TriggerWebhookResponse,
   WebhookEventType,
+  TriggerableWebhookEventType,
 } from "@afriex/webhooks";
 
 export { WEBHOOK_SIGNATURE_HEADER } from "@afriex/webhooks";

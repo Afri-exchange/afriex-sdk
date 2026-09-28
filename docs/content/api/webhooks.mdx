@@ -47,6 +47,9 @@ app.post("/webhook", (req, res) => {
       case "CHECKOUT_SESSION.CREATED":
         console.log("Checkout session created:", event.data);
         break;
+      case "POOL_DEPOSIT_REQUEST.REJECTED":
+        console.log("Pool deposit rejected:", event.data);
+        break;
     }
 
     res.status(200).send("OK");
@@ -108,6 +111,8 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 <Callout type="note">
   Test webhook triggers only work in sandbox environment.
+  `POOL_DEPOSIT_REQUEST.REJECTED` cannot be triggered: it is delivered by the
+  pool-account review flow only.
 </Callout>
 
 ## Event Types
@@ -130,10 +135,16 @@ import { Callout } from "fumadocs-ui/components/callout";
     name: string,
     email: string,
     phone: string,
-    countryCode: string
+    countryCode: string,
+    meta?: Record<string, unknown>,
+    createdAt?: string,
+    updatedAt?: string
   }
 }
 ```
+
+`CUSTOMER.DELETED` carries the same full object: the customer's last known
+state. There is no slimmed-down delete payload and no `deletedAt` field.
 
 ### Transaction Events
 
@@ -154,8 +165,8 @@ import { Callout } from "fumadocs-ui/components/callout";
     destinationId: string,
     status: 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'CANCELLED' |
             'REFUNDED' | 'RETRY' | 'UNKNOWN' | 'SCHEDULED' |
-            'CUSTOMER_ACTION_REQUIRED' | 'REJECTED' | 'IN_REVIEW' | 'DISPUTED' |
-            'DISPUTE_RESOLVED' | 'DISPUTE_WON' | 'DISPUTE_LOST' |
+            'CUSTOMER_ACTION_REQUIRED' | 'REJECTED' | 'IN_REVIEW' | 'RFI_REQUESTED' |
+            'DISPUTED' | 'DISPUTE_RESOLVED' | 'DISPUTE_WON' | 'DISPUTE_LOST' |
             'DISPUTE_EVIDENCE_SUBMITTED',
     type: string,
     channel?: string,
@@ -164,7 +175,9 @@ import { Callout } from "fumadocs-ui/components/callout";
     sourceCurrency: string,
     destinationAmount: string,
     destinationCurrency: string,
-    meta: { idempotencyKey?, reference?, narration?, invoice? },
+    rate?: string, // 1 sourceCurrency = rate destinationCurrency
+    fee?: string,  // in sourceCurrency; omitted when no fee applied
+    meta: { idempotencyKey?, reference?, narration?, invoice?, failureReason? },
     createdAt: string,
     updatedAt: string
   }
@@ -209,6 +222,46 @@ import { Callout } from "fumadocs-ui/components/callout";
 ```typescript
 {
   event: 'CHECKOUT_SESSION.CREATED',
-  data: Record<string, unknown>
+  data: {
+    sessionId: string,
+    merchantReference: string,
+    amount: number, // minor units
+    currency: string,
+    expiresAt: string,
+    createdAt?: string,
+    afriexTransactionId?: string, // once paid
+    paidAt?: string,              // once paid
+    metadata?: Record<string, string>,
+    customer?: { name?, email?, phone?, countryCode? }
+  }
 }
 ```
+
+<Callout type="warn">
+  This event fires when the session is created. It is not a payment signal.
+  Follow `TRANSACTION.UPDATED` on the transaction the session produces.
+</Callout>
+
+### Pool Deposit Events
+
+| Event                           | Description                                         |
+| :------------------------------ | :-------------------------------------------------- |
+| `POOL_DEPOSIT_REQUEST.REJECTED` | A submitted pool-account deposit was rejected in review |
+
+**Payload:**
+
+```typescript
+{
+  event: 'POOL_DEPOSIT_REQUEST.REJECTED',
+  data: {
+    transactionId: string,
+    reference: string,
+    amount?: number,
+    currency?: string,
+    rejectionReason: string,       // free text; do not branch on it
+    resubmissionRequired: boolean  // true: correct and resubmit; false: final
+  }
+}
+```
+
+An approved deposit arrives as `TRANSACTION.CREATED`.

@@ -63,7 +63,10 @@ app.post(
           // Handle payment method events
           break;
         case "CHECKOUT_SESSION.CREATED":
-          // Handle checkout session events
+          // The session was created. This is not a payment signal.
+          break;
+        case "POOL_DEPOSIT_REQUEST.REJECTED":
+          // A pool-account deposit was rejected during review
           break;
       }
 
@@ -88,7 +91,11 @@ app.post(
 - `TRANSACTION.CREATED`
 - `TRANSACTION.UPDATED`
 
-The payload's `data` includes `merchantReference` (mirrors `meta.reference`) and `meta.reference`; `status` covers the full set of transaction statuses (`PENDING`, `PROCESSING`, `SUCCESS`, `FAILED`, `CANCELLED`, `REFUNDED`, `RETRY`, `UNKNOWN`, `SCHEDULED`, `CUSTOMER_ACTION_REQUIRED`, `REJECTED`, `IN_REVIEW`, `DISPUTED`, `DISPUTE_RESOLVED`, `DISPUTE_WON`, `DISPUTE_LOST`, `DISPUTE_EVIDENCE_SUBMITTED`).
+The payload's `data` includes `merchantReference` (mirrors `meta.reference`), plus `rate` and `fee` at the top level beside the amounts. When `status` is `FAILED` or `REJECTED`, `meta.failureReason` carries a stable `AFX_*` code.
+
+`status` covers the full set of transaction statuses (`PENDING`, `PROCESSING`, `SUCCESS`, `FAILED`, `CANCELLED`, `REFUNDED`, `RETRY`, `UNKNOWN`, `SCHEDULED`, `CUSTOMER_ACTION_REQUIRED`, `REJECTED`, `IN_REVIEW`, `RFI_REQUESTED`, `DISPUTED`, `DISPUTE_RESOLVED`, `DISPUTE_WON`, `DISPUTE_LOST`, `DISPUTE_EVIDENCE_SUBMITTED`). `IN_REVIEW` and `RFI_REQUESTED` are review states, so treat them as non-terminal.
+
+`TRANSACTION.UPDATED` fires on intermediate statuses too. Branch on `status` before treating a delivery as final.
 
 ### Payment Method Events
 
@@ -102,20 +109,28 @@ The payload's `data` includes the payment method's lifecycle `status` (`active`,
 
 - `CHECKOUT_SESSION.CREATED`
 
+The payload's `data` carries `sessionId`, `merchantReference`, `amount`, `currency`, `expiresAt`, `metadata` and `customer`, plus `afriexTransactionId` and `paidAt` once the session is paid. The event fires when the session is created. It is not a payment signal: follow `TRANSACTION.UPDATED`.
+
+### Pool Deposit Events
+
+- `POOL_DEPOSIT_REQUEST.REJECTED`
+
+Sent when a pool-account deposit you submitted proof for is rejected during review. The payload's `data` carries `transactionId`, `reference`, `amount`, `currency`, `rejectionReason` and `resubmissionRequired`. Branch on `resubmissionRequired`, not on the free-text `rejectionReason`. An approved deposit arrives as `TRANSACTION.CREATED`.
+
 ## API Reference
 
-### `verify(payload: string, signature: string): boolean`
+### `verify(payload: string | Buffer, signature: string): boolean`
 
 Verify a webhook signature using RSA SHA256.
 
 **Parameters:**
 
-- `payload`: Raw webhook payload string
+- `payload`: The raw request body, as the string or Buffer your server received. Never a re-serialized object
 - `signature`: Base64-encoded signature from `x-webhook-signature` header
 
 **Returns:** `boolean` - Whether signature is valid
 
-### `verifyAndParse(payload: string, signature: string): WebhookPayload`
+### `verifyAndParse(payload: string | Buffer, signature: string): WebhookPayload`
 
 Verify signature and parse the webhook event.
 
@@ -136,7 +151,7 @@ const result = await afriex.webhooks.triggerTestWebhook({
 
 **Parameters:**
 
-- `event` (required): One of the [webhook event types](#webhook-event-types)
+- `event` (required): One of the [webhook event types](#webhook-event-types), except `POOL_DEPOSIT_REQUEST.REJECTED`, which the trigger cannot fire
 - `entityId` (required unless `resourceId` is supplied): The 24-character hex id of the relevant customer, payment method, or transaction — or a UUID v4 for `CHECKOUT_SESSION.CREATED`
 - `resourceId` — **deprecated** alias for `entityId`. Still works (mapped to `entityId` before the request is sent) but logs a deprecation warning; use `entityId` instead.
 

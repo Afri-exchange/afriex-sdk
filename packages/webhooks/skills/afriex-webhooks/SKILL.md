@@ -5,8 +5,8 @@ description: >
   verify, verifyAndParse, and triggerTestWebhook, plus the WebhookVerifier
   wrapper. Covers RSA-SHA256 base64 signatures in the x-webhook-signature
   header (WEBHOOK_SIGNATURE_HEADER), raw-body verification, the
-  CUSTOMER/PAYMENT_METHOD/TRANSACTION/CHECKOUT_SESSION event union and payload
-  shapes, and entityId vs the deprecated resourceId. Load when building a
+  CUSTOMER/PAYMENT_METHOD/TRANSACTION/CHECKOUT_SESSION/POOL_DEPOSIT_REQUEST
+  event union and payload shapes, and entityId vs the deprecated resourceId. Load when building a
   webhook endpoint, validating a signature, or replaying test events in
   sandbox.
 metadata:
@@ -81,7 +81,10 @@ function handle(event: WebhookPayload): void {
       console.log(event.data.paymentMethodId, event.data.channel);
       break;
     case "CHECKOUT_SESSION.CREATED":
-      console.log(event.data);
+      console.log(event.data.merchantReference, event.data.expiresAt);
+      break;
+    case "POOL_DEPOSIT_REQUEST.REJECTED":
+      console.log(event.data.transactionId, event.data.resubmissionRequired);
       break;
     default:
       console.log("unhandled event", event.event);
@@ -90,7 +93,9 @@ function handle(event: WebhookPayload): void {
 ```
 
 `WebhookPayload` is a discriminated union on `event`, so each branch narrows
-`data` to the matching shape.
+`data` to the matching shape. `CHECKOUT_SESSION.CREATED` fires when the session
+is created and is not a payment signal. `POOL_DEPOSIT_REQUEST.REJECTED` reports
+a pool-account deposit rejected in review; branch on `resubmissionRequired`.
 
 ### Act only on terminal transaction states
 
@@ -144,6 +149,7 @@ await afriex.webhooks.triggerTestWebhook({
 
 `entityId` is the 24-character hex id of the customer, payment method, or
 transaction — or a UUID v4 for `CHECKOUT_SESSION.CREATED`.
+`POOL_DEPOSIT_REQUEST.REJECTED` cannot be triggered; the API answers 400 for it.
 
 ## Common Mistakes
 

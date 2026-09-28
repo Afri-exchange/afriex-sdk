@@ -59,6 +59,85 @@ describe("WebhookService", () => {
         "Public key is required for webhook verification"
       );
     });
+
+    it("should verify and parse a raw Buffer body", () => {
+      const service = new WebhookService(undefined, publicKey);
+      const webhookPayload = {
+        event: "TRANSACTION.UPDATED",
+        data: {
+          transactionId: "txn-123",
+          status: "RFI_REQUESTED",
+          rate: "1423.59945",
+          fee: "0.15",
+        },
+      };
+      const body = Buffer.from(JSON.stringify(webhookPayload), "utf8");
+      const signer = crypto.createSign("SHA256");
+      signer.update(body);
+      const signature = signer.sign(privateKey, "base64");
+
+      expect(service.verify(body, signature)).toBe(true);
+      expect(service.verifyAndParse(body, signature)).toEqual(webhookPayload);
+    });
+
+    it("should return false for an empty Buffer body", () => {
+      const service = new WebhookService(undefined, publicKey);
+
+      expect(service.verify(Buffer.alloc(0), "signature")).toBe(false);
+    });
+
+    it("should narrow a pool deposit rejection by its event name", () => {
+      const service = new WebhookService(undefined, publicKey);
+      const payload = JSON.stringify({
+        event: "POOL_DEPOSIT_REQUEST.REJECTED",
+        data: {
+          transactionId: "69528240ba52c13b669fb239",
+          reference: "afx121011",
+          amount: 5000,
+          currency: "NGN",
+          rejectionReason: "Sender name does not match the submitted proof",
+          resubmissionRequired: true,
+        },
+      });
+      const signer = crypto.createSign("SHA256");
+      signer.update(payload);
+      const signature = signer.sign(privateKey, "base64");
+
+      const event = service.verifyAndParse(payload, signature);
+
+      expect(event.event).toBe("POOL_DEPOSIT_REQUEST.REJECTED");
+      if (event.event === "POOL_DEPOSIT_REQUEST.REJECTED") {
+        expect(event.data.resubmissionRequired).toBe(true);
+        expect(event.data.transactionId).toBe("69528240ba52c13b669fb239");
+      }
+    });
+
+    it("should narrow a checkout session event to its typed fields", () => {
+      const service = new WebhookService(undefined, publicKey);
+      const payload = JSON.stringify({
+        event: "CHECKOUT_SESSION.CREATED",
+        data: {
+          sessionId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+          merchantReference: "order-12345",
+          amount: 500000,
+          currency: "NGN",
+          expiresAt: "2026-12-29T13:45:10.123Z",
+          customer: { name: "John Doe", countryCode: "NG" },
+        },
+      });
+      const signer = crypto.createSign("SHA256");
+      signer.update(payload);
+      const signature = signer.sign(privateKey, "base64");
+
+      const event = service.verifyAndParse(payload, signature);
+
+      if (event.event === "CHECKOUT_SESSION.CREATED") {
+        expect(event.data.merchantReference).toBe("order-12345");
+        expect(event.data.customer?.countryCode).toBe("NG");
+      } else {
+        throw new Error("expected a checkout session event");
+      }
+    });
   });
 
   describe("triggerTestWebhook", () => {
