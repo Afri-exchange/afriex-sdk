@@ -53,8 +53,10 @@ const transaction = await afriex.transactions.create({
 console.log(transaction.transactionId, transaction.status);
 ```
 
-Amounts are decimal strings (`"100.00"`), not numbers. `meta.idempotencyKey`
-and `meta.reference` are both required on every create.
+Amounts are accepted as decimal strings (`"100.00"`) or numbers, and always
+come back as strings. One amount is enough: send `sourceAmount` or
+`destinationAmount` and the API derives the other at the live rate.
+`meta.idempotencyKey` and `meta.reference` are both required on every create.
 
 ## Core Patterns
 
@@ -111,8 +113,9 @@ const swap = await afriex.transactions.create({
 console.log(swap.destinationAmount, swap.rate);
 ```
 
-`SWAP` needs no `customerId`, no `destinationId`, and no `destinationAmount` —
-the API computes the payout from the live rate.
+`SWAP` needs no `customerId` and no `destinationId`, and takes exactly one
+amount. The API computes the other side from the live rate and rejects a swap
+that sends both.
 
 ### Filter the transaction list by several statuses and channels
 
@@ -127,8 +130,8 @@ const afriex = new AfriexSDK({
 const failed = await afriex.transactions.list({
   status: ["FAILED", "REJECTED"],
   channel: ["BANK_ACCOUNT", "MOBILE_MONEY"],
-  fromDate: "2026-01-01",
-  toDate: "2026-01-31",
+  fromDate: "2026-01-01T00:00:00.000Z",
+  toDate: "2026-01-31T23:59:59.999Z",
   limit: 100,
 });
 
@@ -138,6 +141,7 @@ for (const transaction of failed.data) {
 ```
 
 Array filters are joined into comma-separated query values by the service.
+Pages start at `0`.
 
 ### Decide whether a failure is worth retrying
 
@@ -155,7 +159,11 @@ if (transaction.status === "FAILED" || transaction.status === "REJECTED") {
 ```
 
 `failureReason.code` is a stable `AFX_*` value; `retryable` says whether
-resubmitting with a fresh `idempotencyKey` can succeed.
+resubmitting with a fresh `idempotencyKey` can succeed. The set of codes grows
+over time, so fall back to `message` for a code you do not recognise.
+
+`IN_REVIEW` and `RFI_REQUESTED` are review states: the transaction is still in
+flight. Treat them, and any status you do not recognise, as non-terminal.
 
 ## Common Mistakes
 
@@ -222,6 +230,11 @@ A timeout or 5xx can leave a transaction created on the Afriex side; retrying
 with a new key makes it a distinct transaction, so the recipient is paid twice.
 Generate the key once per logical payment and reuse it for every attempt.
 
+A reused key, or a reused `reference`, is answered with
+`409 DUPLICATE_REQUEST`. The original transaction is not replayed, so a 409
+means the payment already exists: look it up with
+`list({ reference })` before deciding anything else.
+
 Source: packages/transactions/src/types.ts (`TransactionMeta.idempotencyKey`)
 
 ### CRITICAL Treating a resolved create() as settled money
@@ -286,7 +299,7 @@ Wrong:
 import type { Transaction } from "@afriex/sdk";
 
 function isSettled(transaction: Transaction): boolean {
-  return (transaction.status as string) === "COMPLETED";
+  return transaction.status === "COMPLETED";
 }
 ```
 
@@ -300,10 +313,10 @@ function isSettled(transaction: Transaction): boolean {
 }
 ```
 
-`TransactionStatus` has no `COMPLETED` member — the terminal success value is
-`SUCCESS`, so the comparison is never true and settled payouts are treated as
-still pending. (`COMPLETED` exists only on `TopUpTransactionStatus` in
-`@afriex/balance`, which is a different union.)
+The API never returns `COMPLETED` — the terminal success value is `SUCCESS`,
+so the comparison is never true and settled payouts are treated as still
+pending. `TransactionStatus.COMPLETED` exists only as a deprecated member for
+older stored values, and the list endpoint rejects it as a filter.
 
 Source: packages/transactions/src/types.ts (`TransactionStatus`)
 

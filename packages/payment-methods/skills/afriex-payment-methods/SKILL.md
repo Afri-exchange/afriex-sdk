@@ -4,11 +4,12 @@ description: >
   Create and resolve Afriex payout and collection rails with
   @afriex/payment-methods PaymentMethodService — create, get, list, delete,
   getInstitutions, resolveAccount, resolveInstitutionCode, getCryptoWallet,
-  listVirtualAccounts, createVirtualAccount, and listPoolAccounts. Covers
-  PaymentChannel vs CreatablePaymentChannel, the WITHDRAW/DEPOSIT type flag,
-  institution codes, SWIFT and routing-number lookup, static vs dynamic virtual
-  accounts, and production-only endpoints. Load when adding a bank account or
-  mobile money wallet, resolving an account name, or issuing a virtual account.
+  listVirtualAccounts, createVirtualAccount, and getPoolAccount. Covers
+  PaymentChannel vs CreatablePaymentChannel, the fields each channel requires,
+  the WITHDRAW/DEPOSIT type flag, institution codes, SWIFT and routing-number
+  lookup, the list filters, and static vs dynamic virtual accounts. Load when
+  adding a bank account or mobile money wallet, resolving an account name, or
+  issuing a virtual account.
 metadata:
   type: core
   library: '@afriex/payment-methods'
@@ -81,8 +82,9 @@ const resolved = await afriex.paymentMethods.resolveAccount({
 console.log(resolved.data.recipientName);
 ```
 
-`institutionCode` is required when `channel` is `BANK_ACCOUNT`; `MOBILE_MONEY`
-resolves from the phone number alone.
+`institutionCode` is required on both channels: the bank code for
+`BANK_ACCOUNT`, the provider code for `MOBILE_MONEY`. Get it from
+`getInstitutions`.
 
 ### Create a collection rail (DEPOSIT capability)
 
@@ -99,13 +101,42 @@ const collectionRail = await afriex.paymentMethods.create({
   type: "DEPOSIT",
   customerId: "cus_123",
   accountName: "Ada Lovelace",
-  accountNumber: "+254712345678",
+  accountNumber: "254712345678",
   countryCode: "KE",
-  institution: { institutionCode: "MPESA", institutionName: "M-Pesa" },
+  institution: { institutionCode: "SAFARICOM", institutionName: "SAFARICOM" },
 });
 
 console.log(collectionRail.paymentMethodId);
 ```
+
+For `MOBILE_MONEY`, `accountNumber` is the phone number as digits only:
+country code plus national number. A leading `+` is rejected.
+
+### Create a rail addressed by an alias (UPI, Interac)
+
+```ts
+import { AfriexSDK, Environment } from "@afriex/sdk";
+
+const afriex = new AfriexSDK({
+  apiKey: process.env.AFRIEX_API_KEY!,
+  environment: Environment.STAGING,
+});
+
+const upi = await afriex.paymentMethods.create({
+  channel: "UPI",
+  customerId: "cus_123",
+  accountName: "Raj Kumar",
+  accountNumber: "rajkumar@upi",
+  countryCode: "IN",
+});
+
+console.log(upi.paymentMethodId);
+```
+
+`UPI` and `INTERAC` take no `institution`: the UPI ID or Interac email
+identifies the account. Every other creatable channel except
+`VIRTUAL_BANK_ACCOUNT` requires `accountName`, `accountNumber` and
+`institution`.
 
 ### Issue a static or dynamic virtual account
 
@@ -114,7 +145,7 @@ import { AfriexSDK, Environment } from "@afriex/sdk";
 
 const afriex = new AfriexSDK({
   apiKey: process.env.AFRIEX_API_KEY!,
-  environment: Environment.PRODUCTION,
+  environment: Environment.STAGING,
 });
 
 const staticAccount = await afriex.paymentMethods.createVirtualAccount({
@@ -127,14 +158,15 @@ const dynamicAccount = await afriex.paymentMethods.createVirtualAccount({
   currency: "NGN",
   customerId: "cus_123",
   amount: 50000,
-  reference: "invoice_772",
 });
 
-console.log(staticAccount.accountNumber, dynamicAccount.expiresInMinutes);
+console.log(staticAccount?.accountNumber, dynamicAccount?.reference);
 ```
 
 `label` and `amount` are mutually exclusive: `label` names a permanent
-account, `amount` mints a single-use one.
+account, `amount` mints a single-use one that carries its own `reference`. A
+virtual account for a customer can only be `NGN`; omit `customerId` to create
+one in another currency for the business.
 
 ### Resolve a SWIFT code or US routing number to a bank name
 
@@ -152,10 +184,11 @@ const bank = await afriex.paymentMethods.resolveInstitutionCode({
   searchTerm: "021000021",
 });
 
-console.log(bank?.data.bankName);
+console.log(bank.data?.bankName);
 ```
 
 `routing_number` lookups are US-only; every other country uses `swift_code`.
+`data` is `null` when the code does not resolve.
 
 ## Common Mistakes
 
@@ -172,9 +205,9 @@ const rail = await afriex.paymentMethods.create({
   channel: "MOBILE_MONEY",
   customerId: "cus_123",
   accountName: "Ada Lovelace",
-  accountNumber: "+254712345678",
+  accountNumber: "254712345678",
   countryCode: "KE",
-  institution: { institutionCode: "MPESA" },
+  institution: { institutionCode: "SAFARICOM", institutionName: "SAFARICOM" },
 });
 
 console.log("collect from", rail.paymentMethodId);
@@ -192,9 +225,9 @@ const rail = await afriex.paymentMethods.create({
   type: "DEPOSIT",
   customerId: "cus_123",
   accountName: "Ada Lovelace",
-  accountNumber: "+254712345678",
+  accountNumber: "254712345678",
   countryCode: "KE",
-  institution: { institutionCode: "MPESA" },
+  institution: { institutionCode: "SAFARICOM", institutionName: "SAFARICOM" },
 });
 
 console.log("collect from", rail.paymentMethodId);
@@ -206,7 +239,7 @@ transaction rather than at creation time.
 
 Source: packages/payment-methods/src/types.ts (`CreatePaymentMethodRequest.type`)
 
-### HIGH Listing payment methods without widening the default filters
+### HIGH Treating the payment method list as complete
 
 Wrong:
 
@@ -216,7 +249,8 @@ import { AfriexSDK } from "@afriex/sdk";
 const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
 
 const all = await afriex.paymentMethods.list({ limit: 100 });
-console.log("every rail:", all.total);
+const depositRail = all.data.find((pm) => pm.capabilities?.includes("DEPOSIT"));
+console.log("collect from", depositRail?.paymentMethodId);
 ```
 
 Correct:
@@ -226,17 +260,31 @@ import { AfriexSDK } from "@afriex/sdk";
 
 const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
 
-const all = await afriex.paymentMethods.list({
-  limit: 100,
-  capabilities: ["WITHDRAW", "DEPOSIT"],
-  status: ["active", "pending", "blocked", "expired"],
+const created = await afriex.paymentMethods.create({
+  channel: "MOBILE_MONEY",
+  type: "DEPOSIT",
+  customerId: "cus_123",
+  accountName: "Ada Lovelace",
+  accountNumber: "254712345678",
+  countryCode: "KE",
+  institution: { institutionCode: "SAFARICOM", institutionName: "SAFARICOM" },
 });
-console.log("every rail:", all.total);
+
+await saveDepositRail("cus_123", created.paymentMethodId);
+
+const depositRail = await afriex.paymentMethods.get(created.paymentMethodId);
+console.log("collect from", depositRail.paymentMethodId);
+
+async function saveDepositRail(customerId: string, paymentMethodId: string): Promise<void> {
+  console.log(customerId, paymentMethodId);
+}
 ```
 
-The endpoint defaults `capabilities` to `WITHDRAW` and `status` to
-`active,pending`, so deposit rails and blocked or expired rails are silently
-absent from a list that looks complete.
+The list returns payout rails only: `capabilities` accepts nothing but
+`WITHDRAW`, and `status` nothing but `active` and `pending`. Any other filter
+value answers 422. Deposit rails and blocked, expired or deleted rails never
+appear in it, so store the `paymentMethodId` when you create one and fetch it
+with `get`.
 
 Source: packages/payment-methods/src/types.ts (`ListPaymentMethodsParams`)
 
@@ -250,7 +298,7 @@ import type { PaymentMethod } from "@afriex/sdk";
 
 const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
 
-const pools = await afriex.paymentMethods.listPoolAccounts({ country: "US" });
+const pools = await afriex.paymentMethods.listPoolAccounts({ country: "NG" });
 for (const pool of pools as unknown as PaymentMethod[]) {
   console.log(pool.paymentMethodId);
 }
@@ -263,19 +311,39 @@ import { AfriexSDK } from "@afriex/sdk";
 
 const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
 
-const pool = await afriex.paymentMethods.listPoolAccounts({ country: "US" });
-console.log(pool.paymentMethodId, pool.accountNumber);
+const pool = await afriex.paymentMethods.getPoolAccount({ country: "NG" });
+console.log(pool.accountNumber, pool.reference);
 ```
 
-Despite the plural name, `listPoolAccounts` unwraps `PoolAccountResponse.data`
-and returns a single `PaymentMethod`, so treating it as a collection yields
-nothing.
+There is one pool account per country. `getPoolAccount` returns it as a single
+`PaymentMethod`; `listPoolAccounts` is the deprecated name for the same call,
+and treating its result as a collection yields nothing. Reconcile incoming
+deposits against `reference`.
 
-Source: packages/payment-methods/src/PaymentMethodService.ts (`listPoolAccounts`)
+Source: packages/payment-methods/src/PaymentMethodService.ts (`getPoolAccount`)
 
-### HIGH Testing virtual accounts, pool accounts, or crypto wallets in staging
+### HIGH Reading a virtual account that is still being opened
 
 Wrong:
+
+```ts
+import { AfriexSDK, Environment } from "@afriex/sdk";
+import type { PaymentMethod } from "@afriex/sdk";
+
+const afriex = new AfriexSDK({
+  apiKey: process.env.AFRIEX_API_KEY!,
+  environment: Environment.STAGING,
+});
+
+const account = (await afriex.paymentMethods.createVirtualAccount({
+  currency: "KES",
+  label: "COLLECTIONS",
+})) as PaymentMethod;
+
+console.log("pay into", account.accountNumber);
+```
+
+Correct:
 
 ```ts
 import { AfriexSDK, Environment } from "@afriex/sdk";
@@ -286,42 +354,24 @@ const afriex = new AfriexSDK({
 });
 
 const account = await afriex.paymentMethods.createVirtualAccount({
-  currency: "NGN",
-  customerId: "cus_123",
-  label: "SALES",
-});
-```
-
-Correct:
-
-```ts
-import { AfriexSDK, Environment, ApiError, AfriexErrorCode } from "@afriex/sdk";
-
-const afriex = new AfriexSDK({
-  apiKey: process.env.AFRIEX_API_KEY!,
-  environment: Environment.PRODUCTION,
+  currency: "KES",
+  label: "COLLECTIONS",
 });
 
-try {
-  const account = await afriex.paymentMethods.createVirtualAccount({
-    currency: "NGN",
-    customerId: "cus_123",
-    label: "SALES",
-  });
-  console.log(account.accountNumber);
-} catch (error) {
-  if (error instanceof ApiError && error.errorCode === AfriexErrorCode.FORBIDDEN) {
-    console.log("endpoint is production-only");
-  }
+if (account) {
+  console.log("pay into", account.accountNumber);
+} else {
+  console.log("account is being opened; wait for PAYMENT_METHOD.CREATED");
 }
 ```
 
-`createVirtualAccount`, `listVirtualAccounts`, `listPoolAccounts`, and
-`getCryptoWallet` are production-only and answer `403 FORBIDDEN` in the
-sandbox, which reads as a permissions problem with the API key rather than an
-environment limitation.
+For some currencies the issuing bank opens the account after the request
+returns. The API then answers 201 with an empty body and
+`createVirtualAccount` resolves to `null`; the account arrives through the
+`PAYMENT_METHOD.CREATED` webhook. Asserting the result away reads
+`accountNumber` off `null` and throws.
 
-Source: packages/payment-methods/src/PaymentMethodService.ts (production-only notes)
+Source: packages/payment-methods/src/PaymentMethodService.ts (`createVirtualAccount`)
 
 ### MEDIUM Combining label and amount on a virtual account
 
@@ -352,16 +402,18 @@ const afriex = new AfriexSDK({
   environment: Environment.PRODUCTION,
 });
 
-await afriex.paymentMethods.createVirtualAccount({
+const account = await afriex.paymentMethods.createVirtualAccount({
   currency: "NGN",
   amount: 50000,
-  reference: "invoice_772",
 });
+
+console.log(account?.reference);
 ```
 
 `createVirtualAccount` declares `label` and `amount` mutually exclusive and
 throws a `ValidationError` before the request, so the "labelled account with a
-suggested amount" the code intends is never created.
+suggested amount" the code intends is never created. A one-time account gets
+its `reference` from Afriex; the request cannot set one.
 
 Source: packages/payment-methods/src/PaymentMethodService.ts (`createVirtualAccount`)
 

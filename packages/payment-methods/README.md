@@ -40,7 +40,7 @@ const fetchedMethod = await paymentMethods.get("payment-method-id");
 
 // List payment methods with pagination and filters
 const { data, page, total } = await paymentMethods.list({
-  page: 1,
+  page: 0, // pages start at 0
   limit: 10,
   channel: ["BANK_ACCOUNT", "MOBILE_MONEY"],
   currencies: ["USD", "NGN"],
@@ -64,26 +64,27 @@ const account = await paymentMethods.resolveAccount({
   institutionCode: "058",
 });
 
-// Get crypto wallet (production only)
+// Get crypto wallet (documented as production only)
 const wallet = await paymentMethods.getCryptoWallet({
   asset: "USDT", // or 'USDC'
 });
 
-// List virtual accounts (production only)
+// List virtual accounts
 const virtualAccounts = await paymentMethods.listVirtualAccounts({
   currency: "NGN",
   customerId: "customer-id",
 });
 
-// Create a virtual account (production only)
+// Create a virtual account. The result is null when the bank opens the
+// account later; it then arrives by the PAYMENT_METHOD.CREATED webhook.
 const virtualAccount = await paymentMethods.createVirtualAccount({
   currency: "NGN",
   label: "SALES",
   customerId: "customer-id",
 });
 
-// Get the pool account for a country (production only)
-const poolAccount = await paymentMethods.listPoolAccounts({
+// Get the pool account for a country
+const poolAccount = await paymentMethods.getPoolAccount({
   country: "NG",
 });
 ```
@@ -99,11 +100,11 @@ const poolAccount = await paymentMethods.listPoolAccounts({
 - `INTERAC` - Interac transfer (Canada)
 - `UPI` - UPI transfer (India)
 - `SWIFT` - SWIFT transfer
-- `WE_CHAT` - WeChat Pay
-- `ALIPAY` - Alipay
-- `PAYBILL_TILL` - M-Pesa Paybill/Till (Kenya)
+- `WE_CHAT` - WeChat Pay, and Alipay
 
-**Response-only** (returned by `get()`/`list()`, never accepted on create): `CARD`, `CRYPTO`, `POOL_ACCOUNT`, `RFP`, `VIRTUAL_CARD`
+Alipay has no channel of its own. Create it on `WE_CHAT` with `institution.institutionCode` and `institutionName` both set to `ALIPAY`.
+
+**Response-only** (returned by `get()`/`list()`, never accepted on create): `ALIPAY`, `CARD`, `CRYPTO`, `PAYBILL_TILL`, `POOL_ACCOUNT`, `RFP`, `VIRTUAL_CARD`
 
 ## API Reference
 
@@ -133,7 +134,9 @@ Retrieve a payment method by ID.
 
 List payment methods with optional pagination and filters.
 
-**Parameters:** `page`, `limit`, `channel`, `currencies`, `capabilities` (defaults to `WITHDRAW`), `status` (defaults to `active,pending`)
+**Parameters:** `page` (starts at 0), `limit` (max 100), `channel`, `currencies`, `capabilities` (only `WITHDRAW`, the default), `status` (`active` or `pending`; defaults to both)
+
+`channel` accepts `BANK_ACCOUNT`, `MOBILE_MONEY`, `INTERAC`, `UPI`, `WE_CHAT`, `VIRTUAL_BANK_ACCOUNT`, `RFP` and `SWIFT`. Any other filter value answers `422`.
 
 **Returns:** `{ data: PaymentMethod[], page: number, total: number }`
 
@@ -141,15 +144,17 @@ List payment methods with optional pagination and filters.
 
 Delete a payment method.
 
-### `getInstitutions(params: GetInstitutionsParams): Promise<Institution[]>`
+### `getInstitutions(params: GetInstitutionsParams): Promise<InstitutionListResponse>`
 
-Get supported financial institutions.
+Get supported financial institutions. The list is on `.data`.
 
-**Required:** `channel`, `countryCode`
+**Required:** `channel` (`BANK_ACCOUNT`, `SWIFT`, `MOBILE_MONEY` or `ACH_BANK_ACCOUNT`), `countryCode`
 
-### `resolveInstitutionCode(params: InstitutionCodesParams): Promise<InstitutionCodesResponse|null>`
+Any other channel answers `400 INVALID_TRANSACTION_CHANNEL`.
 
-Resolve a bank code (SWIFT or US routing number) to the corresponding bank or institution.
+### `resolveInstitutionCode(params: InstitutionCodesParams): Promise<InstitutionCodesResponse>`
+
+Resolve a bank code (SWIFT or US routing number) to the corresponding bank or institution. The name is at `.data.bankName`; `.data` is `null` when the code does not resolve.
 
 **Required:** `codeType`, `searchTerm`, and `country`
 
@@ -159,13 +164,15 @@ Resolve a bank code (SWIFT or US routing number) to the corresponding bank or in
 
 Resolve and verify account details.
 
-**Required:** `channel` (`MOBILE_MONEY` or `BANK_ACCOUNT`), `countryCode`, `accountNumber`
+**Required:** `channel` (`MOBILE_MONEY` or `BANK_ACCOUNT`), `countryCode`, `accountNumber`, `institutionCode`
 
-**Required for bank accounts:** `institutionCode`
+`institutionCode` is the bank code for `BANK_ACCOUNT` and the provider code for `MOBILE_MONEY`. The API rejects a request without it on either channel.
+
+**Returns:** `{ data: { recipientName, institutionName, institutionCode } }`
 
 ### `getCryptoWallet(params: GetCryptoWalletParams): Promise<CryptoWalletResponse>`
 
-Get crypto wallet address. **Production only.**
+Get or create a crypto wallet. It returns one wallet with an address per network, at `.data.addresses`. The API reference documents it as production only.
 
 **Required:** `asset` (`USDT` or `USDC`)
 
@@ -173,29 +180,35 @@ Get crypto wallet address. **Production only.**
 
 ### `listVirtualAccounts(params: ListVirtualAccountsParams): Promise<VirtualAccountListResponse>`
 
-List existing virtual accounts. **Production only.**
+List existing virtual accounts. Read-only: it returns an empty list when there is none and never creates one.
 
 **Required:** `currency`
 
-**Optional:** `customerId`, `reference`
+**Optional:** `customerId`, `country`, `amount`, `reference`
 
-### `createVirtualAccount(params: CreateVirtualAccountParams): Promise<PaymentMethod>`
+### `createVirtualAccount(params: CreateVirtualAccountParams): Promise<PaymentMethod | null>`
 
-Create a virtual account. **Production only.**
+Create a virtual account.
 
 **Required:** `currency`
 
-**Optional:** `customerId`, `country`, `label`, `amount`, `reference`
+**Optional:** `customerId`, `label`, `amount`
 
-**Constraint:** `label` and `amount` are mutually exclusive
+**Constraint:** `label` and `amount` are mutually exclusive. `label` makes a permanent account and is one of `SALES`, `OPERATIONS`, `PAYROLL`, `COLLECTIONS`, `VENDOR_PAYMENTS`, `TAX`, `REFUNDS`, `MARKETING`, `TREASURY`, `GENERAL`. `amount` makes a one-time account that expires.
 
-### `listPoolAccounts(params: ListPoolAccountsParams): Promise<PaymentMethod>`
+A virtual account for a customer can only be `NGN`. Omit `customerId` to create one in another currency for the business.
 
-Get the pool account for a country. **Production only.**
+**Returns:** the account, or `null` when the issuing bank opens it after the request returns. It then arrives through the `PAYMENT_METHOD.CREATED` webhook.
+
+### `getPoolAccount(params: ListPoolAccountsParams): Promise<PaymentMethod>`
+
+Get the pool account for a country. Use its `reference` to reconcile incoming deposits. Every call also sends a `PAYMENT_METHOD.UPDATED` webhook.
 
 **Required:** `country`
 
 **Optional:** `customerId`
+
+`listPoolAccounts()` is the deprecated name for the same call.
 
 ## License
 

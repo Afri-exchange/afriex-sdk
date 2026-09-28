@@ -72,6 +72,7 @@ const session = await afriex.checkout.createSession({
   currency: "USD",
   merchantReference: "order-123",
   redirectUrl: "https://example.com/checkout/complete",
+  channels: ["VIRTUAL_BANK_ACCOUNT", "MOBILE_MONEY", "CARD"],
   customer: {
     name: "John Doe",
     email: "john@example.com",
@@ -79,7 +80,7 @@ const session = await afriex.checkout.createSession({
     countryCode: "US",
   },
 });
-// session.checkoutUrl
+// session.checkoutUrl, session.channels
 
 // Webhook verification (requires webhookPublicKey)
 const isValid = afriex.webhooks.verify(payload, signature);

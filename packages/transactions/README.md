@@ -54,7 +54,7 @@ const fetchedTx = await transactions.get("transaction-id");
 // List transactions with pagination
 const { data, page, total } = await transactions.list({
   limit: 10,
-  page: 1,
+  page: 0, // pages start at 0
 });
 
 // Authorize a deposit left in CUSTOMER_ACTION_REQUIRED (e.g. mobile-money OTP)

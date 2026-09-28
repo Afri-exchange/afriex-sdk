@@ -26,8 +26,11 @@ yarn add @afriex/sdk
 ```typescript
 import { AfriexSDK, Environment } from "@afriex/sdk";
 
+const apiKey = process.env.AFRIEX_API_KEY;
+if (!apiKey) throw new Error("AFRIEX_API_KEY is not set");
+
 const afriex = new AfriexSDK({
-  apiKey: process.env.AFRIEX_API_KEY,
+  apiKey,
   environment: "staging", // or 'production'
 });
 ```

@@ -50,11 +50,10 @@ const updated = await customers.update("customer-id", {
 });
 
 // Update KYC information — the document map is sent directly,
-// not wrapped in a `kyc` field
+// not wrapped in a `kyc` field. Each call replaces the stored documents.
 const withKyc = await customers.updateKyc("customer-id", {
   PASSPORT: "AB123456",
   DATE_OF_BIRTH: "1990-05-15",
-  COUNTRY: "NG",
 });
 
 // Verify a customer document (currently BVN only)
@@ -76,13 +75,13 @@ Create a new customer.
 
 ### `get(customerId: string): Promise<Customer>`
 
-Retrieve a customer by ID. The response uses `name`, not `fullName`.
+Retrieve a customer by ID. The response uses `name`, not `fullName`, and carries `reference`: the value to supply as the pool-account reference on a payment proof.
 
 ### `list(params?: ListCustomersParams): Promise<CustomerListResponse>`
 
 List all customers with optional pagination and filters.
 
-**Parameters:** `page`, `limit`, `email`, `phone`
+**Parameters:** `page` (starts at 0), `limit` (max 100), `email`, `phone`
 
 **Returns:** `{ data: Customer[], page: number, total: number }`
 
@@ -98,7 +97,11 @@ Delete a customer.
 
 ### `updateKyc(customerId: string, request: UpdateCustomerKycRequest): Promise<Customer>`
 
-Update customer KYC information. `UpdateCustomerKycRequest` is a flat `Record<string, string>` of KYC document types to values, sent directly as the request body (not wrapped in a `kyc` field). Valid keys: `REPRESENTATIVE_TYPE`, `DATE_OF_BIRTH`, `ADDRESS`, `BANK_STATEMENT`, `BUSINESS_CERTIFICATE`, `COUNTRY`, `ID_FRONT`, `ID_BACK`, `PHONE`, `SELFIE`, `PROOF_OF_ADDRESS`, `PROOF_OF_INCOME`, `BVN`, `DRIVER_LICENSE`, `PASSPORT`, `NATIONAL_ID`, `PAYMENT_METHOD`, `RESIDENCE_PERMIT`, `VEHICLE_REGISTRATION`, `VOTER_ID`, `OTHERS`.
+Update customer KYC information. `UpdateCustomerKycRequest` is a flat map of KYC document types to values, sent directly as the request body (not wrapped in a `kyc` field). Valid keys: `REPRESENTATIVE_TYPE`, `DATE_OF_BIRTH`, `ADDRESS`, `BANK_STATEMENT`, `BUSINESS_CERTIFICATE`, `ID_FRONT`, `ID_BACK`, `SELFIE`, `PROOF_OF_ADDRESS`, `PROOF_OF_INCOME`, `DRIVER_LICENSE`, `PASSPORT`, `NATIONAL_ID`, `PAYMENT_METHOD`, `RESIDENCE_PERMIT`, `VEHICLE_REGISTRATION`, `VOTER_ID`, `OTHERS`.
+
+`COUNTRY`, `PHONE` and `BVN` are not accepted: the API answers `400 INVALID_KYC_DOCUMENT_TYPE`, and `updateKyc()` throws a `ValidationError` before sending. Change a phone number with `update()` and submit a BVN with `verify()`.
+
+The endpoint is documented as a partial update, but each call replaces the stored documents. Send every document you want to keep. The saved documents come back at `meta.kyc.data`.
 
 ### `verify(customerId: string, request: VerifyCustomerRequest): Promise<Customer>`
 

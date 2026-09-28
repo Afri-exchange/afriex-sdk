@@ -2,6 +2,8 @@
 title: Payment Methods
 ---
 
+import { Callout } from "fumadocs-ui/components/callout";
+
 # Payment Methods API
 
 Manage bank accounts, mobile money, crypto wallets, and virtual accounts.
@@ -22,22 +24,39 @@ const paymentMethod = await afriex.paymentMethods.create({
 });
 ```
 
+`customerId`, `channel` and `countryCode` are always required. The account fields depend on the channel:
+
+| Channel                                                                | `accountName` | `accountNumber` | `institution` |
+| :--------------------------------------------------------------------- | :------------ | :-------------- | :------------ |
+| `BANK_ACCOUNT`, `MOBILE_MONEY`, `SWIFT`, `ACH_BANK_ACCOUNT`, `WE_CHAT` | Required      | Required        | Required      |
+| `UPI`, `INTERAC`                                                       | Required      | Required        | Not needed    |
+| `VIRTUAL_BANK_ACCOUNT`                                                 | Not needed    | Not needed      | Not needed    |
+
 **Creatable Channels:**
 
-| Channel                | Description                        |
-| :---------------------- | :--------------------------------- |
-| `BANK_ACCOUNT`          | Bank transfer                      |
-| `MOBILE_MONEY`          | Mobile money (M-Pesa, MTN, etc.)   |
-| `VIRTUAL_BANK_ACCOUNT`  | Virtual bank account               |
-| `ACH_BANK_ACCOUNT`      | US ACH bank account                |
-| `INTERAC`               | Interac (Canada)                   |
-| `UPI`                   | Unified Payments Interface (India) |
-| `SWIFT`                 | International SWIFT transfer       |
-| `WE_CHAT`               | WeChat Pay (China)                 |
-| `ALIPAY`                | Alipay (China)                     |
-| `PAYBILL_TILL`          | M-Pesa Paybill/Till (Kenya)        |
+| Channel                | Description                                   |
+| :--------------------- | :-------------------------------------------- |
+| `BANK_ACCOUNT`         | Bank transfer                                 |
+| `MOBILE_MONEY`         | Mobile money (M-Pesa, MTN, etc.)              |
+| `VIRTUAL_BANK_ACCOUNT` | Virtual bank account                          |
+| `ACH_BANK_ACCOUNT`     | US ACH bank account                           |
+| `INTERAC`              | Interac (Canada)                              |
+| `UPI`                  | Unified Payments Interface (India)            |
+| `SWIFT`                | International SWIFT transfer                  |
+| `WE_CHAT`              | WeChat Pay and Alipay (China)                 |
 
-`CARD`, `CRYPTO`, `POOL_ACCOUNT`, `RFP`, and `VIRTUAL_CARD` are response-only channels — they're returned by `get()`/`list()` but can't be passed to `create()`.
+`ALIPAY`, `CARD`, `CRYPTO`, `PAYBILL_TILL`, `POOL_ACCOUNT`, `RFP`, and `VIRTUAL_CARD` are response-only channels — they're returned by `get()`/`list()` but can't be passed to `create()`.
+
+<Callout type="note">
+  Alipay has no channel of its own. Create it on `WE_CHAT` with
+  `institution.institutionCode` and `institutionName` both set to `ALIPAY`.
+  Cards are collected through a checkout session.
+</Callout>
+
+<Callout type="warn">
+  For `MOBILE_MONEY`, send `accountNumber` as digits only: country code plus
+  national number, such as `254712345678`. A leading `+` is rejected.
+</Callout>
 
 ## Get Payment Method
 
@@ -45,11 +64,13 @@ const paymentMethod = await afriex.paymentMethods.create({
 const paymentMethod = await afriex.paymentMethods.get("payment-method-id");
 ```
 
+The returned `PaymentMethod` carries `currency`, `capabilities`, `status` and `reference`. Virtual accounts and other provider-issued accounts also carry `bankAddress`, the issuing bank's postal address.
+
 ## List Payment Methods
 
 ```typescript
 const response = await afriex.paymentMethods.list({
-  page: 1,
+  page: 0,
   limit: 20,
   channel: ["BANK_ACCOUNT", "MOBILE_MONEY"],
   currencies: ["USD", "NGN"],
@@ -59,14 +80,16 @@ const response = await afriex.paymentMethods.list({
 
 **Parameters:**
 
-| Field          | Type                    | Description                                    |
-| :------------- | :---------------------- | :---------------------------------------------- |
-| `page`         | `number`                | Page number, starting from 0                    |
-| `limit`        | `number`                | Items per page (max 100)                        |
-| `channel`      | `string \| string[]`    | Filter by one or more payment channels           |
-| `currencies`   | `string \| string[]`    | Filter by one or more 3-letter currency codes    |
-| `capabilities` | `string \| string[]`    | Filter by capability. Only `WITHDRAW` is currently supported; defaults to `WITHDRAW` |
-| `status`       | `string \| string[]`    | Filter by status. Defaults to `active,pending`   |
+| Field          | Type                 | Description                                                                                                        |
+| :------------- | :------------------- | :----------------------------------------------------------------------------------------------------------------- |
+| `page`         | `number`             | Page number, starting from 0                                                                                       |
+| `limit`        | `number`             | Items per page (max 100)                                                                                           |
+| `channel`      | `string \| string[]` | One or more of `BANK_ACCOUNT`, `MOBILE_MONEY`, `INTERAC`, `UPI`, `WE_CHAT`, `VIRTUAL_BANK_ACCOUNT`, `RFP`, `SWIFT` |
+| `currencies`   | `string \| string[]` | Filter by one or more 3-letter currency codes                                                                      |
+| `capabilities` | `"WITHDRAW"`         | Only `WITHDRAW` is supported, and it is the default                                                                |
+| `status`       | `string \| string[]` | `active` or `pending`. Defaults to both                                                                            |
+
+Any other filter value answers `422`. Deposit-only, deleted, expired and blocked payment methods cannot be listed; fetch them by ID.
 
 ## Delete Payment Method
 
@@ -92,7 +115,7 @@ for (const institution of response.data) {
 // Institution: { institutionName, institutionCode, institutionAddress?, institutionBranch? }
 ```
 
-Supported channels are `BANK_ACCOUNT`, `SWIFT` and `MOBILE_MONEY`.
+Supported channels are `BANK_ACCOUNT`, `SWIFT`, `MOBILE_MONEY` and `ACH_BANK_ACCOUNT`. Any other channel answers `400 INVALID_TRANSACTION_CHANNEL`.
 
 ## Resolve Institution Code
 
@@ -105,9 +128,9 @@ const result = await afriex.paymentMethods.resolveInstitutionCode({
   codeType: "routing_number",
 });
 
-console.log(result?.data.bankName); // 'JPMORGAN CHASE BANK'
+console.log(result.data?.bankName); // 'JPMORGAN CHASE BANK'
 
-// Returns: { data: { bankName } } — or null if the code does not resolve
+// Returns: { data: { bankName } }, with data null if the code does not resolve
 ```
 
 `country` defaults to `US` and accepts any ISO country code for `swift_code` lookups; `routing_number` is only supported when `country` is `US`.
@@ -127,9 +150,10 @@ const response = await afriex.paymentMethods.resolveAccount({
 console.log(response.data.recipientName);
 
 // Returns: { data: ResolvedAccount }
-// ResolvedAccount: { recipientName?, recipientEmail?, recipientPhone?,
-//                    recipientAddress?, institutionName?, institutionCode? }
+// ResolvedAccount: { recipientName?, institutionName?, institutionCode? }
 ```
+
+`institutionCode` is required on both channels: the bank code for `BANK_ACCOUNT`, the provider code for `MOBILE_MONEY`.
 
 ## Get Crypto Wallet
 
@@ -150,9 +174,9 @@ for (const { network, address } of response.data.addresses) {
 // (ETHEREUM_MAINNET, POLYGON_MAINNET, SOLANA_MAINNET, TRON_MAINNET).
 ```
 
-import { Callout } from "fumadocs-ui/components/callout";
-
-<Callout type="note">Crypto wallets are production-only.</Callout>
+<Callout type="note">
+  The API reference documents crypto wallets as production only.
+</Callout>
 
 ## List Virtual Accounts
 
@@ -161,60 +185,68 @@ Get existing virtual accounts for a customer:
 ```typescript
 const response = await afriex.paymentMethods.listVirtualAccounts({
   customerId: "customer-id",
-  currency: "USD",
+  currency: "NGN",
 });
 
-// Returns: { data: VirtualAccount[], total, page }
+// Returns: { data: PaymentMethod[], total, page }
 ```
+
+The call is read-only. When no account exists it returns an empty list; it never creates one.
 
 ## Create Virtual Account
 
 Generate a new virtual account:
 
 ```typescript
-// With fixed amount label
-const account = await afriex.paymentMethods.createVirtualAccount({
-  currency: "USD",
+// Static: a permanent account, grouped by purpose
+const staticAccount = await afriex.paymentMethods.createVirtualAccount({
+  currency: "NGN",
   label: "SALES",
-  customerId: "optional-customer-id",
+  customerId: "customer-id",
 });
 
-// OR with specific amount
-const account = await afriex.paymentMethods.createVirtualAccount({
+// Dynamic: a one-time account for a specific amount
+const dynamicAccount = await afriex.paymentMethods.createVirtualAccount({
   currency: "NGN",
   amount: 50000,
   customerId: "customer-id",
 });
 
-// Returns single VirtualAccount object
+if (dynamicAccount) {
+  console.log(dynamicAccount.accountNumber, dynamicAccount.reference);
+}
 ```
 
 **Parameters:**
 
-| Field        | Type     | Required | Description                       |
-| :----------- | :------- | :------- | :-------------------------------- |
-| `currency`   | `string` | Yes      | `USD`, `NGN`, `GBP`, or `EUR`     |
-| `label`      | `string` | No\*     | Descriptive label for the account |
-| `amount`     | `number` | No\*     | Specific transaction amount       |
-| `customerId` | `string` | -        | Optional customer ID to associate |
+| Field        | Type     | Required | Description                                                                                                                                 |
+| :----------- | :------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| `currency`   | `string` | Yes      | 3-letter currency code                                                                                                                      |
+| `label`      | `string` | No\*     | One of `SALES`, `OPERATIONS`, `PAYROLL`, `COLLECTIONS`, `VENDOR_PAYMENTS`, `TAX`, `REFUNDS`, `MARKETING`, `TREASURY`, `GENERAL`              |
+| `amount`     | `number` | No\*     | Amount for a dynamic account, which expires after a short window                                                                            |
+| `customerId` | `string` | -        | The customer to create the account for. Omit it to create one for the business. A customer's virtual account can only be `NGN`              |
 
 \*Mutually exclusive: provide `label` OR `amount`, not both.
 
-## List Pool Accounts
+<Callout type="warn">
+  `createVirtualAccount()` returns `null` when the issuing bank opens the
+  account after the request returns. The account then arrives through the
+  `PAYMENT_METHOD.CREATED` webhook.
+</Callout>
+
+## Get Pool Account
 
 Get the pool account for a supported country:
 
 ```typescript
-const poolAccount = await afriex.paymentMethods.listPoolAccounts({
+const poolAccount = await afriex.paymentMethods.getPoolAccount({
   customerId: "customer-id",
   country: "NG",
 });
 
-// Returns: PaymentMethod
+console.log(poolAccount.accountNumber, poolAccount.reference);
 ```
 
-**Pool accounts** are shared across multiple customers in a country. Use the `reference` on the returned payment method to reconcile incoming deposits.
+**Pool accounts** are shared across multiple customers in a country. Use the `reference` on the returned payment method to reconcile incoming deposits. Every call also sends a `PAYMENT_METHOD.UPDATED` webhook carrying the pool account.
 
-<Callout type="note">
-  Virtual accounts and pool accounts are production-only.
-</Callout>
+`listPoolAccounts()` is the deprecated name for the same call.

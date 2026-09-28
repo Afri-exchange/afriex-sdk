@@ -81,6 +81,7 @@ if (afriex.webhooks) {
 | `afriex.paymentMethods` | Bank, mobile money, crypto, virtual accounts |
 | `afriex.balance`        | Organization wallet balances                 |
 | `afriex.rates`          | Exchange rates and conversions               |
+| `afriex.checkout`       | Hosted checkout sessions                     |
 | `afriex.webhooks`       | Webhook signature verification (optional)    |
 
 ## Configuration
@@ -105,6 +106,7 @@ For smaller bundle sizes, install packages individually:
 | `@afriex/payment-methods` | Payment methods               |
 | `@afriex/balance`         | Balance queries               |
 | `@afriex/rates`           | Exchange rates                |
+| `@afriex/checkout`        | Hosted checkout sessions      |
 | `@afriex/webhooks`        | Webhook verification          |
 
 ## AI agents

@@ -60,15 +60,18 @@ const afriex = new AfriexSDK({
 
 await afriex.customers.update("cus_123", { email: "ada.new@example.com" });
 
-await afriex.customers.updateKyc("cus_123", {
-  BVN: "22212345678",
-  NIN: "12345678901",
+const customer = await afriex.customers.updateKyc("cus_123", {
+  PASSPORT: "A12345678",
+  DATE_OF_BIRTH: "1990-05-15",
 });
+
+console.log(customer.meta?.kyc?.data);
 ```
 
 `update` is a PATCH — omitted fields are left unchanged, and at least one of
 `fullName`, `email`, or `phone` must be present. `updateKyc` takes a flat map
-of document type to value and sends it as the whole request body.
+of document type to value and sends it as the whole request body. Each call
+replaces the stored documents, so send every document you want to keep.
 
 ### Verify a Nigerian BVN
 
@@ -103,7 +106,7 @@ const afriex = new AfriexSDK({
 
 async function listAllCustomers(): Promise<Customer[]> {
   const all: Customer[] = [];
-  let page = 1;
+  let page = 0;
 
   for (;;) {
     const response = await afriex.customers.list({ page, limit: 100 });
@@ -117,6 +120,8 @@ async function listAllCustomers(): Promise<Customer[]> {
 
 console.log((await listAllCustomers()).length);
 ```
+
+Pages start at `0`, and `limit` is capped at `100`.
 
 ### Look a customer up by email before creating a duplicate
 
@@ -182,8 +187,8 @@ import { AfriexSDK } from "@afriex/sdk";
 const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
 
 await afriex.customers.updateKyc("cus_123", {
-  kyc: JSON.stringify({ BVN: "22212345678" }),
-});
+  kyc: JSON.stringify({ PASSPORT: "A12345678" }),
+} as never);
 ```
 
 Correct:
@@ -193,12 +198,49 @@ import { AfriexSDK } from "@afriex/sdk";
 
 const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
 
-await afriex.customers.updateKyc("cus_123", { BVN: "22212345678" });
+await afriex.customers.updateKyc("cus_123", { PASSPORT: "A12345678" });
 ```
 
-`UpdateCustomerKycRequest` is `Record<string, string>` posted verbatim as the
-body, so a `kyc` wrapper is stored as a document literally named `kyc` and the
-real BVN is never recorded.
+`UpdateCustomerKycRequest` is a flat map of document type to value, posted
+verbatim as the body. A `kyc` wrapper is not a document type, so the API
+rejects the request and the passport is never recorded.
+
+Source: packages/customers/src/CustomerService.ts (`updateKyc`)
+
+### HIGH Sending a BVN, phone or country through updateKyc
+
+Wrong:
+
+```ts
+import { AfriexSDK } from "@afriex/sdk";
+
+const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
+
+await afriex.customers.updateKyc("cus_123", {
+  PASSPORT: "A12345678",
+  BVN: "22212345678",
+} as never);
+```
+
+Correct:
+
+```ts
+import { AfriexSDK } from "@afriex/sdk";
+
+const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
+
+await afriex.customers.updateKyc("cus_123", { PASSPORT: "A12345678" });
+await afriex.customers.verify("cus_123", {
+  docType: "BVN",
+  docValue: "22212345678",
+});
+```
+
+`BVN`, `PHONE` and `COUNTRY` are not KYC document types. The API answers
+`400 INVALID_KYC_DOCUMENT_TYPE` and rejects the whole request, valid documents
+included, so `updateKyc` throws a `ValidationError` first. A BVN is recorded
+only by `verify`, after the bank verification succeeds; a phone number is
+changed with `update`.
 
 Source: packages/customers/src/CustomerService.ts (`updateKyc`)
 
@@ -211,7 +253,7 @@ import { AfriexSDK } from "@afriex/sdk";
 
 const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
 
-let page = 1;
+let page = 0;
 let response = await afriex.customers.list({ page });
 while ((response as unknown as { pagination?: { hasMore: boolean } }).pagination?.hasMore) {
   page += 1;
@@ -228,7 +270,7 @@ import type { Customer } from "@afriex/sdk";
 const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
 
 const all: Customer[] = [];
-let page = 1;
+let page = 0;
 for (;;) {
   const response = await afriex.customers.list({ page, limit: 100 });
   all.push(...response.data);
@@ -239,7 +281,8 @@ for (;;) {
 
 `CustomerListResponse` is `{ data, page, total }` — it has no `pagination`
 object and no `hasMore` flag, so the loop condition is `undefined` and only the
-first page is ever fetched.
+first page is ever fetched. Pages start at `0`: a loop that starts at `1`
+skips the first page.
 
 Source: packages/customers/src/types.ts (`CustomerListResponse`)
 
@@ -280,9 +323,9 @@ import { AfriexSDK } from "@afriex/sdk";
 
 const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
 
-await afriex.customers.updateKyc("cus_123", { NIN: "12345678901" });
+await afriex.customers.updateKyc("cus_123", { NATIONAL_ID: "12345678901" });
 await afriex.customers.verify("cus_123", {
-  docType: "NIN" as "BVN",
+  docType: "NATIONAL_ID" as "BVN",
   docValue: "12345678901",
 });
 ```
@@ -294,7 +337,7 @@ import { AfriexSDK } from "@afriex/sdk";
 
 const afriex = new AfriexSDK({ apiKey: process.env.AFRIEX_API_KEY! });
 
-await afriex.customers.updateKyc("cus_123", { NIN: "12345678901" });
+await afriex.customers.updateKyc("cus_123", { NATIONAL_ID: "12345678901" });
 await afriex.customers.verify("cus_123", {
   docType: "BVN",
   docValue: "22212345678",

@@ -32,7 +32,9 @@ const customer = await afriex.customers.create({
 | `countryCode` | `string` | Yes      | ISO 3166-1 alpha-2 code, (e.g US) |
 | `meta`        | `object` | -        | Additional metadata               |
 
-The response uses `name`, not `fullName` — the API responds with a `Customer` object whose full-name field is `name`.
+The response uses `name`, not `fullName` — the API responds with a `Customer` object whose full-name field is `name`. It also carries `reference`, a shortened customer reference: supply it as the pool-account reference when submitting a payment proof.
+
+A duplicate email or phone answers `409` with code `EMAIL_ALREADY_EXISTS` or `PHONE_NUMBER_ALREADY_EXISTS`. The existing customer's id is at `error.details.data.customerId`.
 
 ## Get Customer
 
