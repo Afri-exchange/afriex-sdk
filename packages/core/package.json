@@ -1,7 +1,7 @@
 {
   "name": "@afriex/core",
   "version": "2.1.0",
-  "description": "Core functionality for Afriex SDK",
+  "description": "HTTP client, configuration and typed errors for the Afriex Business API SDK",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -45,6 +45,16 @@
   },
   "author": "Victory Lucky <luckyvictory54@gmail.com>",
   "keywords": [
+    "afriex",
+    "payments",
+    "fintech",
+    "africa",
+    "cross-border-payments",
+    "typescript",
+    "api-client",
+    "http-client",
+    "error-handling",
+    "retry",
     "tanstack-intent"
   ]
 }

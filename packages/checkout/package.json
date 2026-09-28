@@ -1,7 +1,7 @@
 {
   "name": "@afriex/checkout",
   "version": "3.0.1",
-  "description": "Checkout service for Afriex SDK",
+  "description": "Hosted checkout sessions for card, mobile money and bank transfer payments with the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,6 +42,16 @@
   },
   "author": "Victory Lucky <luckyvictory54@gmail.com>",
   "keywords": [
+    "afriex",
+    "payments",
+    "fintech",
+    "africa",
+    "cross-border-payments",
+    "typescript",
+    "checkout",
+    "hosted-checkout",
+    "payment-page",
+    "card-payments",
     "tanstack-intent"
   ]
 }

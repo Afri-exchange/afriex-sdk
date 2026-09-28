@@ -1,7 +1,7 @@
 {
   "name": "@afriex/media",
   "version": "0.0.0",
-  "description": "File upload service for Afriex SDK",
+  "description": "Upload invoices, payment proofs and documents to the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,6 +42,15 @@
   },
   "author": "Victory Lucky <luckyvictory54@gmail.com>",
   "keywords": [
+    "afriex",
+    "payments",
+    "fintech",
+    "africa",
+    "cross-border-payments",
+    "typescript",
+    "file-upload",
+    "presigned-url",
+    "document-upload",
     "tanstack-intent"
   ]
 }

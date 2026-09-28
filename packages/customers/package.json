@@ -1,7 +1,7 @@
 {
   "name": "@afriex/customers",
   "version": "3.1.0",
-  "description": "Customer management service for Afriex SDK",
+  "description": "Create and manage customers, KYC documents and identity verification with the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,6 +42,17 @@
   },
   "author": "Victory Lucky <luckyvictory54@gmail.com>",
   "keywords": [
+    "afriex",
+    "payments",
+    "fintech",
+    "africa",
+    "cross-border-payments",
+    "typescript",
+    "customers",
+    "kyc",
+    "identity-verification",
+    "bvn",
+    "onboarding",
     "tanstack-intent"
   ]
 }

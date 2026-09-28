@@ -1,7 +1,7 @@
 {
   "name": "@afriex/webhooks",
   "version": "2.0.0",
-  "description": "Webhook service for Afriex SDK",
+  "description": "Verify and parse Afriex webhook signatures in TypeScript",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -43,6 +43,16 @@
   },
   "author": "Victory Lucky <luckyvictory54@gmail.com>",
   "keywords": [
+    "afriex",
+    "payments",
+    "fintech",
+    "africa",
+    "cross-border-payments",
+    "typescript",
+    "webhooks",
+    "webhook-verification",
+    "signature-verification",
+    "rsa-sha256",
     "tanstack-intent"
   ]
 }

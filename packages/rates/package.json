@@ -1,7 +1,7 @@
 {
   "name": "@afriex/rates",
   "version": "2.0.1",
-  "description": "Rate service for Afriex SDK",
+  "description": "Exchange rates and currency conversion for the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,6 +42,17 @@
   },
   "author": "Victory Lucky <luckyvictory54@gmail.com>",
   "keywords": [
+    "afriex",
+    "payments",
+    "fintech",
+    "africa",
+    "cross-border-payments",
+    "typescript",
+    "exchange-rates",
+    "fx",
+    "forex",
+    "currency-conversion",
+    "currency-converter",
     "tanstack-intent"
   ]
 }

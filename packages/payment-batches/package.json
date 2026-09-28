@@ -1,7 +1,7 @@
 {
   "name": "@afriex/payment-batches",
   "version": "0.0.0",
-  "description": "Payment batch service for Afriex SDK",
+  "description": "Bulk payouts to bank accounts and mobile money wallets with the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,6 +42,17 @@
   },
   "author": "Victory Lucky <luckyvictory54@gmail.com>",
   "keywords": [
+    "afriex",
+    "payments",
+    "fintech",
+    "africa",
+    "cross-border-payments",
+    "typescript",
+    "bulk-payments",
+    "bulk-payouts",
+    "mass-payouts",
+    "batch-payments",
+    "payroll",
     "tanstack-intent"
   ]
 }

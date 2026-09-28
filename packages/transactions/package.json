@@ -1,7 +1,7 @@
 {
   "name": "@afriex/transactions",
   "version": "2.1.0",
-  "description": "Transaction service for Afriex SDK",
+  "description": "Send payouts, collect deposits and swap currencies with the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,6 +42,20 @@
   },
   "author": "Victory Lucky <luckyvictory54@gmail.com>",
   "keywords": [
+    "afriex",
+    "payments",
+    "fintech",
+    "africa",
+    "cross-border-payments",
+    "typescript",
+    "transactions",
+    "payouts",
+    "remittance",
+    "money-transfer",
+    "deposits",
+    "withdrawals",
+    "currency-swap",
+    "idempotency",
     "tanstack-intent"
   ]
 }

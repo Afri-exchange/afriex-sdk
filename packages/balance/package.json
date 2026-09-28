@@ -1,7 +1,7 @@
 {
   "name": "@afriex/balance",
   "version": "2.0.0",
-  "description": "Balance service for Afriex SDK",
+  "description": "Multi-currency wallet balances for the Afriex Business API",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,6 +42,15 @@
   },
   "author": "Victory Lucky <luckyvictory54@gmail.com>",
   "keywords": [
+    "afriex",
+    "payments",
+    "fintech",
+    "africa",
+    "cross-border-payments",
+    "typescript",
+    "wallet",
+    "balance",
+    "multi-currency",
     "tanstack-intent"
   ]
 }
