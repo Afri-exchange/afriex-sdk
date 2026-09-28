@@ -60,11 +60,10 @@ export interface UpdateCustomerRequest {
 }
 
 /**
- * Document types accepted by PATCH /customer/{customerId}/kyc.
+ * Document types that can appear on a customer at `meta.kyc.data`.
  *
- * The sandbox currently rejects `COUNTRY`, `PHONE` and `BVN` with
- * `INVALID_KYC_DOCUMENT_TYPE`, but all three are documented as valid and appear
- * in the documented response example, so they are kept in the union.
+ * Not all of them can be written through `updateKyc()`: see
+ * `UpdatableKycDocumentType`.
  */
 export type KycDocumentType =
   | "REPRESENTATIVE_TYPE"
@@ -89,16 +88,33 @@ export type KycDocumentType =
   | "VOTER_ID"
   | "OTHERS";
 
+/** Document types PATCH /customer/{customerId}/kyc rejects. */
+export type ReadOnlyKycDocumentType = "COUNTRY" | "PHONE" | "BVN";
+
+/**
+ * Document types accepted by PATCH /customer/{customerId}/kyc.
+ *
+ * `COUNTRY` and `PHONE` are profile fields, changed with `update()`. `BVN` is
+ * written only by `verify()`, after a successful bank verification. The API
+ * answers `400 INVALID_KYC_DOCUMENT_TYPE` for all three, and rejects the whole
+ * request when one of them is mixed in with valid types.
+ */
+export type UpdatableKycDocumentType = Exclude<
+  KycDocumentType,
+  ReadOnlyKycDocumentType
+>;
+
 /**
  * Flat map of KYC document types to their values, sent directly as the
  * PATCH /customer/{customerId}/kyc request body (not wrapped in a `kyc` field).
  *
- * The endpoint is documented as a partial update, but the sandbox was observed
- * to replace the stored map outright. Until that is reconciled, send every
- * document you want retained on each call — correct under either behaviour.
+ * The endpoint is documented as a partial update, but the sandbox replaces the
+ * stored map outright: a second call that sends only `DATE_OF_BIRTH` drops a
+ * `PASSPORT` sent by the first. Send every document you want retained on each
+ * call, which is correct under either behaviour.
  */
 export type UpdateCustomerKycRequest = Partial<
-  Record<KycDocumentType, string>
+  Record<UpdatableKycDocumentType, string>
 >;
 
 /**

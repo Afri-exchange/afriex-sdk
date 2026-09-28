@@ -9,42 +9,52 @@ import {
   resolveInstitutionCodeOutputSchema,
   cryptoWalletOutputSchema,
   virtualAccountListOutputSchema,
+  virtualAccountCreatedOutputSchema,
   poolAccountOutputSchema,
   toStructured,
 } from "../schemas/output.js";
 
-const creatablePaymentChannel = z.enum([
+// Channels that name the account through a bank, provider or wallet. Alipay is
+// created on WE_CHAT with institutionCode and institutionName set to ALIPAY.
+const institutionPaymentChannel = z.enum([
   "BANK_ACCOUNT",
   "MOBILE_MONEY",
-  "VIRTUAL_BANK_ACCOUNT",
   "ACH_BANK_ACCOUNT",
-  "INTERAC",
-  "UPI",
   "SWIFT",
   "WE_CHAT",
-  "ALIPAY",
-  "PAYBILL_TILL",
 ]);
 
-const paymentMethodChannel = z.enum([
+// Channels addressed by an alias: a UPI ID or an Interac email.
+const aliasPaymentChannel = z.enum(["UPI", "INTERAC"]);
+
+// The filters GET /payment-method accepts. Anything else answers 422.
+const paymentMethodListChannel = z.enum([
   "BANK_ACCOUNT",
   "MOBILE_MONEY",
-  "SWIFT",
   "INTERAC",
   "UPI",
   "WE_CHAT",
-  "ALIPAY",
-  "CARD",
-  "CRYPTO",
   "VIRTUAL_BANK_ACCOUNT",
-  "POOL_ACCOUNT",
-  "ACH_BANK_ACCOUNT",
-  "PAYBILL_TILL",
   "RFP",
-  "VIRTUAL_CARD",
+  "SWIFT",
 ]);
 
-const paymentMethodStatus = z.enum(["active", "pending", "deleted", "expired", "blocked"]);
+const paymentMethodListStatus = z.enum(["active", "pending"]);
+
+const paymentMethodListCapability = z.enum(["WITHDRAW"]);
+
+const virtualAccountLabel = z.enum([
+  "SALES",
+  "OPERATIONS",
+  "PAYROLL",
+  "COLLECTIONS",
+  "VENDOR_PAYMENTS",
+  "TAX",
+  "REFUNDS",
+  "MARKETING",
+  "TREASURY",
+  "GENERAL",
+]);
 
 export function registerPaymentMethodTools(registry: ToolRegistry): void {
   const { server } = registry;
@@ -52,12 +62,17 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
   server.registerTool(
     "afriex_create_payment_method",
     {
-      description: "Create a new payment method (bank account, mobile money, etc.) for a customer. Payment methods are used as sources or destinations for transactions.",
+      description: "Create a new payment method (bank account, mobile money, etc.) for a customer. Payment methods are used as sources or destinations for transactions. `institution` is required for every channel except UPI and INTERAC. Alipay is created on WE_CHAT with institutionCode and institutionName set to ALIPAY. Cards are collected through checkout, and virtual accounts through afriex_create_virtual_account.",
       inputSchema: {
-        channel: creatablePaymentChannel.describe("Payment channel type"),
+        channel: z
+          .union([institutionPaymentChannel, aliasPaymentChannel])
+          .describe("Payment channel type"),
         customerId: z.string().min(1).describe("The customer's unique identifier"),
         accountName: z.string().min(1).describe("Name on the bank account or mobile money account"),
-        accountNumber: z.string().min(1).describe("Account number or mobile money phone number"),
+        accountNumber: z
+          .string()
+          .min(1)
+          .describe("Account number, UPI ID or Interac email. For MOBILE_MONEY send the phone number as digits only (country code + national number); a leading + is rejected."),
         countryCode: z
           .string()
           .length(2)
@@ -70,7 +85,8 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
             institutionCode: z.string().optional().describe("Bank or provider code"),
             institutionAddress: z.string().optional().describe("Bank branch address"),
           })
-          .describe("Institution (bank/mobile money provider) details"),
+          .optional()
+          .describe("Institution (bank/mobile money provider) details. Required for every channel except UPI and INTERAC."),
         type: z
           .enum(["WITHDRAW", "DEPOSIT"])
           .optional()
@@ -91,16 +107,13 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     async ({ channel, customerId, accountName, accountNumber, countryCode, institution, type, recipient }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
-        const pm = await sdk.paymentMethods.create({
-          channel,
-          customerId,
-          accountName,
-          accountNumber,
-          countryCode,
-          institution,
-          type,
-          recipient,
-        });
+        const shared = { customerId, accountName, accountNumber, countryCode, type, recipient };
+        // The SDK validates `institution` for the channels that need it.
+        const pm = await sdk.paymentMethods.create(
+          channel === "UPI" || channel === "INTERAC"
+            ? { ...shared, channel, institution }
+            : { ...shared, channel, institution: institution as NonNullable<typeof institution> },
+        );
         return {
           content: [{ type: "text", text: JSON.stringify(pm, null, 2) }],
           structuredContent: toStructured(pm),
@@ -149,7 +162,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
         page: z.number().int().positive().optional().describe("Page number for pagination"),
         limit: z.number().int().positive().optional().describe("Payment methods per page"),
         channel: z
-          .union([paymentMethodChannel, z.array(paymentMethodChannel)])
+          .union([paymentMethodListChannel, z.array(paymentMethodListChannel)])
           .optional()
           .describe("Filter by one or more payment channels"),
         currencies: z
@@ -157,11 +170,11 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .optional()
           .describe("Filter by one or more 3-letter ISO 4217 currency codes"),
         capabilities: z
-          .union([z.string(), z.array(z.string())])
+          .union([paymentMethodListCapability, z.array(paymentMethodListCapability)])
           .optional()
-          .describe("Filter by capability. Only WITHDRAW is currently supported; defaults to WITHDRAW"),
+          .describe("Filter by capability. Only WITHDRAW is supported, and it is the default"),
         status: z
-          .union([paymentMethodStatus, z.array(paymentMethodStatus)])
+          .union([paymentMethodListStatus, z.array(paymentMethodListStatus)])
           .optional()
           .describe("Filter by one or more statuses. Defaults to active,pending"),
       },
@@ -218,8 +231,8 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
       description: "List banks or mobile money providers available for a specific country and channel. Use the returned codes to create payment methods.",
       inputSchema: {
         channel: z
-          .enum(["BANK_ACCOUNT", "SWIFT", "MOBILE_MONEY", "UPI", "INTERAC", "WE_CHAT"])
-          .describe("Payment channel to list institutions for"),
+          .enum(["BANK_ACCOUNT", "SWIFT", "MOBILE_MONEY", "ACH_BANK_ACCOUNT"])
+          .describe("Payment channel to list institutions for. UPI, INTERAC and WE_CHAT have no directory."),
         countryCode: z
           .string()
           .length(2)
@@ -303,8 +316,8 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .describe("Two-letter ISO country code, e.g. NG, GH, KE"),
         institutionCode: z
           .string()
-          .optional()
-          .describe("Institution code (required for BANK_ACCOUNT channel)"),
+          .min(1)
+          .describe("The bank code for BANK_ACCOUNT, or the provider code for MOBILE_MONEY. Get it from afriex_get_institutions."),
       },
       outputSchema: resolveAccountOutputSchema.shape,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
@@ -397,7 +410,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
   server.registerTool(
     "afriex_create_virtual_account",
     {
-      description: "Create a new dedicated virtual bank account for a customer or business. Pass `customerId` to assign to an end-user; omit to create a business-level account.",
+      description: "Create a new dedicated virtual bank account for a customer or business. Pass `customerId` to assign to an end-user (NGN only); omit to create a business-level account. Pass exactly one of `label` (a permanent account) or `amount` (a one-time account). For some currencies the bank opens the account later: the result then has pending set to true and the account arrives by the PAYMENT_METHOD.CREATED webhook.",
       inputSchema: {
         currency: z
           .string()
@@ -405,28 +418,30 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
           .toUpperCase()
           .describe("Three-letter currency code for the virtual account, e.g. NGN"),
         customerId: z.string().optional().describe("Customer ID to assign this virtual account to"),
-        country: z.string().length(2).toUpperCase().optional().describe("Optional two-letter ISO country code"),
-        label: z.string().optional().describe("Label for static virtual accounts (e.g. 'SALES', 'OPERATIONS'). Cannot be used with amount."),
-        amount: z.number().positive().optional().describe("Amount for dynamic virtual accounts. Cannot be used with label."),
-        reference: z.string().optional().describe("Optional merchant-supplied reference"),
+        label: virtualAccountLabel.optional().describe("Label for a static virtual account. Cannot be used with amount."),
+        amount: z.number().positive().optional().describe("Amount for a dynamic virtual account. Cannot be used with label."),
       },
-      outputSchema: paymentMethodSchema.shape,
+      outputSchema: virtualAccountCreatedOutputSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    async ({ currency, customerId, country, label, amount, reference }, extra) => {
+    async ({ currency, customerId, label, amount }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
         const account = await sdk.paymentMethods.createVirtualAccount({
           currency,
           customerId,
-          country,
           label,
           amount,
-          reference,
         });
+        if (!account) {
+          return {
+            content: [{ type: "text", text: "The virtual account is being opened by the issuing bank. It will be delivered by the PAYMENT_METHOD.CREATED webhook." }],
+            structuredContent: { pending: true },
+          };
+        }
         return {
           content: [{ type: "text", text: JSON.stringify(account, null, 2) }],
-          structuredContent: toStructured(account),
+          structuredContent: { pending: false, ...toStructured(account) },
         };
       } catch (error) {
         return {
@@ -455,7 +470,7 @@ export function registerPaymentMethodTools(registry: ToolRegistry): void {
     async ({ country, customerId }, extra) => {
       try {
         const sdk = registry.getSdk(extra);
-        const account = await sdk.paymentMethods.listPoolAccounts({ country, customerId });
+        const account = await sdk.paymentMethods.getPoolAccount({ country, customerId });
         return {
           content: [{ type: "text", text: JSON.stringify(account, null, 2) }],
           structuredContent: toStructured(account),

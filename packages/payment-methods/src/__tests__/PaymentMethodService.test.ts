@@ -382,8 +382,21 @@ describe("PaymentMethodService", () => {
           channel: "BANK_ACCOUNT",
           accountNumber: "1234567890",
           countryCode: "NG",
-        })
+        } as any)
       ).rejects.toThrow(ValidationError);
+    });
+
+    it("should throw ValidationError when institutionCode is missing for mobile money", async () => {
+      // The API rejects this with "'institutionCode' is required".
+      await expect(
+        paymentMethodService.resolveAccount({
+          channel: "MOBILE_MONEY",
+          accountNumber: "254712345678",
+          countryCode: "KE",
+        } as any)
+      ).rejects.toThrow("Institution code is required");
+
+      expect(mockHttpClient.get).not.toHaveBeenCalled();
     });
   });
 
@@ -482,6 +495,19 @@ describe("PaymentMethodService", () => {
           amount: 100,
         })
       ).rejects.toThrow("Validation failed");
+    });
+
+    it("should return null when the account is opened after the request returns", async () => {
+      // The API answers 201 with an empty data object; the account then
+      // arrives through the PAYMENT_METHOD.CREATED webhook.
+      (mockHttpClient.post as Mock).mockResolvedValue({ data: {} });
+
+      await expect(
+        paymentMethodService.createVirtualAccount({
+          currency: "KES",
+          label: "COLLECTIONS",
+        })
+      ).resolves.toBeNull();
     });
   });
 

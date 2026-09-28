@@ -172,8 +172,40 @@ describe("CustomerService", () => {
 
     it("should throw ValidationError when customerId is missing", async () => {
       await expect(
-        customerService.updateKyc("", { BVN: "22222222222" })
+        customerService.updateKyc("", { PASSPORT: "A12345678" })
       ).rejects.toThrow(ValidationError);
+    });
+
+    it("should reject BVN, PHONE and COUNTRY before sending, and say where each belongs", async () => {
+      await expect(
+        customerService.updateKyc("cust-123", {
+          PASSPORT: "A12345678",
+          BVN: "22222222222",
+          PHONE: "+2348012345678",
+          COUNTRY: "NG",
+        } as any)
+      ).rejects.toMatchObject({
+        name: "ValidationError",
+        fields: [
+          {
+            field: "BVN",
+            message:
+              "BVN cannot be set through updateKyc(). Use verify() with docType 'BVN'.",
+          },
+          {
+            field: "PHONE",
+            message:
+              "PHONE cannot be set through updateKyc(). It is a profile field: use update().",
+          },
+          {
+            field: "COUNTRY",
+            message:
+              "COUNTRY cannot be set through updateKyc(). It is a profile field set when the customer is created.",
+          },
+        ],
+      });
+
+      expect(mockHttpClient.patch).not.toHaveBeenCalled();
     });
 
     it("should throw ValidationError when KYC data is empty", async () => {

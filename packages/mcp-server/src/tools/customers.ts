@@ -111,14 +111,11 @@ export function registerCustomerTools(registry: ToolRegistry): void {
               "ADDRESS",
               "BANK_STATEMENT",
               "BUSINESS_CERTIFICATE",
-              "COUNTRY",
               "ID_FRONT",
               "ID_BACK",
-              "PHONE",
               "SELFIE",
               "PROOF_OF_ADDRESS",
               "PROOF_OF_INCOME",
-              "BVN",
               "DRIVER_LICENSE",
               "PASSPORT",
               "NATIONAL_ID",
@@ -130,7 +127,7 @@ export function registerCustomerTools(registry: ToolRegistry): void {
             ]),
             z.string()
           )
-          .describe("KYC document type/value pairs, e.g. { BVN: '22222222222', DATE_OF_BIRTH: '1990-05-15', COUNTRY: 'NG' }"),
+          .describe("KYC document type/value pairs, e.g. { PASSPORT: 'A12345678', DATE_OF_BIRTH: '1990-05-15' }. Each call replaces the stored documents, so send every document to keep. BVN is not accepted here: use afriex_verify_customer. PHONE is changed with afriex_update_customer."),
       },
       outputSchema: customerSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },

@@ -213,6 +213,35 @@ describe("TransactionService", () => {
       expect(mockHttpClient.post).toHaveBeenCalledWith("/transaction", request);
     });
 
+    it("should throw ValidationError when a SWAP sends both amounts", async () => {
+      // The API rejects this with "Only one of source amount or destination
+      // amount can be provided".
+      await expect(
+        transactionService.create({
+          type: "SWAP",
+          sourceAmount: "10",
+          destinationAmount: "16500",
+          sourceCurrency: "USD",
+          destinationCurrency: "NGN",
+          meta: {
+            idempotencyKey: "swap-key-both",
+            reference: "swap-ref-both",
+          },
+        } as any)
+      ).rejects.toMatchObject({
+        name: "ValidationError",
+        fields: [
+          {
+            field: "destinationAmount",
+            message:
+              "A SWAP takes exactly one of sourceAmount or destinationAmount",
+          },
+        ],
+      });
+
+      expect(mockHttpClient.post).not.toHaveBeenCalled();
+    });
+
     it("should create a SWAP from a destinationAmount", async () => {
       (mockHttpClient.post as Mock).mockResolvedValue({
         data: { transactionId: "txn-swap-destination", type: "SWAP" },

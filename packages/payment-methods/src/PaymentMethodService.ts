@@ -143,6 +143,9 @@ export class PaymentMethodService {
    * GET /payment-method/resolve
    *
    * The resolved account is on the `data` property of the returned envelope.
+   *
+   * `institutionCode` is required on both channels: the bank code for
+   * BANK_ACCOUNT, the provider code for MOBILE_MONEY.
    */
   async resolveAccount(
     params: ResolveAccountParams
@@ -155,10 +158,8 @@ export class PaymentMethodService {
       throw new ValidationError("Account number is required");
     }
 
-    if (params.channel === "BANK_ACCOUNT" && !params.institutionCode) {
-      throw new ValidationError(
-        "Institution code is required for bank accounts"
-      );
+    if (!params.institutionCode) {
+      throw new ValidationError("Institution code is required");
     }
 
     return this.httpClient.get<ResolveAccountResponse>(
@@ -220,20 +221,30 @@ export class PaymentMethodService {
    * A virtual account for a customer can only be NGN; omit `customerId` to
    * create one in another currency for the business itself. In the sandbox,
    * fund it with `simulate-transfer`: it receives no money on its own.
+   *
+   * @returns The account, or `null` when the issuing bank opens it after the
+   *   request returns. It is then delivered by the `PAYMENT_METHOD.CREATED`
+   *   webhook.
    */
   async createVirtualAccount(
     params: CreateVirtualAccountParams
-  ): Promise<PaymentMethod> {
+  ): Promise<PaymentMethod | null> {
     new ValidationBuilder()
       .required("currency", params.currency)
       .mutuallyExclusive("label", params.label, "amount", params.amount)
       .throwIfInvalid();
 
-    const response = await this.httpClient.post<{ data: PaymentMethod }>(
-      "/payment-method/virtual-account",
-      params
-    );
-    return response.data;
+    const response = await this.httpClient.post<{
+      data?: Partial<PaymentMethod> | null;
+    }>("/payment-method/virtual-account", params);
+
+    // For some currencies the issuing bank opens the account after the request
+    // returns. The API then answers 201 with an empty `data` object.
+    const data = response?.data;
+    if (!data?.paymentMethodId) {
+      return null;
+    }
+    return data as PaymentMethod;
   }
 
   /**

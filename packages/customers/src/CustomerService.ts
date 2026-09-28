@@ -10,6 +10,13 @@ import {
 } from "./types.js";
 
 export class CustomerService {
+  /** Document types the KYC endpoint rejects, and where each one belongs. */
+  private static readonly readOnlyKycTypes: Record<string, string> = {
+    COUNTRY: "It is a profile field set when the customer is created.",
+    PHONE: "It is a profile field: use update().",
+    BVN: "Use verify() with docType 'BVN'.",
+  };
+
   private httpClient: HttpClient;
 
   constructor(httpClient: HttpClient) {
@@ -103,8 +110,11 @@ export class CustomerService {
    * PATCH /customer/{customerId}/kyc
    *
    * The document map is sent directly as the request body (not wrapped in a `kyc` field).
-   * It is documented as a partial update, but the sandbox was observed to replace the
-   * stored documents, so send every document you want retained on each call.
+   * It is documented as a partial update, but the sandbox replaces the stored
+   * documents, so send every document you want retained on each call.
+   *
+   * `COUNTRY`, `PHONE` and `BVN` are not accepted here. Change a phone number
+   * with `update()` and submit a BVN with `verify()`.
    *
    * The saved documents come back on the customer at `meta.kyc.data`.
    */
@@ -119,6 +129,21 @@ export class CustomerService {
     if (!request || Object.keys(request).length === 0) {
       throw new ValidationError("KYC data is required");
     }
+
+    // The API rejects the whole request when one of these is mixed in, so catch
+    // it before the round trip and say where the value belongs.
+    const builder = new ValidationBuilder();
+    for (const key of Object.keys(request)) {
+      const redirect = CustomerService.readOnlyKycTypes[key];
+      if (redirect) {
+        builder.condition(
+          key,
+          true,
+          `${key} cannot be set through updateKyc(). ${redirect}`
+        );
+      }
+    }
+    builder.throwIfInvalid();
 
     const response = await this.httpClient.patch<{ data: Customer }>(
       `/customer/${customerId}/kyc`,

@@ -181,6 +181,17 @@ export const virtualAccountListOutputSchema = z
   })
   .passthrough();
 
+/**
+ * A created virtual account, or `{ pending: true }` when the issuing bank opens
+ * it after the request returns. Every payment method field is optional here:
+ * the pending result carries none, and the sandbox omits `countryCode` and
+ * `currency` on a dynamic account.
+ */
+export const virtualAccountCreatedOutputSchema = paymentMethodSchema
+  .partial()
+  .extend({ pending: z.boolean() })
+  .passthrough();
+
 export const poolAccountOutputSchema = paymentMethodSchema;
 
 // ---- Transactions ----

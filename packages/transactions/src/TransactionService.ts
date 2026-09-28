@@ -105,6 +105,13 @@ export class TransactionService {
         !request.sourceAmount && !request.destinationAmount,
         "Either sourceAmount or destinationAmount is required"
       )
+      .condition(
+        "destinationAmount",
+        type === "SWAP" &&
+          Boolean(request.sourceAmount) &&
+          Boolean(request.destinationAmount),
+        "A SWAP takes exactly one of sourceAmount or destinationAmount"
+      )
       .required("sourceCurrency", request.sourceCurrency)
       .required("destinationCurrency", request.destinationCurrency)
       .required("meta", request.meta)

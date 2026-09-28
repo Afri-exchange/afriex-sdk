@@ -270,11 +270,27 @@ export type CreateDepositTransaction = CreateTransactionBase &
   };
 
 /**
+ * The amount of a swap: exactly one side. The API computes the other at the
+ * live exchange rate and rejects a swap that sends both.
+ */
+export type SwapAmount =
+  | {
+      /** The amount to convert, in the source currency. */
+      sourceAmount: TransactionAmount;
+      destinationAmount?: never;
+    }
+  | {
+      sourceAmount?: never;
+      /** The amount to receive, in the destination currency. */
+      destinationAmount: TransactionAmount;
+    };
+
+/**
  * Swap transaction — exchanges between currencies inside the wallet.
  * The API computes the side you leave out at the live exchange rate.
  */
 export type CreateSwapTransaction = CreateTransactionBase &
-  TransactionAmounts & {
+  SwapAmount & {
     type: "SWAP";
     /** Optional. When omitted, the swap runs against the business wallet. */
     customerId?: string;

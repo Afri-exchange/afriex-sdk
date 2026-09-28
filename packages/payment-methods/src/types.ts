@@ -4,8 +4,9 @@
 
 /**
  * All channels a `PaymentMethod` may report. Broader than
- * `CreatablePaymentChannel` — some values (CARD, CRYPTO, POOL_ACCOUNT, RFP,
- * VIRTUAL_CARD) are only ever returned, never accepted on create.
+ * `CreatablePaymentChannel` — some values (ALIPAY, CARD, CRYPTO, PAYBILL_TILL,
+ * POOL_ACCOUNT, RFP, VIRTUAL_CARD) are only ever returned, never accepted on
+ * create.
  */
 export type PaymentChannel =
   | "BANK_ACCOUNT"
@@ -24,7 +25,14 @@ export type PaymentChannel =
   | "RFP"
   | "VIRTUAL_CARD";
 
-/** Channels accepted by POST /payment-method. */
+/**
+ * Channels accepted by POST /payment-method.
+ *
+ * Alipay has no channel of its own: create it on `WE_CHAT` with
+ * `institution.institutionCode` and `institutionName` set to `ALIPAY`.
+ * `PAYBILL_TILL` cannot be created through the API. Both are rejected with
+ * 400 when sent as the channel.
+ */
 export type CreatablePaymentChannel =
   | "BANK_ACCOUNT"
   | "MOBILE_MONEY"
@@ -33,9 +41,37 @@ export type CreatablePaymentChannel =
   | "INTERAC"
   | "UPI"
   | "SWIFT"
+  | "WE_CHAT";
+
+/** Channels GET /payment-method accepts as a filter. */
+export type PaymentMethodListChannel =
+  | "BANK_ACCOUNT"
+  | "MOBILE_MONEY"
+  | "INTERAC"
+  | "UPI"
   | "WE_CHAT"
-  | "ALIPAY"
-  | "PAYBILL_TILL";
+  | "VIRTUAL_BANK_ACCOUNT"
+  | "RFP"
+  | "SWIFT";
+
+/** Statuses GET /payment-method accepts as a filter. */
+export type PaymentMethodListStatus = "active" | "pending";
+
+/** Capabilities GET /payment-method accepts as a filter. */
+export type PaymentMethodListCapability = "WITHDRAW";
+
+/** Labels that group static virtual accounts by purpose. */
+export type VirtualAccountLabel =
+  | "SALES"
+  | "OPERATIONS"
+  | "PAYROLL"
+  | "COLLECTIONS"
+  | "VENDOR_PAYMENTS"
+  | "TAX"
+  | "REFUNDS"
+  | "MARKETING"
+  | "TREASURY"
+  | "GENERAL";
 
 /** Lifecycle status of a payment method. */
 export type PaymentMethodStatus =
@@ -218,14 +254,14 @@ export type CreatePaymentMethodRequest =
 export interface ListPaymentMethodsParams {
   page?: number;
   limit?: number;
-  /** Filter by one or more payment channels. */
-  channel?: PaymentChannel | PaymentChannel[];
+  /** Filter by one or more payment channels. Other channels answer 422. */
+  channel?: PaymentMethodListChannel | PaymentMethodListChannel[];
   /** Filter by one or more 3-letter ISO 4217 currency codes. */
   currencies?: string | string[];
-  /** Filter by capability. Only WITHDRAW is currently supported. Defaults to WITHDRAW. */
-  capabilities?: string | string[];
-  /** Filter by one or more statuses. Defaults to active,pending. */
-  status?: PaymentMethodStatus | PaymentMethodStatus[];
+  /** Filter by capability. Only WITHDRAW is supported, and it is the default. */
+  capabilities?: PaymentMethodListCapability | PaymentMethodListCapability[];
+  /** Filter by one or more statuses. Defaults to active,pending; other statuses answer 422. */
+  status?: PaymentMethodListStatus | PaymentMethodListStatus[];
 }
 
 export interface PaymentMethodListResponse {
@@ -261,9 +297,7 @@ export interface InstitutionListResponse {
 
 /** Account details resolved from an account number. */
 export interface ResolvedAccount {
-  recipientEmail?: string;
-  recipientPhone?: string;
-  recipientAddress?: string;
+  /** The name on the account. */
   recipientName?: string;
   /** The institution the account resolved to. */
   institutionName?: string;
@@ -288,14 +322,18 @@ export interface InstitutionCodesResponse {
   data: InstitutionCode | null;
 }
 
-/** Channels accepted by GET /payment-method/institution. */
+/**
+ * Channels accepted by GET /payment-method/institution. Any other channel
+ * answers `400 INVALID_TRANSACTION_CHANNEL`.
+ *
+ * `ACH_BANK_ACCOUNT` is not in the API reference, but the sandbox serves the
+ * US routing-number directory for it.
+ */
 export type InstitutionListChannel =
   | "BANK_ACCOUNT"
   | "SWIFT"
   | "MOBILE_MONEY"
-  | "UPI"
-  | "INTERAC"
-  | "WE_CHAT";
+  | "ACH_BANK_ACCOUNT";
 
 export interface GetInstitutionsParams {
   channel: InstitutionListChannel;
@@ -304,8 +342,14 @@ export interface GetInstitutionsParams {
 
 export interface ResolveAccountParams {
   channel: "MOBILE_MONEY" | "BANK_ACCOUNT";
+  /** The bank account number, or the phone number for MOBILE_MONEY. */
   accountNumber: string;
-  institutionCode?: string;
+  /**
+   * The bank or mobile money provider code. The reference documents it as
+   * required for BANK_ACCOUNT only, but the API rejects a request without it
+   * on either channel.
+   */
+  institutionCode: string;
   countryCode: string;
 }
 export interface InstitutionCodesParams {
@@ -366,16 +410,19 @@ export interface ListVirtualAccountsParams {
 export interface CreateVirtualAccountParams {
   /** The 3-letter ISO 4217 currency code */
   currency: string;
-  /** Optional customer ID. If not provided, creates for the business. */
+  /**
+   * Optional customer ID. If not provided, creates for the business. A
+   * virtual account for a customer can only be NGN.
+   */
   customerId?: string;
-  /** Optional ISO 3166-1 alpha-2 country code e.g US */
-  country?: string;
-  /** Label for static virtual accounts (e.g., 'SALES', 'OPERATIONS'). Can not be used with amount. */
-  label?: string;
-  /** Amount for dynamic virtual accounts. Can not be used with label. */
+  /** Label for a static virtual account. Can not be used with amount. */
+  label?: VirtualAccountLabel;
+  /**
+   * Amount for a dynamic virtual account, which expires after a short window.
+   * Can not be used with label. The account's `reference` comes back on the
+   * response.
+   */
   amount?: number;
-  /** Optional transaction reference */
-  reference?: string;
 }
 
 /**

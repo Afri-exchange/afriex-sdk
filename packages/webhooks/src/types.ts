@@ -35,32 +35,57 @@ export type PaymentMethodEventType =
   | "PAYMENT_METHOD.UPDATED"
   | "PAYMENT_METHOD.DELETED";
 
+/**
+ * The payment method an event is about. Empty fields are omitted, so only the
+ * identifiers and `countryCode` are always present. Account-shaped channels
+ * carry `accountName`, `accountNumber` and `institution`; the CARD channel
+ * carries the card fields in their place.
+ */
 export interface PaymentMethodWebhookData {
   paymentMethodId: string;
   channel: string;
   customerId: string;
-  institution: {
+  countryCode: string;
+  institution?: {
     institutionId?: string;
     institutionName?: string;
     institutionCode?: string;
     institutionAddress?: string;
   };
-  transaction: {
+  transaction?: {
     transactionInvoice?: string;
     transactionNarration?: string;
   };
-  recipient: {
+  recipient?: {
     recipientEmail?: string;
     recipientPhone?: string;
     recipientAddress?: string;
     recipientName?: string;
   };
-  accountName: string;
-  accountNumber: string;
-  countryCode: string;
+  accountName?: string;
+  accountNumber?: string;
+  /** ISO 4217 currency of the payment method. */
+  currency?: string;
+  /** Operations the payment method is enabled for, e.g. DEPOSIT, WITHDRAW. */
+  capabilities?: string[];
+  /** Identifier to reconcile incoming deposits against. */
+  reference?: string;
   /** Lifecycle status of the payment method. */
   status?: string;
+  /** Last 4 digits of the card. CARD channel only. */
+  last4?: string;
+  /** Card brand. CARD channel only. */
+  brand?: string;
+  /** Card expiration. CARD channel only. */
+  expiration?: { month: number; year: number };
+  /** Name on the card. CARD channel only. */
+  cardName?: string;
+  /** Minutes until a dynamic virtual account expires. */
+  expiresInMinutes?: number;
+  /** Requested amount for a dynamic virtual account. */
+  amount?: number;
   meta?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export interface PaymentMethodWebhookPayload {
