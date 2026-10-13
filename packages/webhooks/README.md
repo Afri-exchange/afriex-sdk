@@ -109,7 +109,7 @@ The payload's `data` includes the payment method's lifecycle `status` (`active`,
 
 - `CHECKOUT_SESSION.CREATED`
 
-The payload's `data` carries `sessionId`, `merchantReference`, `amount`, `currency`, `expiresAt`, `metadata` and `customer`, plus `afriexTransactionId` and `paidAt` once the session is paid. The event fires when the session is created. It is not a payment signal: follow `TRANSACTION.UPDATED`.
+The payload's `data` carries `sessionId`, `merchantReference`, `amount`, `currency`, `expiresAt`, `metadata` and `customer`. The event is sent once, when the session is created. It is not a payment signal: follow `TRANSACTION.UPDATED` on the session's deposit, which you can find by listing transactions with `reference` set to the `merchantReference`.
 
 ### Pool Deposit Events
 

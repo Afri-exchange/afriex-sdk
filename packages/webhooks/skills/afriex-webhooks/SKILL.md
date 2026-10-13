@@ -310,11 +310,10 @@ import type { TransactionWebhookPayload } from "@afriex/sdk";
 const processed = new Set<string>();
 
 async function onTransaction(event: TransactionWebhookPayload): Promise<void> {
-  const key = `${event.data.transactionId}:${event.data.status}`;
-  if (processed.has(key)) {
+  if (processed.has(event.id)) {
     return;
   }
-  processed.add(key);
+  processed.add(event.id);
   await creditMerchant(event.data.transactionId, event.data.destinationAmount);
 }
 
@@ -323,10 +322,12 @@ async function creditMerchant(id: string, amount: string): Promise<void> {
 }
 ```
 
-Webhook delivery is at-least-once and `TRANSACTION.UPDATED` fires on each
-status change, so an unguarded handler credits the merchant again on every
-redelivery and on every intermediate transition. Use a durable store rather
-than an in-process `Set` in production.
+Webhook delivery is at-least-once, so an unguarded handler credits the
+merchant again on every redelivery. Every delivery of the same event carries
+the same `id`, so key the guard on it; a replayed delivery is caught the same
+way. `TRANSACTION.UPDATED` also fires on each status change, each with its own
+`id`, so still act only on the status you care about. Use a durable store
+rather than an in-process `Set` in production.
 
 Source: packages/webhooks/src/types.ts (`TransactionEventType`)
 

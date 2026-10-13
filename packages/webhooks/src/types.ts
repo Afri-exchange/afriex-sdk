@@ -2,6 +2,21 @@
  * Webhook types matching Afriex Business API
  */
 
+/**
+ * Fields every webhook body carries alongside `event` and `data`. Afriex sets
+ * both once per event, every retry of the event repeats them, and the signature
+ * covers them.
+ */
+export interface WebhookEnvelope {
+  /**
+   * The event's unique ID. Store it and skip a delivery whose `id` you have
+   * already processed: that handles both retries and replays.
+   */
+  id: string;
+  /** When Afriex created the event, in ISO 8601. */
+  createdAt: string;
+}
+
 // Customer webhook events
 export type CustomerEventType =
   | "CUSTOMER.CREATED"
@@ -24,7 +39,7 @@ export interface CustomerWebhookData {
   updatedAt?: string;
 }
 
-export interface CustomerWebhookPayload {
+export interface CustomerWebhookPayload extends WebhookEnvelope {
   event: CustomerEventType;
   data: CustomerWebhookData;
 }
@@ -88,7 +103,7 @@ export interface PaymentMethodWebhookData {
   [key: string]: unknown;
 }
 
-export interface PaymentMethodWebhookPayload {
+export interface PaymentMethodWebhookPayload extends WebhookEnvelope {
   event: PaymentMethodEventType;
   data: PaymentMethodWebhookData;
 }
@@ -175,7 +190,7 @@ export interface TransactionWebhookData {
   updatedAt: string;
 }
 
-export interface TransactionWebhookPayload {
+export interface TransactionWebhookPayload extends WebhookEnvelope {
   event: TransactionEventType;
   data: TransactionWebhookData;
 }
@@ -206,16 +221,23 @@ export interface CheckoutSessionWebhookData {
   currency: string;
   expiresAt: string;
   createdAt?: string;
-  /** The Afriex transaction id, once the session is paid. */
+  /**
+   * @deprecated Afriex never sends this: `CHECKOUT_SESSION.CREATED` is sent
+   * once, when the session is created. Find the session's deposit by listing
+   * transactions with `reference` set to `merchantReference`.
+   */
   afriexTransactionId?: string;
-  /** When the session was paid. */
+  /**
+   * @deprecated Afriex never sends this. Follow `TRANSACTION.UPDATED` on the
+   * session's deposit to learn when it is paid.
+   */
   paidAt?: string;
   metadata?: Record<string, string>;
   customer?: CheckoutSessionWebhookCustomer;
   [key: string]: unknown;
 }
 
-export interface CheckoutSessionWebhookPayload {
+export interface CheckoutSessionWebhookPayload extends WebhookEnvelope {
   event: CheckoutSessionEventType;
   data: CheckoutSessionWebhookData;
 }
@@ -243,7 +265,7 @@ export interface PoolDepositRejectedWebhookData {
   resubmissionRequired: boolean;
 }
 
-export interface PoolDepositRequestWebhookPayload {
+export interface PoolDepositRequestWebhookPayload extends WebhookEnvelope {
   event: PoolDepositRequestEventType;
   data: PoolDepositRejectedWebhookData;
 }
