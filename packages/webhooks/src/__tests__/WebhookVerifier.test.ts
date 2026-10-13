@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as crypto from "crypto";
 import { WebhookVerifier } from "../WebhookVerifier.js";
+import type { WebhookPayload } from "../types.js";
 
 describe("WebhookVerifier", () => {
   // Generate a test key pair
@@ -81,6 +82,30 @@ describe("WebhookVerifier", () => {
       const result = verifier.verifyAndParse(payload, signature);
 
       expect(result).toEqual(webhookPayload);
+    });
+
+    it("returns the event id and creation time, which the signature covers", () => {
+      const verifier = new WebhookVerifier(publicKey);
+      const payload = JSON.stringify({
+        id: "8f14e45f-ceea-4e7a-9f1d-6b1c2a3d4e5f",
+        createdAt: "2026-04-24T09:13:33.883Z",
+        event: "TRANSACTION.UPDATED",
+        data: { transactionId: "txn-123", status: "SUCCESS" },
+      });
+      const signer = crypto.createSign("SHA256");
+      signer.update(payload);
+      const signature = signer.sign(privateKey, "base64");
+
+      const event: WebhookPayload = verifier.verifyAndParse(payload, signature);
+
+      expect(event.id).toBe("8f14e45f-ceea-4e7a-9f1d-6b1c2a3d4e5f");
+      expect(event.createdAt).toBe("2026-04-24T09:13:33.883Z");
+
+      // Changing the id breaks the signature, so a receiver can trust it.
+      const tampered = payload.replace("8f14e45f", "00000000");
+      expect(() => verifier.verifyAndParse(tampered, signature)).toThrow(
+        "Invalid webhook signature"
+      );
     });
 
     it("should throw error for invalid signature", () => {

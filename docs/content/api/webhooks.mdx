@@ -117,6 +117,8 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 ## Event Types
 
+Every payload carries `id` and `createdAt` alongside `event` and `data`. Each retry of an event repeats the same `id`, and the signature covers both fields. Store the `id` of each event you process and skip a delivery whose `id` you have already seen: that handles both retries and replays.
+
 ### Customer Events
 
 | Event              | Description      |
@@ -129,6 +131,8 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 ```typescript
 {
+  id: string,        // the event's unique ID, the same on every retry
+  createdAt: string, // when Afriex created the event
   event: 'CUSTOMER.CREATED',
   data: {
     customerId: string,
@@ -157,6 +161,8 @@ state. There is no slimmed-down delete payload and no `deletedAt` field.
 
 ```typescript
 {
+  id: string,        // the event's unique ID, the same on every retry
+  createdAt: string, // when Afriex created the event
   event: 'TRANSACTION.UPDATED',
   data: {
     transactionId: string,
@@ -196,6 +202,8 @@ state. There is no slimmed-down delete payload and no `deletedAt` field.
 
 ```typescript
 {
+  id: string,        // the event's unique ID, the same on every retry
+  createdAt: string, // when Afriex created the event
   event: 'PAYMENT_METHOD.CREATED',
   data: {
     paymentMethodId: string,
@@ -221,6 +229,8 @@ state. There is no slimmed-down delete payload and no `deletedAt` field.
 
 ```typescript
 {
+  id: string,        // the event's unique ID, the same on every retry
+  createdAt: string, // when Afriex created the event
   event: 'CHECKOUT_SESSION.CREATED',
   data: {
     sessionId: string,
@@ -229,8 +239,6 @@ state. There is no slimmed-down delete payload and no `deletedAt` field.
     currency: string,
     expiresAt: string,
     createdAt?: string,
-    afriexTransactionId?: string, // once paid
-    paidAt?: string,              // once paid
     metadata?: Record<string, string>,
     customer?: { name?, email?, phone?, countryCode? }
   }
@@ -238,8 +246,9 @@ state. There is no slimmed-down delete payload and no `deletedAt` field.
 ```
 
 <Callout type="warn">
-  This event fires when the session is created. It is not a payment signal.
-  Follow `TRANSACTION.UPDATED` on the transaction the session produces.
+  This event is sent once, when the session is created. It is not a payment
+  signal. Follow `TRANSACTION.UPDATED` on the session's deposit, which you can
+  find by listing transactions with `reference` set to the `merchantReference`.
 </Callout>
 
 ### Pool Deposit Events
@@ -252,6 +261,8 @@ state. There is no slimmed-down delete payload and no `deletedAt` field.
 
 ```typescript
 {
+  id: string,        // the event's unique ID, the same on every retry
+  createdAt: string, // when Afriex created the event
   event: 'POOL_DEPOSIT_REQUEST.REJECTED',
   data: {
     transactionId: string,

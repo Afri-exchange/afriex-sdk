@@ -257,6 +257,7 @@ export type {
   TriggerWebhookResponse,
   WebhookEventType,
   TriggerableWebhookEventType,
+  WebhookEnvelope,
 } from "@afriex/webhooks";
 
 export { WEBHOOK_SIGNATURE_HEADER } from "@afriex/webhooks";
