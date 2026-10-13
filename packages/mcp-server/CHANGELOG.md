@@ -1,5 +1,12 @@
 # @afriex/mcp-server
 
+## 2.1.1
+
+### Patch Changes
+
+- Updated dependencies [51a2723]
+  - @afriex/sdk@5.1.0
+
 ## 2.1.0
 
 ### Minor Changes
