@@ -1,136 +1,18 @@
-# @afriex/sdk
+# This repository has moved
 
-Official TypeScript SDK for the Afriex Business API. A unified interface for all Afriex services.
+**The Afriex TypeScript SDK now lives in the [Afriex docs repository](https://github.com/Afri-exchange/docs/tree/main/sdks/typescript),** next to the API reference it is generated from. This repository is archived and no longer receives changes.
 
-## Installation
+- **Use `@afriex/sdk` 6 or later.** It is one package with no runtime dependencies, generated from the [OpenAPI spec](https://docs.afriex.com/api-reference/introduction), and released when the API changes.
 
-```bash
-npm install @afriex/sdk
-# or
-pnpm add @afriex/sdk
-```
+  ```bash
+  npm install @afriex/sdk@latest
+  ```
 
-## Quick Start
+- **Upgrading from 5.x:** see [Upgrading from version 5](https://docs.afriex.com/sdk/introduction#upgrading-from-version-5) and the [SDK changelog](https://github.com/Afri-exchange/docs/blob/main/sdks/typescript/CHANGELOG.md).
+- **The per-resource packages** (`@afriex/core`, `@afriex/customers`, `@afriex/transactions`, `@afriex/payment-methods`, `@afriex/payment-batches`, `@afriex/balance`, `@afriex/rates`, `@afriex/checkout`, `@afriex/media`, `@afriex/sme-registration` and `@afriex/webhooks`) are deprecated. Everything they did is in `@afriex/sdk`.
+- **Documentation:** [docs.afriex.com/sdk](https://docs.afriex.com/sdk/introduction).
+- **Issues:** open them in [Afri-exchange/docs](https://github.com/Afri-exchange/docs/issues).
 
-```typescript
-import { AfriexSDK } from "@afriex/sdk";
-// or use the alias
-import { Afriex } from "@afriex/sdk";
+The code for `@afriex/sdk` 5.x and earlier stays here for reference. The hosted MCP server (`packages/mcp-server`, deployed as mcp.afriex.com) is still built from this repository until it gets a new home.
 
-const afriex = new AfriexSDK({
-  apiKey: "your-api-key",
-  environment: "production", // or 'staging' (default: 'production')
-  webhookPublicKey: "-----BEGIN PUBLIC KEY-----...", // optional
-});
-
-// Customers
-const customer = await afriex.customers.create({
-  fullName: "John Doe",
-  email: "john@example.com",
-  phone: "+1234567890",
-  countryCode: "US",
-});
-
-// Payment Methods
-const paymentMethod = await afriex.paymentMethods.create({
-  customerId: customer.customerId,
-  channel: "BANK_ACCOUNT",
-  accountName: "John Doe",
-  accountNumber: "1234567890",
-  countryCode: "NG",
-  institution: {
-    institutionCode: "058",
-    institutionName: "GTBank",
-  },
-});
-
-// Transactions
-const transaction = await afriex.transactions.create({
-  customerId: customer.customerId,
-  sourceAmount: "100",
-  destinationAmount: "50000",
-  sourceCurrency: "USD",
-  destinationCurrency: "NGN",
-  destinationId: paymentMethod.paymentMethodId,
-  meta: {
-    idempotencyKey: "quick-start-transaction-1",
-    reference: "order-123",
-  },
-});
-
-// Rates
-const rate = await afriex.rates.getRate("USD", "NGN");
-
-// Balance
-const balances = await afriex.balance.getBalance({
-  currencies: ["USD", "NGN"],
-});
-
-// Webhook Verification (only if webhookPublicKey provided)
-if (afriex.webhooks) {
-  const isValid = afriex.webhooks.verify(payload, signature);
-}
-```
-
-## Available Services
-
-| Service                 | Description                                  |
-| ----------------------- | -------------------------------------------- |
-| `afriex.customers`      | Customer CRUD and KYC management             |
-| `afriex.transactions`   | Create and track transactions                |
-| `afriex.paymentMethods` | Bank, mobile money, crypto, virtual accounts |
-| `afriex.paymentBatches` | Pay many recipients in one call              |
-| `afriex.balance`        | Organization wallet balances                 |
-| `afriex.rates`          | Exchange rates and conversions               |
-| `afriex.checkout`       | Hosted checkout sessions                     |
-| `afriex.media`          | File uploads                                 |
-| `afriex.smeRegistration` | SME registration for KES virtual accounts   |
-| `afriex.webhooks`       | Webhook signature verification (optional)    |
-
-## Configuration
-
-```typescript
-interface AfriexSDKConfig {
-  apiKey: string; // Required - Your Afriex API key
-  environment?: "staging" | "production"; // Default: 'production'
-  webhookPublicKey?: string; // Optional - Afriex's public key for webhooks
-}
-```
-
-## Individual Packages
-
-For smaller bundle sizes, install packages individually:
-
-| Package                   | Description                   |
-| ------------------------- | ----------------------------- |
-| `@afriex/core`            | Base client and configuration |
-| `@afriex/customers`       | Customer management           |
-| `@afriex/transactions`    | Transaction handling          |
-| `@afriex/payment-methods` | Payment methods               |
-| `@afriex/payment-batches` | Bulk payouts                  |
-| `@afriex/balance`         | Balance queries               |
-| `@afriex/rates`           | Exchange rates                |
-| `@afriex/checkout`        | Hosted checkout sessions      |
-| `@afriex/media`           | File uploads                  |
-| `@afriex/sme-registration` | SME registration             |
-| `@afriex/webhooks`        | Webhook verification          |
-
-## AI agents
-
-Every `@afriex/*` package ships [TanStack Intent](https://tanstack.com/intent) skills
-under `skills/`, so coding agents get grounded guidance on this SDK instead of guessing
-at the API. If you use an AI agent, run:
-
-```bash
-npx @tanstack/intent@latest install
-```
-
-List what is available with `npx @tanstack/intent@latest list`.
-
-## Documentation
-
-Full documentation availale at [https://docs.afriex.com/sdk/introduction](https://afriex-sdk-docs.vercel.app)
-
-## License
-
-MIT
+The SDK started as a hackathon project by the Afriex DevRel team. Thank you to everyone who built it.
